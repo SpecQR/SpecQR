@@ -1,0 +1,67 @@
+{
+  "name": "specqr",
+  "version": "1.0.0-rc.1",
+  "description": "A dependency-free QR Code Model 2 generator for JavaScript.",
+  "homepage": "https://github.com/SpecQR/specqr#readme",
+  "bugs": {
+    "url": "https://github.com/SpecQR/specqr/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SpecQR/specqr.git"
+  },
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./browser": {
+      "types": "./src/browser.d.ts",
+      "import": "./src/browser.js"
+    },
+    "./node": {
+      "types": "./src/node.d.ts",
+      "import": "./src/node.js"
+    }
+  },
+  "files": [
+    "src",
+    "docs",
+    "fixtures",
+    "tools",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "test": "node --test",
+    "fixtures:golden": "node tools/update-golden-fixtures.js",
+    "verify:decode": "node tools/verify-decode.js",
+    "verify:decode:optional": "node tools/verify-decode-optional.js",
+    "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",
+    "verify:decode:independent": "npm run verify:decode:jsqr"
+  },
+  "keywords": [
+    "qr",
+    "qrcode",
+    "barcode",
+    "svg",
+    "png",
+    "kanji",
+    "shift-jis",
+    "gs1",
+    "eci",
+    "model2"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0"
+  }
+}

@@ -1,0 +1,116 @@
+[
+  {
+    "id": "ascii-url",
+    "text": "https://example.com",
+    "options": {
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "numeric-auto",
+    "text": "123456789012345678901234567890",
+    "options": {
+      "errorCorrectionLevel": "Q"
+    }
+  },
+  {
+    "id": "alphanumeric-auto",
+    "text": "HELLO WORLD 123",
+    "options": {
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "utf8-byte",
+    "text": "こんにちは",
+    "options": {
+      "mode": "byte",
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "kanji-auto",
+    "text": "こんにちは漢字",
+    "options": {
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "utf8-eci",
+    "text": "こんにちは",
+    "options": {
+      "eci": true,
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "mixed-segments-eci",
+    "text": "ORDER-1234567890-こんにちは",
+    "options": {
+      "eci": true,
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "manual-segments",
+    "segments": [
+      {
+        "mode": "alphanumeric",
+        "data": "ORDER-"
+      },
+      {
+        "mode": "numeric",
+        "data": "1234567890"
+      },
+      {
+        "mode": "byte",
+        "data": "-こんにちは"
+      }
+    ],
+    "expected": "ORDER-1234567890-こんにちは",
+    "options": {
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "manual-kanji-segments",
+    "segments": [
+      {
+        "mode": "alphanumeric",
+        "data": "KANJI "
+      },
+      {
+        "mode": "kanji",
+        "data": "漢字"
+      }
+    ],
+    "expected": "KANJI 漢字",
+    "options": {
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "binary-ascii",
+    "binaryHex": "414243313233",
+    "expected": "ABC123",
+    "options": {
+      "errorCorrectionLevel": "M"
+    }
+  },
+  {
+    "id": "version-7-format-boundary",
+    "text": "Version 7",
+    "options": {
+      "version": 7,
+      "errorCorrectionLevel": "L"
+    }
+  },
+  {
+    "id": "boosted-ecc",
+    "text": "HELLO",
+    "options": {
+      "errorCorrectionLevel": "L",
+      "boostErrorCorrection": true
+    }
+  }
+]

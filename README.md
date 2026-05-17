@@ -2,7 +2,7 @@
 
 SpecQR is a dependency-free JavaScript QR Code Model 2 generator. It focuses on standards-conscious QR generation with SVG, PNG, matrix, diagnostics, Kanji, ECI, and GS1/FNC1 support.
 
-Repository: https://github.com/SpecQR/specqr
+Repository: https://github.com/SpecQR/SpecQR
 
 SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するためのライブラリです。実用上「生成はできるが読めない」「仕様端で壊れる」「環境で挙動が変わる」問題を避けるため、v1 では対応範囲を明確に絞り、テストとデコード検証を厚めに置いています。
 

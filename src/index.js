@@ -15,14 +15,38 @@ import {
 } from "./encoding/modes.js";
 import { ERROR_CORRECTION_LEVEL_ORDER, getDataCodewordCount, getSize } from "./core/tables.js";
 import { createDiagnostics } from "./diagnostics.js";
-import { createGs1ElementString, GS1_FNC1_SEPARATOR, parseGs1HumanReadable } from "./gs1.js";
+import {
+  appendGtinCheckDigit,
+  appendSsccCheckDigit,
+  calculateGs1CheckDigit,
+  calculateGtinCheckDigit,
+  calculateSsccCheckDigit,
+  createGs1ElementString,
+  GS1_FNC1_SEPARATOR,
+  parseGs1HumanReadable,
+  validateGs1CheckDigit,
+  validateGtinCheckDigit,
+  validateSsccCheckDigit
+} from "./gs1.js";
 import { DataTooLongError, InvalidGs1Error, InvalidOutputError } from "./errors.js";
 import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
 import { renderPng, renderPngDataUrl } from "./render/png.js";
 import { renderSvg, renderSvgDataUrl } from "./render/svg.js";
 
-export { createGs1ElementString, GS1_FNC1_SEPARATOR, parseGs1HumanReadable } from "./gs1.js";
+export {
+  appendGtinCheckDigit,
+  appendSsccCheckDigit,
+  calculateGs1CheckDigit,
+  calculateGtinCheckDigit,
+  calculateSsccCheckDigit,
+  createGs1ElementString,
+  GS1_FNC1_SEPARATOR,
+  parseGs1HumanReadable,
+  validateGs1CheckDigit,
+  validateGtinCheckDigit,
+  validateSsccCheckDigit
+} from "./gs1.js";
 
 export {
   DataTooLongError,
@@ -56,6 +80,38 @@ export class QRCode {
 
   static parseGs1HumanReadable(input) {
     return parseGs1HumanReadable(input);
+  }
+
+  static calculateGs1CheckDigit(digits) {
+    return calculateGs1CheckDigit(digits);
+  }
+
+  static validateGs1CheckDigit(digitsWithCheckDigit) {
+    return validateGs1CheckDigit(digitsWithCheckDigit);
+  }
+
+  static calculateGtinCheckDigit(gtinWithoutCheckDigit) {
+    return calculateGtinCheckDigit(gtinWithoutCheckDigit);
+  }
+
+  static appendGtinCheckDigit(gtinWithoutCheckDigit) {
+    return appendGtinCheckDigit(gtinWithoutCheckDigit);
+  }
+
+  static validateGtinCheckDigit(gtin) {
+    return validateGtinCheckDigit(gtin);
+  }
+
+  static calculateSsccCheckDigit(ssccWithoutCheckDigit) {
+    return calculateSsccCheckDigit(ssccWithoutCheckDigit);
+  }
+
+  static appendSsccCheckDigit(ssccWithoutCheckDigit) {
+    return appendSsccCheckDigit(ssccWithoutCheckDigit);
+  }
+
+  static validateSsccCheckDigit(sscc) {
+    return validateSsccCheckDigit(sscc);
   }
 }
 

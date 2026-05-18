@@ -20,6 +20,7 @@ SpecQR `1.0.0-rc.2` は、実務で使う通常の QR Code Model 2 generation �
 - UTF-8 と explicit assignment number 向けの optional ECI metadata
 - GS1 QR Code / FNC1 first position mode
 - 代表的な fixed-length / variable-length AI 向けの GS1 element string helper と human-readable parser
+- GTIN / SSCC check digit helper と、AI `00`/`01`/`02` の check digit validation
 - 選択 Version を増やさない optional error correction boosting
 - Automatic version selection
 - Automatic mask selection
@@ -31,6 +32,8 @@ SpecQR `1.0.0-rc.2` は、実務で使う通常の QR Code Model 2 generation �
 - Browser canvas drawing
 - Node PNG buffer/file helpers
 - Browser Blob/ImageData/Object URL helpers
+- 実利用向け examples
+- 小さな browser playground
 - quiet zone、contrast、capacity、mask/version selection、scan risk、print DPI の diagnostics / warnings
 
 ## Compatibility Notes
@@ -39,7 +42,7 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 `eci: true` は byte-mode text が UTF-8 であることを明示するための option です。そのため、ECI が有効な場合、auto segmentation は non-ASCII text を byte mode に保ちます。explicit manual Kanji segment は引き続き利用できます。
 
-`gs1: true` は FNC1 first position を先頭に挿入し、input が raw GS1 element string であることを期待します。`parseGs1HumanReadable()` は対応 AI の parentheses notation を `{ ai, value }[]` に変換し、`createGs1ElementString()` は値を検証して、必要な位置に ASCII GS (`"\x1D"`) separator を挿入します。全 GS1 AI catalog validation、業界別 AI rule、check digit validation、FNC1 second position はこの phase には含めません。ECI と GS1/FNC1 first position は control-mode ordering が曖昧になるため併用を reject します。
+`gs1: true` は FNC1 first position を先頭に挿入し、input が raw GS1 element string であることを期待します。`parseGs1HumanReadable()` は対応 AI の parentheses notation を `{ ai, value }[]` に変換し、`createGs1ElementString()` は値を検証して、必要な位置に ASCII GS (`"\x1D"`) separator を挿入します。GTIN / SSCC check digit helper と AI `00`/`01`/`02` の check digit validation は実装済みです。全 GS1 AI catalog validation、業界別 AI rule、FNC1 second position はこの phase には含めません。ECI と GS1/FNC1 first position は control-mode ordering が曖昧になるため併用を reject します。
 
 package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の separate export を持ちます。CommonJS と minified browser build は build pipeline を導入するまで生成しません。source package は dependency-free runtime を保ちます。
 
@@ -50,7 +53,6 @@ package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の sep
 - FNC1 second position
 - Full GS1 AI catalog validation
 - Industry-specific GS1 AI rules
-- GS1 check digit validation
 - Structured Append
 - Micro QR
 - rMQR
@@ -58,13 +60,12 @@ package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の sep
 - SQRC
 - Logo overlay
 - Styled modules
-- Browser playground
 
 ## v1 後の Roadmap
 
 通常 QR Code Model 2 以外の symbol family や domain extension は、core に直接混ぜず、別 module として扱う方針です。
 
-- `@specqr/gs1`: full GS1 AI validation、check-digit helpers、追加の GS1 domain helpers
+- `@specqr/gs1`: full GS1 AI validation、追加の GS1 domain helpers
 - `@specqr/structured-append`: multi-symbol splitting
 - `@specqr/micro`: Micro QR implementation
 - `@specqr/rmqr`: rectangular QR implementation

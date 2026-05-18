@@ -17,5 +17,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run examples:smoke
       - run: npm run verify:decode:jsqr
       - run: npm pack --dry-run

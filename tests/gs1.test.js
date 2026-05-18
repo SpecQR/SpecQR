@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  appendGtinCheckDigit,
+  appendSsccCheckDigit,
+  calculateGs1CheckDigit,
+  calculateGtinCheckDigit,
+  calculateSsccCheckDigit,
   createGs1ElementString,
   DataTooLongError,
   GS1_FNC1_SEPARATOR,
@@ -8,7 +13,10 @@ import {
   QRCode,
   generate,
   generateSegments,
-  parseGs1HumanReadable
+  parseGs1HumanReadable,
+  validateGs1CheckDigit,
+  validateGtinCheckDigit,
+  validateSsccCheckDigit
 } from "../src/index.js";
 import { getSegmentsBitLength, normalizeManualSegments } from "../src/encoding/modes.js";
 
@@ -164,6 +172,58 @@ test("GS1 helper validates representative AI lengths and raw values", () => {
   );
   assert.throws(
     () => createGs1ElementString([{ ai: "30", value: 123 }]),
+    (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
+  );
+});
+
+test("GS1 check digit helpers calculate and validate GTIN and SSCC values", () => {
+  assert.equal(calculateGs1CheckDigit("0491234567890"), "4");
+  assert.equal(validateGs1CheckDigit("04912345678904"), true);
+  assert.equal(validateGs1CheckDigit("04912345678905"), false);
+
+  assert.equal(calculateGtinCheckDigit("0491234567890"), "4");
+  assert.equal(appendGtinCheckDigit("0491234567890"), "04912345678904");
+  assert.equal(validateGtinCheckDigit("04912345678904"), true);
+  assert.equal(validateGtinCheckDigit("04912345678905"), false);
+  assert.equal(QRCode.appendGtinCheckDigit("0491234567890"), "04912345678904");
+  assert.equal(QRCode.validateGtinCheckDigit("04912345678904"), true);
+
+  assert.equal(calculateSsccCheckDigit("12345678901234567"), "5");
+  assert.equal(appendSsccCheckDigit("12345678901234567"), "123456789012345675");
+  assert.equal(validateSsccCheckDigit("123456789012345675"), true);
+  assert.equal(validateSsccCheckDigit("123456789012345670"), false);
+
+  assert.throws(
+    () => calculateGtinCheckDigit("123"),
+    (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
+  );
+  assert.throws(
+    () => validateSsccCheckDigit("123"),
+    (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
+  );
+});
+
+test("GS1 helper validates GTIN and SSCC check digits for supported AIs", () => {
+  assert.equal(
+    createGs1ElementString([
+      { ai: "00", value: appendSsccCheckDigit("12345678901234567") },
+      { ai: "01", value: appendGtinCheckDigit("0491234567890") },
+      { ai: "422", value: "392" },
+      { ai: "10", value: "LOT-A" }
+    ]),
+    `00123456789012345675010491234567890442239210LOT-A`
+  );
+
+  assert.throws(
+    () => createGs1ElementString([{ ai: "01", value: "04912345678905" }]),
+    (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
+  );
+  assert.throws(
+    () => createGs1ElementString([{ ai: "00", value: "123456789012345670" }]),
+    (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
+  );
+  assert.throws(
+    () => createGs1ElementString([{ ai: "422", value: "JP1" }]),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
 });

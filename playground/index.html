@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SpecQR Playground</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="workspace" aria-label="QR generator">
+        <div class="controls">
+          <header>
+            <p class="eyebrow">SpecQR Playground</p>
+            <h1>QR 生成確認</h1>
+          </header>
+
+          <label>
+            入力
+            <textarea id="qr-input" rows="6">https://github.com/SpecQR/SpecQR</textarea>
+          </label>
+
+          <div class="control-grid">
+            <label>
+              入力形式
+              <select id="qr-kind">
+                <option value="text">Text / URL</option>
+                <option value="gs1">GS1 human-readable</option>
+              </select>
+            </label>
+            <label>
+              ECC
+              <select id="qr-ecc">
+                <option value="L">L</option>
+                <option value="M" selected>M</option>
+                <option value="Q">Q</option>
+                <option value="H">H</option>
+              </select>
+            </label>
+            <label>
+              Scale
+              <input id="qr-scale" type="number" min="1" max="24" value="8">
+            </label>
+            <label>
+              Margin
+              <input id="qr-margin" type="number" min="0" max="12" value="4">
+            </label>
+          </div>
+
+          <div class="actions">
+            <a id="download-svg" class="button" download="specqr.svg" aria-disabled="true">SVG</a>
+            <a id="download-png" class="button" download="specqr.png" aria-disabled="true">PNG</a>
+          </div>
+        </div>
+
+        <div class="preview-area">
+          <div id="qr-preview" class="preview" aria-live="polite"></div>
+          <div id="qr-error" class="error" hidden></div>
+        </div>
+
+        <aside class="diagnostics">
+          <h2>Diagnostics</h2>
+          <dl id="qr-diagnostics"></dl>
+          <h3>Warnings</h3>
+          <ul id="qr-warnings"></ul>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="./playground.js"></script>
+  </body>
+</html>

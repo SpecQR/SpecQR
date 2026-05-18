@@ -111,15 +111,19 @@ QRCode.generateSegments([
 - `parseGs1HumanReadable(input)`: `(01)04912345678904(10)ABC123(17)251231` のような parentheses-based input を `{ ai, value }[]` に変換します。
 - `createGs1ElementString(elements)`: 対応 AI の `{ ai, value }` string entries を検証し、QR input として使う raw GS1 element string を返します。leading zero を保持するため、AI values は string で渡す必要があります。
 - `GS1_FNC1_SEPARATOR`: 可変長 AI の後に別の element が続く場合に挿入される ASCII GS separator `"\x1D"` です。
+- `calculateGs1CheckDigit(digits)`: GS1 mod-10 check digit を計算します。
+- `validateGs1CheckDigit(digitsWithCheckDigit)`: 末尾 check digit を検証します。
+- `calculateGtinCheckDigit(gtinWithoutCheckDigit)`, `appendGtinCheckDigit(gtinWithoutCheckDigit)`, `validateGtinCheckDigit(gtin)`: GTIN-8/12/13/14 向け helper です。
+- `calculateSsccCheckDigit(ssccWithoutCheckDigit)`, `appendSsccCheckDigit(ssccWithoutCheckDigit)`, `validateSsccCheckDigit(sscc)`: SSCC 向け helper です。
 
 helper が対応する代表 AI は次の範囲です。
 
-- fixed length: `00`, `01`, `02`, `11`, `12`, `13`, `15`, `16`, `17`, `20`, `410` through `415`, `3100` through `3105`, `3200` through `3205`
+- fixed length: `00`, `01`, `02`, `11`, `12`, `13`, `15`, `16`, `17`, `20`, `410` through `415`, `422`, `424`, `425`, `426`, `3100` through `3105`, `3200` through `3205`
 - variable length: `10`, `21`, `22`, `30`, `37`, `240`, `241`, `400`, `420`, `91` through `99`
 
-validation は、対応 AI format、fixed/max length、numeric-only AI、printable ASCII text values、raw value 内の separator/parentheses rejection を対象にします。可変長 AI の後に別の element が続く場合は `"\x1D"` を挿入し、最後の可変長 AI は separator なしで終端します。
+validation は、対応 AI format、fixed/max length、numeric-only AI、printable ASCII text values、raw value 内の separator/parentheses rejection、AI `00` の SSCC check digit、AI `01`/`02` の GTIN check digit を対象にします。可変長 AI の後に別の element が続く場合は `"\x1D"` を挿入し、最後の可変長 AI は separator なしで終端します。
 
-全 GS1 AI catalog、業界別 AI rule、check digit validation、FNC1 second position は v1 RC の対象外です。
+GTIN / SSCC 以外の check digit rule、全 GS1 AI catalog、業界別 AI rule、FNC1 second position は v1 RC の対象外です。
 
 ## Return Values
 

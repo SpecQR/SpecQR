@@ -23,6 +23,7 @@ npm install specqr@next
 - binary input と manual segment input
 - GS1 QR Code / FNC1 first position
 - 対応 AI に限定した GS1 human-readable parser / element string helper
+- GTIN / SSCC check digit helper
 - `matrix`, `svg`, Data URL, PNG, canvas output
 - Node PNG helper と browser Blob/ImageData/Object URL helper
 - capacity、mask/version selection、contrast、quiet zone、print warning を含む diagnostics
@@ -130,7 +131,16 @@ const svg = QRCode.generate(data, {
 });
 ```
 
-`parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。AI values は先頭ゼロを保持するため string で渡してください。全 GS1 AI catalog、業界別 validation、check digit validation は v1 RC の対象外です。
+`parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog、業界別 validation、FNC1 second position は v1 RC の対象外です。
+
+GTIN や SSCC の check digit は helper で計算できます。
+
+```js
+import { appendGtinCheckDigit, appendSsccCheckDigit } from "specqr";
+
+const gtin = appendGtinCheckDigit("0491234567890"); // "04912345678904"
+const sscc = appendSsccCheckDigit("12345678901234567");
+```
 
 ## バイナリ入力
 
@@ -199,6 +209,24 @@ const blob = toBlob("https://example.com");
 const imageData = toImageData("https://example.com");
 const url = toObjectURL("https://example.com");
 ```
+
+## Examples / Playground
+
+実利用向けの小さな examples を同梱しています。
+
+```sh
+npm run examples:node
+npm run examples:gs1
+npm run examples:smoke
+```
+
+ブラウザで動作を確認したい場合は playground を起動します。
+
+```sh
+npm run playground
+```
+
+Open `http://127.0.0.1:4173/playground/`.
 
 ## Errors
 

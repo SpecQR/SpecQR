@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  appendGtinCheckDigit,
   createGs1ElementString,
   DataTooLongError,
   generate,
@@ -36,7 +37,8 @@ test("release candidate public API examples execute", () => {
   assert.ok(Array.isArray(diagnosticResult.matrix));
   assert.equal(typeof diagnosticResult.diagnostics.version, "number");
 
-  const gs1Elements = parseGs1HumanReadable("(01)04912345678904(10)ABC123(17)251231");
+  const gtin = appendGtinCheckDigit("0491234567890");
+  const gs1Elements = parseGs1HumanReadable(`(01)${gtin}(10)ABC123(17)251231`);
   const gs1Data = createGs1ElementString(gs1Elements);
   const gs1Result = QRCode.generate(gs1Data, {
     gs1: true,

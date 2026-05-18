@@ -18,6 +18,7 @@
 - Diagnostics が capacity、mask/version selection reasons、quiet-zone status、contrast、print hints、warnings を出すこと。
 - Node helpers が PNG buffers を返し、PNG file を書き出すこと。
 - Browser helpers が platform support のある環境で Blob/ImageData/Object URL output を返すこと。
+- Examples smoke が Node PNG / GS1 SVG examples と browser/playground source files を確認すること。
 - Root、Node、browser subpath exports が import 可能であること。
 - Deterministic random payloads が matrix shape、capacity、masking、diagnostics invariants を満たすこと。
 - Reed-Solomon arithmetic が安定した correction bytes を生成すること。
@@ -113,7 +114,26 @@ repository には minimal GitHub Actions workflow `.github/workflows/ci.yml` が
 
 - `npm ci`
 - `npm test`
+- `npm run examples:smoke`
 - `npm run verify:decode:jsqr`
 - `npm pack --dry-run`
 
 macOS Vision validation は Swift、Vision、ImageMagick に依存するため、local/macOS release check として扱います。
+
+## Examples / Playground
+
+実利用導線の regression check として、Node examples は smoke script で実行します。
+
+```sh
+npm run examples:smoke
+```
+
+この check は Node PNG 保存 example、GS1 SVG example、TypeScript usage file、browser helper example、playground source files が実行または読み取り可能であることを確認します。
+
+Playground は dependency-free な static files として提供し、local server で確認します。
+
+```sh
+npm run playground
+```
+
+Open `http://127.0.0.1:4173/playground/`.

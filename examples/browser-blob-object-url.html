@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SpecQR Browser Blob Example</title>
+    <style>
+      body {
+        color: #1f2937;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 2rem;
+      }
+
+      img {
+        border: 1px solid #d1d5db;
+        display: block;
+        height: 264px;
+        image-rendering: pixelated;
+        margin-block: 1rem;
+        width: 264px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SpecQR Browser Blob / Object URL</h1>
+    <p>This example uses <code>specqr/browser</code> to create a PNG Blob and Object URL.</p>
+    <img id="preview" alt="Generated QR code preview">
+    <a id="download" download="specqr-browser-example.png">Download PNG</a>
+
+    <script type="module">
+      import { toObjectURL } from "../src/browser.js";
+
+      const url = toObjectURL("https://github.com/SpecQR/SpecQR", {
+        errorCorrectionLevel: "Q",
+        scale: 8,
+        margin: 4
+      });
+
+      document.querySelector("#preview").src = url;
+      document.querySelector("#download").href = url;
+    </script>
+  </body>
+</html>

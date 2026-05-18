@@ -30,7 +30,9 @@
   "files": [
     "src",
     "docs",
+    "examples",
     "fixtures",
+    "playground",
     "tools",
     "README.md",
     "CHANGELOG.md",
@@ -40,6 +42,10 @@
   "scripts": {
     "test": "node --test",
     "fixtures:golden": "node tools/update-golden-fixtures.js",
+    "examples:node": "node examples/node-save-png.mjs",
+    "examples:gs1": "node examples/gs1-qr.mjs",
+    "examples:smoke": "node tools/verify-examples.js",
+    "playground": "node tools/serve-playground.js",
     "verify:decode": "node tools/verify-decode.js",
     "verify:decode:optional": "node tools/verify-decode-optional.js",
     "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",

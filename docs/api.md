@@ -1,6 +1,6 @@
 # API
 
-この文書は SpecQR `1.0.0-rc.1` の公開 API を説明します。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
+この文書は SpecQR `1.0.0-rc.2` の公開 API を説明します。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
 
 ## Core
 

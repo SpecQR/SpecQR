@@ -1,6 +1,6 @@
 {
   "name": "specqr",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "description": "A dependency-free QR Code Model 2 generator for JavaScript.",
   "homepage": "https://github.com/SpecQR/SpecQR#readme",
   "bugs": {

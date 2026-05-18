@@ -9,7 +9,7 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 ## インストール
 
 ```sh
-npm install specqr@1.0.0-rc.1
+npm install specqr@next
 ```
 
 ## v1 RC の対応範囲

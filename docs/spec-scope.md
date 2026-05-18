@@ -2,7 +2,7 @@
 
 ## Target
 
-SpecQR `1.0.0-rc.1` は、実務で使う通常の QR Code Model 2 generation を対象にします。v1 RC では「通常 QR Code を安定して生成する」ことを優先し、別系統の QR family や装飾機能は core に混ぜません。
+SpecQR `1.0.0-rc.2` は、実務で使う通常の QR Code Model 2 generation を対象にします。v1 RC では「通常 QR Code を安定して生成する」ことを優先し、別系統の QR family や装飾機能は core に混ぜません。
 
 ## 実装済み範囲
 

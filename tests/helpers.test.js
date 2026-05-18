@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { toBlob, toBlobFromSegments } from "../src/browser.js";
 import { toPngBuffer, toPngBufferFromSegments, writePngFile } from "../src/node.js";
 
@@ -17,11 +19,17 @@ test("Node helpers return PNG buffers", () => {
 });
 
 test("Node helper writes PNG files", async () => {
-  const path = "tmp/helper-output.png";
-  await writePngFile(path, "HELLO");
+  const directory = await mkdtemp(join(tmpdir(), "specqr-helper-"));
+  const path = join(directory, "helper-output.png");
 
-  const bytes = await readFile(path);
-  assert.deepEqual(Array.from(bytes.subarray(0, 8)), PNG_SIGNATURE);
+  try {
+    await writePngFile(path, "HELLO");
+
+    const bytes = await readFile(path);
+    assert.deepEqual(Array.from(bytes.subarray(0, 8)), PNG_SIGNATURE);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("Browser helpers return PNG blobs when Blob is available", async () => {

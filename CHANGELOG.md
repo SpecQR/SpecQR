@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-rc.2 - 2026-05-18
+
+### 修正
+
+- CI の新規 checkout でも helper tests が安定して通るよう、Node PNG file helper test を OS の一時ディレクトリ上で実行するように変更。
+
 ## 1.0.0-rc.1 - 2026-05-17
 
 SpecQR の v1 target は、dependency-free な JavaScript QR Code Model 2 generator として、実用上安全な通常 QR generation に集中します。

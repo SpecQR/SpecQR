@@ -82,7 +82,7 @@ QRCode.drawToCanvas(canvas, "https://example.com", {
 
 ## GS1 / FNC1 First Position
 
-`gs1: true` は、入力が raw GS1 element string である場合に使います。QR Code の FNC1 first position mode indicator を先頭に挿入します。
+`gs1: true` は、入力が raw GS1 element string である場合に使います。QR Code の FNC1 first position mode indicator を先頭に挿入し、通常テキスト QR ではなく GS1 QR Code として decode されることを意図します。
 
 ```js
 import { QRCode, createGs1ElementString, parseGs1HumanReadable } from "specqr";
@@ -115,6 +115,8 @@ QRCode.generateSegments([
 - `validateGs1CheckDigit(digitsWithCheckDigit)`: 末尾 check digit を検証します。
 - `calculateGtinCheckDigit(gtinWithoutCheckDigit)`, `appendGtinCheckDigit(gtinWithoutCheckDigit)`, `validateGtinCheckDigit(gtin)`: GTIN-8/12/13/14 向け helper です。
 - `calculateSsccCheckDigit(ssccWithoutCheckDigit)`, `appendSsccCheckDigit(ssccWithoutCheckDigit)`, `validateSsccCheckDigit(sscc)`: SSCC 向け helper です。
+
+Human-readable input は、表示・入力しやすさのための `(01)04912345678904(10)ABC123` 形式です。実際に QR に encode する raw GS1 element string は parentheses を含みません。GS1 Digital Link は URL ベースの別表現であり、現時点では専用 helper / validator を提供していません。
 
 helper が対応する代表 AI は次の範囲です。
 

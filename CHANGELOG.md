@@ -7,11 +7,13 @@
 - Added practical examples for Node PNG output, browser Blob/Object URL usage, TypeScript usage, and GS1 QR generation.
 - Added a small dependency-free browser playground with input, ECC selection, preview, diagnostics, warnings, and SVG/PNG downloads.
 - Added GS1 mod-10 check digit helpers for GTIN and SSCC values.
+- Added a conformance matrix and an external reference comparison report.
+- Added fixed-condition matrix comparison against Nayuki QR Code generator as a dev-only reference check.
 
 ### Changed
 
 - Strengthened supported GS1 AI validation for GTIN/SSCC check digits and representative country-of-origin AIs.
-- Added examples smoke coverage to CI.
+- Added examples smoke coverage and Nayuki reference comparison to CI.
 
 ## 1.0.0-rc.2 - 2026-05-18
 

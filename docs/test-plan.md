@@ -19,6 +19,7 @@
 - Node helpers が PNG buffers を返し、PNG file を書き出すこと。
 - Browser helpers が platform support のある環境で Blob/ImageData/Object URL output を返すこと。
 - Examples smoke が Node PNG / GS1 SVG examples と browser/playground source files を確認すること。
+- Nayuki reference comparison が fixed payload / fixed Version / fixed ECC / fixed mask の matrix exact match を確認すること。
 - Root、Node、browser subpath exports が import 可能であること。
 - Deterministic random payloads が matrix shape、capacity、masking、diagnostics invariants を満たすこと。
 - Reed-Solomon arithmetic が安定した correction bytes を生成すること。
@@ -63,6 +64,18 @@ npm test
 ```
 
 Golden tests は、すべての scanner が output image を受け入れることを証明しません。下記の Vision / jsQR decode checks と併せて解釈します。
+
+## External Reference Comparison
+
+固定条件の QR construction regression を検出するため、外部参照実装との matrix comparison を行います。
+
+```sh
+npm run verify:reference:nayuki
+```
+
+この script は devDependency の `nayuki-qr-code-generator@1.8.0` を使い、SpecQR と Nayuki に同じ fixed payload、fixed Version、fixed error correction level、fixed mask、fixed segment を渡して full matrix rows を比較します。現在の coverage は numeric、alphanumeric、byte、manual mixed segments、ECI + UTF-8 byte、raw binary byte data です。
+
+Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、renderer output、SpecQR diagnostics は参照比較の対象外です。これらは unit / golden / decoder validation で別に検証します。詳細は [External Reference Comparison](./reference-comparison.md) を参照してください。
 
 ## Decoder Validation
 
@@ -116,6 +129,7 @@ repository には minimal GitHub Actions workflow `.github/workflows/ci.yml` が
 - `npm test`
 - `npm run examples:smoke`
 - `npm run verify:decode:jsqr`
+- `npm run verify:reference:nayuki`
 - `npm pack --dry-run`
 
 macOS Vision validation は Swift、Vision、ImageMagick に依存するため、local/macOS release check として扱います。

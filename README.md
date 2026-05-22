@@ -30,6 +30,8 @@ npm install specqr@next
 
 Micro QR、rMQR、logo overlay、styled modules、FNC1 second position、Structured Append は v1 RC の対象外です。
 
+詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
+
 ## 基本的な使い方
 
 ```js
@@ -117,7 +119,7 @@ QRCode.generate("こんにちは", {
 
 ## GS1 QR Code / FNC1 first position
 
-GS1 QR Code を生成する場合は、human-readable GS1 text を parse して raw GS1 element string に変換し、`gs1: true` を指定します。
+GS1 QR Code を生成する場合は、human-readable GS1 text を parse して raw GS1 element string に変換し、`gs1: true` を指定します。通常テキスト QR と違い、GS1 QR Code では先頭に FNC1 first position mode indicator が入り、GS1 element string として解釈されることを decoder に伝えます。
 
 ```js
 import { QRCode, createGs1ElementString, parseGs1HumanReadable } from "specqr";
@@ -132,6 +134,8 @@ const svg = QRCode.generate(data, {
 ```
 
 `parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog、業界別 validation、FNC1 second position は v1 RC の対象外です。
+
+`(01)04912345678904(10)ABC123` のような parentheses 付き表記は human-readable input です。QR に渡す payload は parentheses を含まない raw GS1 element string です。GS1 Digital Link は URL 形式の別用途として扱い、現時点では専用 helper / validation を提供していません。
 
 GTIN や SSCC の check digit は helper で計算できます。
 
@@ -280,3 +284,11 @@ npm run verify:decode:jsqr
 ```
 
 `jsqr` は devDependency のみです。SpecQR の runtime package は dependency-free のままです。
+
+固定条件での外部参照比較には Nayuki QR Code generator を使います。
+
+```sh
+npm run verify:reference:nayuki
+```
+
+この check は fixed payload、fixed Version、fixed ECC、fixed mask の matrix を外部実装と比較します。auto segmentation や GS1 semantics の完全一致は目的にしていません。

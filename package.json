@@ -49,7 +49,8 @@
     "verify:decode": "node tools/verify-decode.js",
     "verify:decode:optional": "node tools/verify-decode-optional.js",
     "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",
-    "verify:decode:independent": "npm run verify:decode:jsqr"
+    "verify:decode:independent": "npm run verify:decode:jsqr",
+    "verify:reference:nayuki": "node tools/verify-reference-nayuki.js"
   },
   "keywords": [
     "qr",
@@ -68,6 +69,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "jsqr": "^1.4.0"
+    "jsqr": "^1.4.0",
+    "nayuki-qr-code-generator": "^1.8.0"
   }
 }

@@ -19,4 +19,5 @@ jobs:
       - run: npm test
       - run: npm run examples:smoke
       - run: npm run verify:decode:jsqr
+      - run: npm run verify:reference:nayuki
       - run: npm pack --dry-run

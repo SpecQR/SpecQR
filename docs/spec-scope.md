@@ -4,6 +4,8 @@
 
 SpecQR `1.0.0-rc.2` は、実務で使う通常の QR Code Model 2 generation を対象にします。v1 RC では「通常 QR Code を安定して生成する」ことを優先し、別系統の QR family や装飾機能は core に混ぜません。
 
+対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
+
 ## 実装済み範囲
 
 - QR Code Model 2 のみ
@@ -44,7 +46,15 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 `gs1: true` は FNC1 first position を先頭に挿入し、input が raw GS1 element string であることを期待します。`parseGs1HumanReadable()` は対応 AI の parentheses notation を `{ ai, value }[]` に変換し、`createGs1ElementString()` は値を検証して、必要な位置に ASCII GS (`"\x1D"`) separator を挿入します。GTIN / SSCC check digit helper と AI `00`/`01`/`02` の check digit validation は実装済みです。全 GS1 AI catalog validation、業界別 AI rule、FNC1 second position はこの phase には含めません。ECI と GS1/FNC1 first position は control-mode ordering が曖昧になるため併用を reject します。
 
+GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱い、現時点では専用 parser / validator を持ちません。
+
 package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の separate export を持ちます。CommonJS と minified browser build は build pipeline を導入するまで生成しません。source package は dependency-free runtime を保ちます。
+
+## ISO/IEC 18004:2024 について
+
+SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていますが、ISO/IEC 18004:2024 の全項目について「完全準拠」とは表現しません。Version 1-40、mode encoding、format / version information、Reed-Solomon、masking、remainder bits など、core generation に必要な領域を tests と golden fixtures で固定しています。
+
+2015 版と 2024 版の差分、Micro QR、rMQR、Structured Append、FNC1 second position などは、今後の監査・別 module の対象です。ISO 本文や仕様表のコピーは repository に含めません。
 
 ## v1 RC で意図的に対象外とするもの
 

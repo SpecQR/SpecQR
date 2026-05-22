@@ -8,6 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fixturesPath = path.join(root, "fixtures", "decode-cases.json");
 const outputDir = path.join(root, "tmp", "verify-decode");
 const decoderPath = path.join(root, "tools", "decode-vision.swift");
+const swiftModuleCacheDir = path.join(outputDir, "swift-module-cache");
 
 const cases = JSON.parse(readFileSync(fixturesPath, "utf8"));
 
@@ -16,6 +17,13 @@ if (!existsSync(decoderPath)) {
 }
 
 mkdirSync(outputDir, { recursive: true });
+mkdirSync(swiftModuleCacheDir, { recursive: true });
+
+const swiftEnv = {
+  ...process.env,
+  CLANG_MODULE_CACHE_PATH: swiftModuleCacheDir,
+  SWIFT_MODULE_CACHE_PATH: swiftModuleCacheDir
+};
 
 let passed = 0;
 
@@ -33,7 +41,7 @@ for (const testCase of cases) {
 
   writeFileSync(svgPath, svg);
   execFileSync("magick", [svgPath, svgPngPath], { encoding: "utf8" });
-  const decodedFromSvg = execFileSync("swift", [decoderPath, svgPngPath], { encoding: "utf8" }).trim();
+  const decodedFromSvg = execFileSync("swift", [decoderPath, svgPngPath], { encoding: "utf8", env: swiftEnv }).trim();
   const png = generateFixture(testCase, {
     ...testCase.options,
     output: "png",
@@ -41,7 +49,7 @@ for (const testCase of cases) {
     margin: 4
   });
   writeFileSync(pngPath, png);
-  const decodedFromPng = execFileSync("swift", [decoderPath, pngPath], { encoding: "utf8" }).trim();
+  const decodedFromPng = execFileSync("swift", [decoderPath, pngPath], { encoding: "utf8", env: swiftEnv }).trim();
 
   if (decodedFromSvg !== expected) {
     throw new Error(

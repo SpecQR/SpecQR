@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 - 2026-05-22
 
 ### Added
 
+- Released SpecQR as the first stable 1.0.0 package.
 - Added practical examples for Node PNG output, browser Blob/Object URL usage, TypeScript usage, and GS1 QR generation.
 - Added a small dependency-free browser playground with input, ECC selection, preview, diagnostics, warnings, and SVG/PNG downloads.
 - Added GS1 mod-10 check digit helpers for GTIN and SSCC values.

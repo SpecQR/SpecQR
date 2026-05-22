@@ -1,17 +1,11 @@
 # Release Checklist
 
-この文書は SpecQR `1.0.0-rc.2` から `1.0.0` 正式版へ進むための公開前後 checklist です。実際の npm publish、GitHub Release 作成、GitHub Pages deploy は、手動確認後に実行します。
+この文書は SpecQR `1.0.0` 正式版の公開前後 checklist と、その後の RC 運用方針です。実際の npm publish、GitHub Release 作成、GitHub Pages deploy は、手動確認後に実行します。
 
 ## Release Channels
 
 - `latest`: 安定版利用者向け。`1.0.0` 正式版を公開したら `latest` は `1.0.0` を指します。
-- `next`: RC / prerelease 利用者向け。`1.0.0-rc.*` の検証中は `next` を使います。正式版公開後も、次の RC を出すまでは `next` を直ちに動かす必要はありません。
-
-現在の RC を試す場合:
-
-```sh
-npm install specqr@next
-```
+- `next`: RC / prerelease 利用者向け。次の prerelease を検証するときに使います。正式版公開後も、次の RC を出すまでは `next` を直ちに動かす必要はありません。
 
 通常 install:
 
@@ -19,9 +13,15 @@ npm install specqr@next
 npm install specqr
 ```
 
-`1.0.0` 正式版公開前は、npm dist-tag の状態によって `specqr` が RC を指している場合があります。正式版公開後は `specqr` が stable channel、`specqr@next` が prerelease channel という扱いに揃えます。
+RC / prerelease channel を明示して試す場合:
 
-## 1.0.0 に進む条件
+```sh
+npm install specqr@next
+```
+
+正式版では `specqr` が stable channel、`specqr@next` が prerelease channel という扱いに揃えます。
+
+## 1.0.0 公開条件
 
 - `npm test` が green。
 - `npm run examples:smoke` が green。
@@ -30,7 +30,7 @@ npm install specqr
 - `npm run verify:reference:nayuki` が green。
 - macOS release machine で `npm run verify:decode` が green。
 - `npm pack --dry-run` が clean な npm cache / CI 上で green。
-- `npm run verify:published` が公開済み package に対して green。
+- 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@1.0.0` に対して green。
 - GitHub Actions `CI` が green。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
 - v1 で未対応の Micro QR、rMQR、Structured Append、FNC1 second position、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link が docs に明記されている。

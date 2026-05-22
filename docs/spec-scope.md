@@ -2,7 +2,7 @@
 
 ## Target
 
-SpecQR `1.0.0-rc.2` は、実務で使う通常の QR Code Model 2 generation を対象にします。v1 RC では「通常 QR Code を安定して生成する」ことを優先し、別系統の QR family や装飾機能は core に混ぜません。
+SpecQR `1.0.0` は、実務で使う通常の QR Code Model 2 generation を対象にします。v1 では「通常 QR Code を安定して生成する」ことを優先し、別系統の QR family や装飾機能は core に混ぜません。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
@@ -56,7 +56,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 2015 版と 2024 版の差分、Micro QR、rMQR、Structured Append、FNC1 second position などは、今後の監査・別 module の対象です。ISO 本文や仕様表のコピーは repository に含めません。
 
-## v1 RC で意図的に対象外とするもの
+## v1 で意図的に対象外とするもの
 
 次の機能は core Model 2 package には実装していません。
 

@@ -11,19 +11,17 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 
 ## インストール
 
-RC / prerelease channel:
+```sh
+npm install specqr
+```
+
+RC / prerelease channel を明示して試す場合:
 
 ```sh
 npm install specqr@next
 ```
 
-通常 install:
-
-```sh
-npm install specqr
-```
-
-`1.0.0` 正式版公開前は、npm dist-tag の状態によって `specqr` が RC を指す場合があります。正式版公開後は `specqr` を stable channel、`specqr@next` を prerelease channel として扱います。
+正式版では `specqr` を stable channel、`specqr@next` を prerelease channel として扱います。
 
 ## Links
 
@@ -36,7 +34,7 @@ npm install specqr
 - Test Plan: [docs/test-plan.md](docs/test-plan.md)
 - Release Checklist: [docs/release.md](docs/release.md)
 
-## v1 RC の対応範囲
+## v1 の対応範囲
 
 - QR Code Model 2
 - Version 1 から 40
@@ -52,7 +50,7 @@ npm install specqr
 - Node PNG helper と browser Blob/ImageData/Object URL helper
 - capacity、mask/version selection、contrast、quiet zone、print warning を含む diagnostics
 
-Micro QR、rMQR、logo overlay、styled modules、FNC1 second position、Structured Append は v1 RC の対象外です。
+Micro QR、rMQR、logo overlay、styled modules、FNC1 second position、Structured Append は v1 の対象外です。
 
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
 
@@ -157,7 +155,7 @@ const svg = QRCode.generate(data, {
 });
 ```
 
-`parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog、業界別 validation、FNC1 second position は v1 RC の対象外です。
+`parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog、業界別 validation、FNC1 second position は v1 の対象外です。
 
 `(01)04912345678904(10)ABC123` のような parentheses 付き表記は human-readable input です。QR に渡す payload は parentheses を含まない raw GS1 element string です。GS1 Digital Link は URL 形式の別用途として扱い、現時点では専用 helper / validation を提供していません。
 

@@ -169,8 +169,18 @@ export interface GS1ElementStringParseResult {
   hasSeparators: boolean;
 }
 
+export interface GS1DigitalLinkOptions {
+  baseUrl: string | URL;
+  primaryAi?: "00" | "01" | "414";
+  pathAis?: string[];
+}
+
 export const GS1_FNC1_SEPARATOR: "\x1D";
 export function createGs1ElementString(elements: GS1Element[]): string;
+export function createGs1DigitalLink(
+  input: GS1Element[] | GS1ElementStringParseResult,
+  options: GS1DigitalLinkOptions
+): string;
 export function parseGs1HumanReadable(input: string): GS1Element[];
 export function parseGs1ElementString(input: string): GS1ElementStringParseResult;
 export function calculateGs1CheckDigit(digits: string): string;
@@ -233,6 +243,10 @@ export class QRCode {
   static generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
   static drawToCanvas<T extends QRCanvasTarget>(target: T, input: QRInput, options?: QRCodeOptions): T;
   static createGs1ElementString(elements: GS1Element[]): string;
+  static createGs1DigitalLink(
+    input: GS1Element[] | GS1ElementStringParseResult,
+    options: GS1DigitalLinkOptions
+  ): string;
   static parseGs1HumanReadable(input: string): GS1Element[];
   static parseGs1ElementString(input: string): GS1ElementStringParseResult;
   static calculateGs1CheckDigit(digits: string): string;

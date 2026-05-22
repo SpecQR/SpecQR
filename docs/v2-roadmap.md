@@ -71,6 +71,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-22: Internal GS1 raw validation integrated into generation. `generate(input, { gs1: true })` は raw GS1 element string を内部 validator に通し、diagnostics には `gs1Validation` metadata を追加しました。public parser API と package exports は変更していません。
 - 2026-05-23: Public GS1 raw parser API implemented. `parseGs1ElementString(input)` を root export と `QRCode.parseGs1ElementString(input)` に追加し、return shape、error behavior、ambiguity policy、rejected alternatives を `docs/gs1-v2-api.md` に整理しました。`validateGs1ElementString()` はまだ public API ではありません。
 - 2026-05-23: GS1 Digital Link v2 design documented. `createGs1DigitalLink(elements, options)` と `parseGs1DigitalLink(uri, options?)` の API proposal、FNC1 first GS1 QR と通常 URL QR の区別、validation policy、conversion examples、non-scope を `docs/gs1-digital-link-v2.md` に固定しました。runtime API はまだ追加していません。
+- 2026-05-23: GS1 Digital Link URI builder implemented. `createGs1DigitalLink(input, options)` を root export と `QRCode.createGs1DigitalLink()` に追加し、supported AI validation、baseUrl validation、path/query placement、packed package smoke を追加しました。`parseGs1DigitalLink()` は deferred のままです。
 
 ## Release Gate
 

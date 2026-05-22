@@ -6,6 +6,7 @@ import {
   calculateGs1CheckDigit,
   calculateGtinCheckDigit,
   calculateSsccCheckDigit,
+  createGs1DigitalLink,
   createGs1ElementString,
   DataTooLongError,
   GS1_FNC1_SEPARATOR,
@@ -35,6 +36,7 @@ import { getSegmentsBitLength, normalizeManualSegments } from "../src/encoding/m
 test("GS1 compatibility entrypoint preserves public helper exports", () => {
   assert.equal(gs1Entrypoint.GS1_FNC1_SEPARATOR, GS1_FNC1_SEPARATOR);
   assert.equal(typeof gs1Entrypoint.createGs1ElementString, "function");
+  assert.equal(typeof gs1Entrypoint.createGs1DigitalLink, "function");
   assert.equal(typeof gs1Entrypoint.parseGs1HumanReadable, "function");
   assert.equal(typeof gs1Entrypoint.calculateGs1CheckDigit, "function");
   assert.equal(typeof gs1Entrypoint.appendGtinCheckDigit, "function");
@@ -273,6 +275,115 @@ test("public GS1 element string parser rejects malformed raw element strings", (
       (error) => error instanceof InvalidGs1Error &&
         error.code === "INVALID_GS1" &&
         message.test(error.message)
+    );
+  }
+});
+
+test("GS1 Digital Link helper creates stable URL QR payloads", () => {
+  const elements = [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ];
+
+  assert.equal(
+    createGs1DigitalLink(elements, { baseUrl: "https://example.com" }),
+    "https://example.com/01/04912345678904/10/ABC123?17=251231"
+  );
+  assert.equal(
+    createGs1DigitalLink(elements, { baseUrl: "https://example.com/" }),
+    "https://example.com/01/04912345678904/10/ABC123?17=251231"
+  );
+  assert.equal(
+    createGs1DigitalLink(elements, { baseUrl: "https://example.com/prefix/" }),
+    "https://example.com/prefix/01/04912345678904/10/ABC123?17=251231"
+  );
+  assert.equal(
+    QRCode.createGs1DigitalLink(elements, { baseUrl: new URL("https://example.com") }),
+    "https://example.com/01/04912345678904/10/ABC123?17=251231"
+  );
+});
+
+test("GS1 Digital Link helper accepts parseGs1ElementString result input", () => {
+  const raw = `010491234567890410ABC123${GS1_FNC1_SEPARATOR}17251231`;
+  const parsed = parseGs1ElementString(raw);
+
+  assert.equal(
+    createGs1DigitalLink(parsed, { baseUrl: "https://example.com/" }),
+    "https://example.com/01/04912345678904/10/ABC123?17=251231"
+  );
+});
+
+test("GS1 Digital Link helper supports explicit primary and path AI options", () => {
+  assert.equal(
+    createGs1DigitalLink(
+      [
+        { ai: "00", value: "195201234567891232" },
+        { ai: "02", value: "09520123456788" },
+        { ai: "37", value: "25" },
+        { ai: "10", value: "ABC123" }
+      ],
+      { baseUrl: "https://example.com", primaryAi: "00" }
+    ),
+    "https://example.com/00/195201234567891232?02=09520123456788&10=ABC123&37=25"
+  );
+  assert.equal(
+    createGs1DigitalLink(
+      [
+        { ai: "01", value: "04912345678904" },
+        { ai: "21", value: "SER/1" }
+      ],
+      { baseUrl: "https://example.com", pathAis: ["21"] }
+    ),
+    "https://example.com/01/04912345678904/21/SER%2F1"
+  );
+});
+
+test("GS1 Digital Link helper rejects invalid input and base URL values", () => {
+  const cases = [
+    [
+      () => createGs1DigitalLink([{ ai: "01", value: "04912345678904" }]),
+      /baseUrl is required/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "01", value: "04912345678904" }], { baseUrl: "ftp://example.com" }),
+      /http or https/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "01", value: "04912345678904" }], { baseUrl: "https://example.com?a=1" }),
+      /must not include query or fragment/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "10", value: "ABC123" }], { baseUrl: "https://example.com" }),
+      /must include primary AI 01/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "01", value: "04912345678904" }, { ai: "01", value: "04912345678904" }], { baseUrl: "https://example.com" }),
+      /duplicate AI 01/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "9999", value: "ABC" }], { baseUrl: "https://example.com" }),
+      /Unsupported GS1 AI/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "01", value: "04912345678905" }], { baseUrl: "https://example.com" }),
+      /invalid GTIN check digit/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "10", value: `ABC${GS1_FNC1_SEPARATOR}` }], { baseUrl: "https://example.com" }),
+      /must not contain the FNC1 separator/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "10", value: "(ABC)" }], { baseUrl: "https://example.com" }),
+      /without human-readable parentheses/
+    ]
+  ];
+
+  for (const [fn, message] of cases) {
+    assert.throws(
+      fn,
+      (error) => error instanceof InvalidGs1Error && message.test(error.message),
+      `Expected InvalidGs1Error matching ${message}`
     );
   }
 });

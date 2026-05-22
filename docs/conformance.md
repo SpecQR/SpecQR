@@ -42,9 +42,9 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | Binary input | Tested | `Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、byte array、0x00 / 0xff payload を確認しています。 |
 | Manual segments | Tested | `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` を確認しています。 |
 | FNC1 first position | Tested | mode indicator `0101`、`gs1: true`、manual `{ mode: "fnc1" }`、diagnostics を確認しています。 |
-| GS1 helper | Partial | 代表 AI の human-readable parser / raw element string parser / element string builder / separator insertion / GTIN・SSCC check digit helper を確認しています。全 AI catalog と業界別 rule は対象外です。 |
+| GS1 helper | Partial | 代表 AI の human-readable parser / raw element string parser / element string builder / Digital Link URI builder / separator insertion / GTIN・SSCC check digit helper を確認しています。全 AI catalog と業界別 rule は対象外です。 |
 | GS1 raw element string parser | Tested | `parseGs1ElementString()` の fixed-length sequence、variable final AI、separator handling、builder round-trip、human-readable round-trip、invalid input rejection を確認しています。 |
-| GS1 Digital Link | Not supported | 通常 URL として QR 化できますが、GS1 Digital Link 専用 helper / validation は未実装です。v2.0.0 の計画範囲で、API boundary と validation policy は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に documented planned として固定しています。 |
+| GS1 Digital Link | Partial | `createGs1DigitalLink()` で supported AI から通常 URL QR 用の Digital Link URI を生成できます。`parseGs1DigitalLink()`、resolver、compression、full canonicalizer は未実装です。 |
 | FNC1 second position | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 | Structured Append | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 
@@ -83,7 +83,7 @@ v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax laye
 | 項目 | v2.0.0 での扱い | 理由 |
 | --- | --- | --- |
 | Full GS1 AI catalog / strict validation | Planned | v1 の partial GS1 helper を実務向け syntax layer に進めるため。 |
-| GS1 Digital Link helper | Planned / design documented | GS1 element string の FNC1 QR と URL-based Digital Link QR を混同しない API にするため。`createGs1DigitalLink()` / `parseGs1DigitalLink()` の proposal は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) にあります。 |
+| GS1 Digital Link helper | Partial / design documented | `createGs1DigitalLink()` は実装済みです。`parseGs1DigitalLink()` と full round-trip validation は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に deferred として残しています。 |
 | Control segment model | Planned | ECI、FNC1 first、FNC1 second、Structured Append の ordering / capacity / diagnostics を一貫して扱うため。 |
 | FNC1 second position | Planned | 通常 QR Code Model 2 の optional FNC1 coverage を広げるため。 |
 | Structured Append | Planned | Model 2 の multi-symbol generation を低レベル header と高レベル splitting API の両方で扱うため。 |

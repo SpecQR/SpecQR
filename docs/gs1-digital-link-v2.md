@@ -1,6 +1,6 @@
 # GS1 Digital Link v2 Design
 
-この文書は、SpecQR v2 系で追加する GS1 Digital Link helper の設計記録です。現時点では docs/design only であり、runtime API、package exports、型定義、package version は変更しません。
+この文書は、SpecQR v2 系で追加する GS1 Digital Link helper の設計記録です。`createGs1DigitalLink(input, options)` は実装済みです。`parseGs1DigitalLink(uri, options?)`、resolver、compression、full canonicalizer はまだ実装していません。
 
 参考にする外部仕様は [GS1 Digital Link Standard: URI Syntax 1.6.0](https://ref.gs1.org/standards/digital-link/uri-syntax/) と [GS1 Digital Link overview](https://www.gs1.org/standards/gs1-digital-link) です。SpecQR の v2 helper はこの仕様全体の完全実装ではなく、既存 GS1 element data から安全に URL QR を作るための小さな API layer として始めます。
 
@@ -17,7 +17,7 @@ Digital Link URI は URL なので、`QRCode.generate(uri)` で通常 QR とし�
 
 ## Proposed Public API
 
-### `createGs1DigitalLink(input, options)`
+### `createGs1DigitalLink(input, options)` implemented
 
 GS1 element data から GS1 Digital Link URI string を作ります。
 
@@ -35,10 +35,6 @@ function createGs1DigitalLink(
     baseUrl: string | URL;
     primaryAi?: "01" | "00" | "414";
     pathAis?: string[];
-    unknownAi?: "reject";
-    duplicateAi?: "reject";
-    querySort?: "lexical";
-    allowHttp?: boolean;
   }
 ): string;
 ```
@@ -51,9 +47,9 @@ function createGs1DigitalLink(
 
 `pathAis` は primary key の後ろに path segment として置く AI を指定します。指定がない場合、v2 初期実装は GTIN の代表 qualifier として `"10"` batch/lot、`"21"` serial number、`"22"` consumer product variant を path に置き、それ以外の supported AI は query string に置く方針にします。path / query の完全な GS1 Digital Link semantic classification は、full AI catalog phase まで広げません。
 
-`querySort` は v2 初期実装では `"lexical"` 固定にします。canonical URI に近づけるため、query string の AI key は lexical order で並べます。
+`querySort` は v2 初期実装では `"lexical"` 固定です。canonical URI に近づけるため、query string の AI key は lexical order で並べます。`http` と `https` はどちらも許可しますが、`baseUrl` に query / fragment は含められません。
 
-### `parseGs1DigitalLink(uri, options?)`
+### `parseGs1DigitalLink(uri, options?)` deferred
 
 GS1 Digital Link URI から GS1 element data を取り出します。
 
@@ -90,17 +86,17 @@ function parseGs1DigitalLink(
 - `linkType` helper
 - full GS1 AI catalog based canonicalizer
 
-`parseGs1DigitalLink()` が成功すれば validation 済みの parse result を返し、失敗時は `InvalidGs1Error` を throw するため、boolean-only validator は最初の公開 API には不要と判断します。
+`parseGs1DigitalLink()` が成功すれば validation 済みの parse result を返し、失敗時は `InvalidGs1Error` を throw するため、boolean-only validator は最初の公開 API には不要と判断します。現時点では `parseGs1DigitalLink()` も `validateGs1DigitalLink()` も public export していません。
 
 ## Supported v2 Scope
 
 v2 初期実装では、次だけを対象にします。
 
 - Uncompressed GS1 Digital Link URI のみ。
-- `https` URI を default とし、`http` は `allowHttp: true` のときだけ許可。
+- `http` / `https` URI のみ。
 - Primary key を path に置く。
-- GTIN `(01)` を主対象にする。
-- SSCC `(00)` と GLN `(414)` は dictionary metadata がそろう範囲で追加候補にする。
+- GTIN `(01)` を default primary key にする。
+- SSCC `(00)` と GLN `(414)` は `primaryAi` option で primary key にできる。
 - Additional supported AI は、代表 qualifier を path、それ以外を query string に置く。
 - Query string の AI key は lexical order で生成する。
 - URL construction / parsing は WHATWG `URL` を使い、network access はしない。
@@ -141,7 +137,7 @@ GTIN `(01)` の v2 初期 policy:
 
 ### Unknown query params
 
-`parseGs1DigitalLink()` の default は `unknownQuery: "reject"` です。
+`parseGs1DigitalLink()` 実装時の default は `unknownQuery: "reject"` にする方針です。
 
 - Numeric query key が dictionary にない場合は unsupported AI として reject。
 - Non-numeric query key は extension parameter 候補ですが、default では reject。
@@ -181,9 +177,8 @@ const svg = QRCode.generate(elementString, {
 ### Human-readable to GS1 Digital Link URI QR
 
 ```js
-import { QRCode, parseGs1HumanReadable } from "specqr";
+import { QRCode, createGs1DigitalLink, parseGs1HumanReadable } from "specqr";
 
-// v2 proposal, not implemented yet:
 const elements = parseGs1HumanReadable("(01)04912345678904(10)ABC123(17)251231");
 const uri = createGs1DigitalLink(elements, {
   baseUrl: "https://example.com"
@@ -199,9 +194,8 @@ const svg = QRCode.generate(uri, {
 ### Raw element string to Digital Link URI
 
 ```js
-import { parseGs1ElementString } from "specqr";
+import { createGs1DigitalLink, parseGs1ElementString } from "specqr";
 
-// v2 proposal, not implemented yet:
 const parsed = parseGs1ElementString("010491234567890410ABC123\u001D17251231");
 const uri = createGs1DigitalLink(parsed, {
   baseUrl: "https://example.com"
@@ -230,11 +224,10 @@ console.log(parsed.elements);
 - Unknown query params を default preserve する案: resolver / web app 用途では便利ですが、helper としては誤入力を隠しやすいため default reject にします。
 - Full canonicalizer を最初から提供する案: full AI catalog、primary/key-qualifier metadata、industry profile が必要になり、v2 初期 scope を超えるため見送ります。
 
-## Non-scope
+## Remaining Non-scope
 
-- Runtime implementation
-- Public API export
-- TypeScript declarations
+- `parseGs1DigitalLink()` implementation
+- `validateGs1DigitalLink()` public API
 - Network resolver / redirect / linkset lookup
 - Resolver Description File lookup
 - Digital Link compression / decompression
@@ -248,27 +241,34 @@ console.log(parsed.elements);
 
 ## Future Test Plan
 
-実装時には次の tests を追加します。
+実装済みの `createGs1DigitalLink()` では、次を tests / smoke で確認しています。
 
 - `createGs1DigitalLink()` constructs GTIN path URI.
 - Path qualifier placement for AI `10`, `21`, `22`.
 - Query attribute placement and lexical sorting.
+- `QRCode.createGs1DigitalLink()` static API.
+- `parseGs1ElementString()` result input.
+- baseUrl required / invalid baseUrl rejection.
+- Invalid GTIN / SSCC check digit rejection.
+- Unsupported AI rejection.
+- Duplicate AI rejection.
+- Percent-encoding for `/` in path values.
+- `parseGs1DigitalLink()` and `validateGs1ElementString()` stay unexported where applicable.
+
+次フェーズでは、次を追加します。
+
 - `parseGs1DigitalLink()` parses path and query AI elements.
 - Human-readable -> elements -> Digital Link URI -> normal QR.
 - Raw element string -> parser -> Digital Link URI.
 - Digital Link URI -> elements -> element string round-trip.
-- Invalid GTIN / SSCC check digit rejection.
-- Unsupported AI rejection.
-- Duplicate AI rejection.
 - Unknown query param rejection / preserve option.
-- Percent-encoding for `/`, `?`, `#`, `&`, `=` in AI values.
+- Percent-encoding parse cases for `?`, `#`, `&`, `=` in AI values.
 - Trailing slash rejection and optional tolerant parse.
 - `QRCode.generate(uri, { gs1: true })` misuse stays rejected through existing GS1 raw validator.
 
 ## Implementation Order
 
 1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute.
-2. Add internal `normalizeGs1ElementsForDigitalLink(input)` helper.
-3. Implement `createGs1DigitalLink()` without parser first.
-4. Add `parseGs1DigitalLink()` after path/query validation policy is fixed by tests.
-5. Add examples and playground copy that show GS1 QR Code and Digital Link QR side by side.
+2. Add `parseGs1DigitalLink()` after path/query validation policy is fixed by tests.
+3. Add examples and playground copy that show GS1 QR Code and Digital Link QR side by side.
+4. Revisit full canonicalization after broader AI catalog metadata exists.

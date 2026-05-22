@@ -21,6 +21,7 @@ import {
   calculateGs1CheckDigit,
   calculateGtinCheckDigit,
   calculateSsccCheckDigit,
+  createGs1DigitalLink,
   createGs1ElementString,
   GS1_FNC1_SEPARATOR,
   parseGs1HumanReadable,
@@ -44,6 +45,7 @@ export {
   calculateGs1CheckDigit,
   calculateGtinCheckDigit,
   calculateSsccCheckDigit,
+  createGs1DigitalLink,
   createGs1ElementString,
   GS1_FNC1_SEPARATOR,
   parseGs1HumanReadable,
@@ -80,6 +82,10 @@ export class QRCode {
 
   static createGs1ElementString(elements) {
     return createGs1ElementString(elements);
+  }
+
+  static createGs1DigitalLink(input, options) {
+    return createGs1DigitalLink(input, options);
   }
 
   static parseGs1HumanReadable(input) {

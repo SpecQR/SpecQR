@@ -17,6 +17,11 @@ try {
   const svg = await readFile(svgPath, "utf8");
   assert.match(svg, /^<svg /);
 
+  const digitalLinkSvgPath = join(directory, "gs1-digital-link.svg");
+  await run("node", ["examples/gs1-digital-link.mjs", digitalLinkSvgPath]);
+  const digitalLinkSvg = await readFile(digitalLinkSvgPath, "utf8");
+  assert.match(digitalLinkSvg, /^<svg /);
+
   await assertReadable("examples/typescript-usage.ts");
   await assertReadable("examples/browser-blob-object-url.html");
   await assertReadable("playground/index.html");

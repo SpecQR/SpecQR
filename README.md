@@ -46,7 +46,7 @@ npm install specqr@next
 - 自動 mixed-segment optimization
 - binary input と manual segment input
 - GS1 QR Code / FNC1 first position
-- 対応 AI に限定した GS1 human-readable parser / element string helper
+- 対応 AI に限定した GS1 human-readable parser / element string / Digital Link helper
 - GTIN / SSCC check digit helper
 - `matrix`, `svg`, Data URL, PNG, canvas output
 - Node PNG helper と browser Blob/ImageData/Object URL helper
@@ -161,13 +161,26 @@ const svg = QRCode.generate(data, {
 
 `parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。`QRCode.generate(data, { gs1: true })` は raw GS1 element string を内部 validator で検証してから生成します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog、業界別 validation、FNC1 second position は v1 の対象外です。
 
-`(01)04912345678904(10)ABC123` のような parentheses 付き表記は human-readable input です。QR に渡す payload は parentheses を含まない raw GS1 element string です。human-readable input を直接 `gs1: true` に渡すと reject されるため、先に `parseGs1HumanReadable()` と `createGs1ElementString()` を使ってください。外部システムから受け取った raw GS1 element string は `parseGs1ElementString()` で `{ elements, hasSeparators }` に読み戻せます。`diagnostics: true` では `diagnostics.gs1Validation` に `elementCount`、`ais`、separator 有無が入ります。GS1 Digital Link は URL 形式の別用途として扱い、現時点では専用 helper / validation を提供していません。
+`(01)04912345678904(10)ABC123` のような parentheses 付き表記は human-readable input です。QR に渡す payload は parentheses を含まない raw GS1 element string です。human-readable input を直接 `gs1: true` に渡すと reject されるため、先に `parseGs1HumanReadable()` と `createGs1ElementString()` を使ってください。外部システムから受け取った raw GS1 element string は `parseGs1ElementString()` で `{ elements, hasSeparators }` に読み戻せます。`diagnostics: true` では `diagnostics.gs1Validation` に `elementCount`、`ais`、separator 有無が入ります。
 
 ```js
 import { parseGs1ElementString } from "specqr";
 
 const parsed = parseGs1ElementString("010491234567890410ABC123\x1D17251231");
 console.log(parsed.elements);
+```
+
+GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。
+
+```js
+import { QRCode, createGs1DigitalLink, parseGs1HumanReadable } from "specqr";
+
+const elements = parseGs1HumanReadable("(01)04912345678904(10)ABC123(17)251231");
+const uri = createGs1DigitalLink(elements, {
+  baseUrl: "https://example.com"
+});
+
+const svg = QRCode.generate(uri, { output: "svg" });
 ```
 
 GTIN や SSCC の check digit は helper で計算できます。

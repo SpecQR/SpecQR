@@ -22,6 +22,14 @@ npm run examples:gs1
 
 This creates a GS1 QR SVG using the human-readable parser, GTIN check digit helper, and FNC1 first position.
 
+## GS1 Digital Link QR
+
+```sh
+npm run examples:gs1-digital-link
+```
+
+This creates a normal URL QR SVG from a GS1 Digital Link URI. It intentionally does not use `gs1: true`.
+
 ## Browser Blob / Object URL
 
 Serve the repository and open `examples/browser-blob-object-url.html`.

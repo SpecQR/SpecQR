@@ -4,6 +4,7 @@ export {
   calculateGs1CheckDigit,
   calculateGtinCheckDigit,
   calculateSsccCheckDigit,
+  createGs1DigitalLink,
   createGs1ElementString,
   GS1_FNC1_SEPARATOR,
   parseGs1HumanReadable,

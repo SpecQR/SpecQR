@@ -110,13 +110,14 @@ QRCode.generateSegments([
 
 - `parseGs1HumanReadable(input)`: `(01)04912345678904(10)ABC123(17)251231` のような parentheses-based input を `{ ai, value }[]` に変換します。
 - `createGs1ElementString(elements)`: 対応 AI の `{ ai, value }` string entries を検証し、QR input として使う raw GS1 element string を返します。leading zero を保持するため、AI values は string で渡す必要があります。
+- `createGs1DigitalLink(input, options)`: 対応 AI の element data から GS1 Digital Link URI を返します。これは通常 URL QR 用の helper であり、`gs1: true` は使いません。
 - `GS1_FNC1_SEPARATOR`: 可変長 AI の後に別の element が続く場合に挿入される ASCII GS separator `"\x1D"` です。
 - `calculateGs1CheckDigit(digits)`: GS1 mod-10 check digit を計算します。
 - `validateGs1CheckDigit(digitsWithCheckDigit)`: 末尾 check digit を検証します。
 - `calculateGtinCheckDigit(gtinWithoutCheckDigit)`, `appendGtinCheckDigit(gtinWithoutCheckDigit)`, `validateGtinCheckDigit(gtin)`: GTIN-8/12/13/14 向け helper です。
 - `calculateSsccCheckDigit(ssccWithoutCheckDigit)`, `appendSsccCheckDigit(ssccWithoutCheckDigit)`, `validateSsccCheckDigit(sscc)`: SSCC 向け helper です。
 
-Human-readable input は、表示・入力しやすさのための `(01)04912345678904(10)ABC123` 形式です。実際に QR に encode する raw GS1 element string は parentheses を含みません。GS1 Digital Link は URL ベースの別表現であり、現時点では専用 helper / validator を提供していません。
+Human-readable input は、表示・入力しやすさのための `(01)04912345678904(10)ABC123` 形式です。実際に GS1 QR Code として encode する raw GS1 element string は parentheses を含みません。GS1 Digital Link は URL ベースの別表現であり、通常 URL QR として生成します。
 
 Human-readable input を直接 `QRCode.generate(input, { gs1: true })` に渡すと `InvalidGs1Error` になります。`parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw GS1 element string を作ってから `gs1: true` に渡してください。
 
@@ -141,6 +142,32 @@ console.log(parsed);
 ```
 
 invalid raw input は `InvalidGs1Error` で reject します。対象は unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、variable-length AI 後の missing separator、human-readable parentheses direct input です。`validateGs1ElementString()` は public API としてはまだ提供していません。
+
+### `createGs1DigitalLink(input, options)`
+
+GS1 element data から GS1 Digital Link URI string を作ります。`input` は `{ ai, value }[]`、または `parseGs1ElementString()` の戻り値 `{ elements, hasSeparators }` を受け付けます。
+
+```js
+import { QRCode, createGs1DigitalLink, parseGs1HumanReadable } from "specqr";
+
+const elements = parseGs1HumanReadable("(01)04912345678904(10)ABC123(17)251231");
+const uri = createGs1DigitalLink(elements, {
+  baseUrl: "https://example.com"
+});
+
+console.log(uri);
+// "https://example.com/01/04912345678904/10/ABC123?17=251231"
+
+const svg = QRCode.generate(uri, { output: "svg" });
+```
+
+`options.baseUrl` は必須です。暗黙の `https://id.gs1.org` default はありません。`baseUrl` は `http` または `https` URL のみ許可し、query / fragment は含められません。末尾 slash は normalize されるため、`https://example.com` と `https://example.com/` は同じ URI を返します。
+
+default では AI `01` を primary key として path に置き、AI `10`、`21`、`22` は path qualifier として続けます。それ以外の supported AI は query string に置き、AI key の lexical order で並べます。`primaryAi` は `"00" | "01" | "414"`、`pathAis` は AI string array を指定できます。
+
+Digital Link URI は URL なので、QR 生成時は `QRCode.generate(uri)` を使います。`QRCode.generate(uri, { gs1: true })` は GS1 element string / FNC1 first position 用であり、Digital Link URI には使いません。
+
+Digital Link 生成時も既存 GS1 validation を使うため、unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、duplicate AI、invalid `baseUrl` は `InvalidGs1Error` になります。`parseGs1DigitalLink()` はまだ public API として提供していません。
 
 helper が対応する代表 AI は次の範囲です。
 

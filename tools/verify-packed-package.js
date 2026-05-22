@@ -46,6 +46,12 @@ import * as specqr from "specqr";
 
 assert.equal(typeof specqr.parseGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.parseGs1ElementString, "function");
+assert.equal(typeof specqr.createGs1DigitalLink, "function");
+assert.equal(typeof specqr.QRCode.createGs1DigitalLink, "function");
+assert.equal(specqr.parseGs1DigitalLink, undefined);
+assert.equal(specqr.QRCode.parseGs1DigitalLink, undefined);
+assert.equal(specqr.validateGs1DigitalLink, undefined);
+assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
 assert.equal(specqr.validateGs1ElementString, undefined);
 assert.equal(specqr.QRCode.validateGs1ElementString, undefined);
 
@@ -67,8 +73,27 @@ assert.deepEqual(specqr.QRCode.parseGs1ElementString("010491234567890417251231")
   hasSeparators: false
 });
 
+assert.equal(
+  specqr.createGs1DigitalLink(specqr.parseGs1ElementString(rawWithSeparator), {
+    baseUrl: "https://example.com/"
+  }),
+  "https://example.com/01/04912345678904/10/ABC123?17=251231"
+);
+assert.equal(
+  specqr.QRCode.createGs1DigitalLink([{ ai: "01", value: "04912345678904" }], {
+    baseUrl: "https://example.com/stem/"
+  }),
+  "https://example.com/stem/01/04912345678904"
+);
+
 assert.throws(
   () => specqr.parseGs1ElementString("010491234567890410ABC12317251231"),
+  (error) => error instanceof specqr.InvalidGs1Error && error.code === "INVALID_GS1"
+);
+assert.throws(
+  () => specqr.createGs1DigitalLink([{ ai: "01", value: "04912345678905" }], {
+    baseUrl: "https://example.com"
+  }),
   (error) => error instanceof specqr.InvalidGs1Error && error.code === "INVALID_GS1"
 );
 `
@@ -92,8 +117,13 @@ async function assertTypeDeclarations(directory) {
   );
   assert.match(
     declarations,
+    /export function createGs1DigitalLink\(\s*input: GS1Element\[] \| GS1ElementStringParseResult,\s*options: GS1DigitalLinkOptions\s*\): string;/
+  );
+  assert.match(
+    declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /static createGs1DigitalLink\(/);
 }
 
 function run(command, args, cwd) {

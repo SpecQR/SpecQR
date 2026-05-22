@@ -9,6 +9,8 @@ Status は次の意味で使います。
 - `Partial`: 意図的に範囲を絞って対応しています。
 - `Not supported`: v1 系の対象外です。
 
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けています。この matrix では現在の実装状態を主に示し、v2 で取り込む予定の領域は各 section の planning note で明示します。
+
 ## Core QR Code Model 2
 
 | 項目 | Status | 現在の確認範囲 |
@@ -41,9 +43,9 @@ Status は次の意味で使います。
 | Manual segments | Tested | `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` を確認しています。 |
 | FNC1 first position | Tested | mode indicator `0101`、`gs1: true`、manual `{ mode: "fnc1" }`、diagnostics を確認しています。 |
 | GS1 helper | Partial | 代表 AI の parser / element string builder / separator insertion / GTIN・SSCC check digit helper を確認しています。全 AI catalog と業界別 rule は対象外です。 |
-| GS1 Digital Link | Not supported | 通常 URL として QR 化できますが、GS1 Digital Link 専用 helper / validation は未実装です。 |
-| FNC1 second position | Not supported | v1 系では対象外です。 |
-| Structured Append | Not supported | v1 系では対象外です。 |
+| GS1 Digital Link | Not supported | 通常 URL として QR 化できますが、GS1 Digital Link 専用 helper / validation は未実装です。v2.0.0 の計画範囲です。 |
+| FNC1 second position | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
+| Structured Append | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 
 ## Rendering / Runtime Helpers
 
@@ -73,15 +75,29 @@ SpecQR の現在の対象は通常 QR Code Model 2 です。Version、mode、for
 
 ただし、ISO/IEC 18004:2024 の全項目を網羅監査したものではありません。2015 版との差分、Structured Append、Micro QR、rMQR、FNC1 second position、その他 domain-specific usage は今後の確認範囲として扱います。
 
-## v1 系で対象外のもの
+## v2.0.0 Planning Notes
+
+v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系を強化する計画です。詳細な実装順と release gate は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) を参照してください。
+
+| 項目 | v2.0.0 での扱い | 理由 |
+| --- | --- | --- |
+| Full GS1 AI catalog / strict validation | Planned | v1 の partial GS1 helper を実務向け syntax layer に進めるため。 |
+| GS1 Digital Link helper | Planned | GS1 element string の FNC1 QR と URL-based Digital Link QR を混同しない API にするため。 |
+| Control segment model | Planned | ECI、FNC1 first、FNC1 second、Structured Append の ordering / capacity / diagnostics を一貫して扱うため。 |
+| FNC1 second position | Planned | 通常 QR Code Model 2 の optional FNC1 coverage を広げるため。 |
+| Structured Append | Planned | Model 2 の multi-symbol generation を低レベル header と高レベル splitting API の両方で扱うため。 |
+| v2 validation expansion | Planned | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics を組み合わせて確認するため。 |
+
+## v2.0.0 Outside Scope
+
+次の項目は v1 系では未対応であり、v2.0.0 の中心 scope にも含めません。別 symbol family や visual customization を同時に進めると、v2 の GS1 / control segment / Structured Append の検証範囲が広がりすぎるためです。
 
 - Micro QR
 - rMQR
-- Structured Append
-- FNC1 second position
-- Full GS1 AI catalog validation
-- GS1 Digital Link helper
+- Frame QR
+- SQRC
 - Logo overlay
 - Styled modules
+- Other visual customization helpers
 - CJS build
 - Minified browser build

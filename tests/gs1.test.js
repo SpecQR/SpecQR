@@ -18,7 +18,23 @@ import {
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "../src/index.js";
+import * as gs1Entrypoint from "../src/gs1.js";
 import { getSegmentsBitLength, normalizeManualSegments } from "../src/encoding/modes.js";
+
+test("GS1 compatibility entrypoint preserves public helper exports", () => {
+  assert.equal(gs1Entrypoint.GS1_FNC1_SEPARATOR, GS1_FNC1_SEPARATOR);
+  assert.equal(typeof gs1Entrypoint.createGs1ElementString, "function");
+  assert.equal(typeof gs1Entrypoint.parseGs1HumanReadable, "function");
+  assert.equal(typeof gs1Entrypoint.calculateGs1CheckDigit, "function");
+  assert.equal(typeof gs1Entrypoint.appendGtinCheckDigit, "function");
+  assert.equal(typeof gs1Entrypoint.appendSsccCheckDigit, "function");
+  assert.equal(typeof gs1Entrypoint.validateGtinCheckDigit, "function");
+  assert.equal(typeof gs1Entrypoint.validateSsccCheckDigit, "function");
+  assert.equal(
+    gs1Entrypoint.createGs1ElementString([{ ai: "01", value: "04912345678904" }]),
+    "0104912345678904"
+  );
+});
 
 test("gs1 option prepends FNC1 first position and reports diagnostics", () => {
   const result = generate("0104912345678904", {

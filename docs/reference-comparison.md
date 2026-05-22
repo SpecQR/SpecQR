@@ -73,6 +73,17 @@ Reference comparison は「固定条件で構築された matrix が独立実装
 
 これらは、環境に存在しない場合でも core release gate を壊さない optional validation として追加する方針です。
 
+## v2.0.0 Planning Notes
+
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 で追加予定の GS1 strict validation、GS1 Digital Link、FNC1 second position、Structured Append は、Nayuki matrix comparison だけでは十分に検証できません。
+
+- GS1 semantics: FNC1、AI validation、separator handling、Digital Link conversion は domain-level behavior なので、unit / golden tests と docs で確認します。
+- FNC1 second position: decoder や参照実装によって application indicator の露出方法が異なるため、bit length、control segment placement、diagnostics、negative tests を優先します。
+- Structured Append: sequence、total count、parity、chunking policy は SpecQR API と diagnostics の一部として golden fixtures で固定します。
+- Digital Link: URL QR として生成できる一方、GS1 element string とは別表現なので、reference matrix comparison ではなく conversion tests を中心にします。
+
+参照実装比較は今後も fixed-condition QR construction regression のために使い、v2 feature の semantics は専用 tests と conformance docs で補完します。
+
 ## Current Result
 
 `npm run verify:reference:nayuki` は、現在 6/6 case で SpecQR と Nayuki の full matrix rows が一致することを確認します。現時点で既知の差分はありません。

@@ -77,6 +77,20 @@ npm run verify:reference:nayuki
 
 Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、renderer output、SpecQR diagnostics は参照比較の対象外です。これらは unit / golden / decoder validation で別に検証します。詳細は [External Reference Comparison](./reference-comparison.md) を参照してください。
 
+## v2.0.0 Validation Planning
+
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model を追加する予定のため、次の検証カテゴリを release gate に加える方針です。
+
+- GS1 strict validation: AI metadata、fixed / variable length、numeric / text constraints、separator insertion、GTIN / SSCC check digit、unsupported AI rejection を確認する。
+- GS1 Digital Link conversion: element data と Digital Link URI の相互変換を確認し、FNC1 first の raw GS1 element string と URL-based QR を混同しないことを固定する。
+- Control segment ordering: ECI、FNC1 first、FNC1 second、Structured Append の併用可否、ordering、capacity accounting、diagnostics を確認する。
+- FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases を確認する。
+- Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks を golden fixtures で固定する。
+- Structured Append high-level: automatic splitting、最大 16 symbols、split failure、symbol diagnostics、payload parity consistency を確認する。
+- Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
+- Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
+- Reference comparison limits: Nayuki comparison は fixed-condition matrix regression に使い、GS1 semantics、Digital Link conversion、Structured Append API shape の検証は unit / golden tests に分ける。
+
 ## Decoder Validation
 
 より高い信頼性のため、generated SVG または rasterized output を少なくとも 1 つの独立 decoder で検証します。

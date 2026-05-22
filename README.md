@@ -33,6 +33,7 @@ npm install specqr@next
 - External Reference Comparison: [docs/reference-comparison.md](docs/reference-comparison.md)
 - Test Plan: [docs/test-plan.md](docs/test-plan.md)
 - Release Checklist: [docs/release.md](docs/release.md)
+- v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
 
 ## v1 の対応範囲
 
@@ -53,6 +54,8 @@ npm install specqr@next
 Micro QR、rMQR、logo overlay、styled modules、FNC1 second position、Structured Append は v1 の対象外です。
 
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
+
+v2.0.0 では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心に計画しています。Micro QR、rMQR、logo overlay、styled modules は v2.0.0 の対象外です。詳細は [v2 Roadmap](docs/v2-roadmap.md) を参照してください。
 
 ## 基本的な使い方
 

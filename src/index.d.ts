@@ -102,6 +102,13 @@ export interface QRQuietZoneDiagnostics {
   isSufficient: boolean;
 }
 
+export interface QRGs1ValidationDiagnostics {
+  enabled: boolean;
+  elementCount: number | null;
+  ais: string[];
+  hasSeparators: boolean;
+}
+
 export interface QRDiagnostics {
   version: Version;
   size: number;
@@ -118,6 +125,7 @@ export interface QRDiagnostics {
   eciAssignmentNumber: number | null;
   fnc1: "first-position" | null;
   gs1: boolean;
+  gs1Validation: QRGs1ValidationDiagnostics;
   segments: QRSegmentDiagnostics[];
   dataBitLength: number;
   capacityBits: number;

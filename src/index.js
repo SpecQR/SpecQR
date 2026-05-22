@@ -28,6 +28,7 @@ import {
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "./gs1.js";
+import { getGs1ElementStringDiagnostics } from "./gs1/validator.js";
 import { DataTooLongError, InvalidGs1Error, InvalidOutputError } from "./errors.js";
 import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
@@ -172,6 +173,7 @@ function renderResult(plan, normalized, inputBytes) {
         getDiagnosticMode,
         getFirstEciAssignmentNumber,
         getFirstFnc1Mode,
+        gs1Validation: plan.gs1Validation,
         getSegmentDiagnostics: (segment) => ({
           mode: segment.mode,
           assignmentNumber: segment.assignmentNumber,
@@ -200,16 +202,15 @@ function renderResult(plan, normalized, inputBytes) {
 }
 
 function selectPlanForInput(input, options) {
-  if (options.gs1 && isBinaryInput(input)) {
-    throw new InvalidGs1Error("gs1 input must be a GS1 element string, not binary input");
-  }
-  return selectPlan(
+  const gs1Validation = getGs1ValidationForInput(input, options);
+  const plan = selectPlan(
     (version) => prependFnc1Segment(
       createSegments(input, options.mode, version, options.optimizeSegments, options.eci),
       options.gs1
     ),
     options
   );
+  return gs1Validation ? { ...plan, gs1Validation } : plan;
 }
 
 function selectPlanForManualSegments(segments, options) {
@@ -217,6 +218,19 @@ function selectPlanForManualSegments(segments, options) {
     () => prependFnc1Segment(prependEciSegment(segments, options.eci), options.gs1),
     options
   );
+}
+
+function getGs1ValidationForInput(input, options) {
+  if (!options.gs1) {
+    return null;
+  }
+  if (isBinaryInput(input)) {
+    throw new InvalidGs1Error("gs1 input must be a raw GS1 element string, not binary input");
+  }
+  if (typeof input !== "string") {
+    throw new InvalidGs1Error("gs1 input must be a raw GS1 element string");
+  }
+  return getGs1ElementStringDiagnostics(input);
 }
 
 function selectPlan(createSegmentsForVersion, options) {

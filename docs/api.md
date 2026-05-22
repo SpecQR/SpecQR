@@ -76,13 +76,13 @@ QRCode.drawToCanvas(canvas, "https://example.com", {
 - `output`: `"matrix" | "svg" | "svg-data-url" | "png" | "png-data-url"`。default は `"svg"`。
 - `boostErrorCorrection`: `true` の場合、選択 Version を増やさずに収まる範囲で error correction level を上げます。default は `false`。
 - `eci`: `false | true | number`。default は `false`。`true` は UTF-8 ECI assignment number `26` を挿入し、auto-selected non-ASCII text を byte mode に保ちます。
-- `gs1`: boolean。default は `false`。`true` の場合、GS1 QR Code 用に QR FNC1 first position (`0101`) を先頭に挿入します。この実装では ECI と併用できません。
+- `gs1`: boolean。default は `false`。`true` の場合、input を raw GS1 element string として内部 validator で検証し、GS1 QR Code 用に QR FNC1 first position (`0101`) を先頭に挿入します。この実装では ECI と併用できません。
 - `diagnostics`: `true` の場合、生成詳細と warnings を返します。
 - `printDpi`: print-size diagnostics のための optional DPI。生成結果そのものには影響しません。
 
 ## GS1 / FNC1 First Position
 
-`gs1: true` は、入力が raw GS1 element string である場合に使います。QR Code の FNC1 first position mode indicator を先頭に挿入し、通常テキスト QR ではなく GS1 QR Code として decode されることを意図します。
+`gs1: true` は、入力が raw GS1 element string である場合に使います。QR Code の FNC1 first position mode indicator を先頭に挿入し、通常テキスト QR ではなく GS1 QR Code として decode されることを意図します。`QRCode.generate(data, { gs1: true })` は supported AI dictionary に基づき raw payload を検証します。
 
 ```js
 import { QRCode, createGs1ElementString, parseGs1HumanReadable } from "specqr";
@@ -117,6 +117,8 @@ QRCode.generateSegments([
 - `calculateSsccCheckDigit(ssccWithoutCheckDigit)`, `appendSsccCheckDigit(ssccWithoutCheckDigit)`, `validateSsccCheckDigit(sscc)`: SSCC 向け helper です。
 
 Human-readable input は、表示・入力しやすさのための `(01)04912345678904(10)ABC123` 形式です。実際に QR に encode する raw GS1 element string は parentheses を含みません。GS1 Digital Link は URL ベースの別表現であり、現時点では専用 helper / validator を提供していません。
+
+Human-readable input を直接 `QRCode.generate(input, { gs1: true })` に渡すと `InvalidGs1Error` になります。`parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw GS1 element string を作ってから `gs1: true` に渡してください。raw GS1 element string validator は内部 API であり、root export には出していません。
 
 helper が対応する代表 AI は次の範囲です。
 
@@ -161,6 +163,7 @@ PNG と ImageData output は `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `"black"`,
     eciAssignmentNumber,
     fnc1,
     gs1,
+    gs1Validation,
     segments,
     dataBitLength,
     capacityBits,
@@ -177,6 +180,8 @@ PNG と ImageData output は `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `"black"`,
   }
 }
 ```
+
+`diagnostics.gs1` は v1 互換の boolean です。`diagnostics.gs1Validation` は追加 metadata で、shape は `{ enabled, elementCount, ais, hasSeparators }` です。`generate(input, { gs1: true })` の raw string path では `elementCount` と `ais` が入ります。manual `{ mode: "fnc1" }` path では raw element string validation を行わないため、`elementCount` は `null` になります。
 
 ## Node Helpers
 

@@ -15,11 +15,14 @@ export function createDiagnostics({
   getDiagnosticMode,
   getFirstEciAssignmentNumber,
   getFirstFnc1Mode,
+  gs1Validation,
   getSegmentDiagnostics
 }) {
   const remainingBits = capacityBits - plan.dataBitLength;
   const contrast = getColorContrast(options);
   const print = getPrintDiagnostics(plan, options);
+  const fnc1 = getFirstFnc1Mode(plan.segments);
+  const gs1 = fnc1 === "first-position";
   const warnings = createWarnings({
     options,
     remainingBits,
@@ -42,8 +45,9 @@ export function createDiagnostics({
     maskSelectionReason: getMaskSelectionReason(built, options),
     mode: getDiagnosticMode(plan.segments),
     eciAssignmentNumber: getFirstEciAssignmentNumber(plan.segments),
-    fnc1: getFirstFnc1Mode(plan.segments),
-    gs1: getFirstFnc1Mode(plan.segments) === "first-position",
+    fnc1,
+    gs1,
+    gs1Validation: gs1Validation ?? createDefaultGs1ValidationDiagnostics(gs1),
     segments: plan.segments.map(getSegmentDiagnostics),
     dataBitLength: plan.dataBitLength,
     capacityBits,
@@ -61,6 +65,15 @@ export function createDiagnostics({
     colors: contrast,
     print,
     warnings
+  };
+}
+
+function createDefaultGs1ValidationDiagnostics(enabled) {
+  return {
+    enabled,
+    elementCount: enabled ? null : 0,
+    ais: [],
+    hasSeparators: false
   };
 }
 

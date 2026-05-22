@@ -25,6 +25,7 @@ import {
   getGs1AiSpec
 } from "../src/gs1/ai-dictionary.js";
 import {
+  getGs1ElementStringDiagnostics,
   parseGs1ElementString,
   validateGs1ElementString
 } from "../src/gs1/validator.js";
@@ -121,6 +122,18 @@ test("internal GS1 element string validator parses fixed-length sequences", () =
   assert.equal(validateGs1ElementString("010491234567890417251231"), true);
 });
 
+test("internal GS1 element string diagnostics summarize raw validation", () => {
+  assert.deepEqual(
+    getGs1ElementStringDiagnostics(`010491234567890410ABC123${GS1_FNC1_SEPARATOR}17251231`),
+    {
+      enabled: true,
+      elementCount: 3,
+      ais: ["01", "10", "17"],
+      hasSeparators: true
+    }
+  );
+});
+
 test("internal GS1 element string validator parses variable-length final elements", () => {
   assert.deepEqual(parseGs1ElementString("010491234567890410ABC123"), [
     { ai: "01", value: "04912345678904" },
@@ -205,6 +218,12 @@ test("gs1 option prepends FNC1 first position and reports diagnostics", () => {
 
   assert.equal(result.diagnostics.gs1, true);
   assert.equal(result.diagnostics.fnc1, "first-position");
+  assert.deepEqual(result.diagnostics.gs1Validation, {
+    enabled: true,
+    elementCount: 1,
+    ais: ["01"],
+    hasSeparators: false
+  });
   assert.equal(result.diagnostics.mode, "numeric");
   assert.deepEqual(
     result.diagnostics.segments.map((segment) => segment.mode),
@@ -219,13 +238,70 @@ test("gs1 option prepends FNC1 first position and reports diagnostics", () => {
   assert.equal(result.diagnostics.remainingBits, 0);
 
   assert.throws(
-    () => generate("01049123456789040", {
+    () => generate("010491234567890417251231", {
       gs1: true,
       version: 1,
       errorCorrectionLevel: "H",
       mode: "numeric"
     }),
     (error) => error instanceof DataTooLongError && error.code === "DATA_TOO_LONG"
+  );
+});
+
+test("gs1 option validates raw element strings before generation", () => {
+  const data = createGs1ElementString([
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ]);
+  const result = QRCode.generate(data, {
+    gs1: true,
+    output: "matrix",
+    diagnostics: true
+  });
+
+  assert.equal(result.diagnostics.gs1, true);
+  assert.deepEqual(result.diagnostics.gs1Validation, {
+    enabled: true,
+    elementCount: 3,
+    ais: ["01", "10", "17"],
+    hasSeparators: true
+  });
+});
+
+test("gs1 option rejects invalid raw element strings clearly", () => {
+  const cases = [
+    [`010491234567890410ABC12317251231`, /missing an FNC1 separator/],
+    ["250ABC", /Unsupported GS1 AI/],
+    ["010491234567890", /exactly 14 characters/],
+    ["10ロット1", /printable ASCII/],
+    ["0104912345678905", /invalid GTIN check digit/],
+    ["00123456789012345670", /invalid SSCC check digit/]
+  ];
+
+  for (const [input, message] of cases) {
+    assert.throws(
+      () => generate(input, { gs1: true }),
+      (error) => error instanceof InvalidGs1Error &&
+        error.code === "INVALID_GS1" &&
+        message.test(error.message)
+    );
+  }
+});
+
+test("gs1 option rejects human-readable and binary inputs before generation", () => {
+  assert.throws(
+    () => generate("(01)04912345678904", { gs1: true }),
+    (error) => error instanceof InvalidGs1Error &&
+      error.code === "INVALID_GS1" &&
+      /parseGs1HumanReadable\(\).*createGs1ElementString\(\)/.test(error.message)
+  );
+
+  assert.throws(
+    () => generate(new Uint8Array([0x30, 0x31]), { gs1: true }),
+    (error) => error instanceof InvalidGs1Error &&
+      error.code === "INVALID_GS1" &&
+      /not binary input/.test(error.message)
   );
 });
 
@@ -243,6 +319,12 @@ test("manual fnc1 segment encodes first position control mode", () => {
 
   assert.equal(getSegmentsBitLength(segments, 1), 72);
   assert.equal(result.diagnostics.gs1, true);
+  assert.deepEqual(result.diagnostics.gs1Validation, {
+    enabled: true,
+    elementCount: null,
+    ais: [],
+    hasSeparators: false
+  });
   assert.equal(result.diagnostics.fnc1, "first-position");
   assert.deepEqual(
     result.diagnostics.segments.map((segment) => segment.mode),
@@ -298,6 +380,12 @@ test("GS1 element string helper inserts separators after variable-length element
   });
   assert.equal(result.diagnostics.gs1, true);
   assert.equal(result.diagnostics.segments[0].mode, "fnc1");
+  assert.deepEqual(result.diagnostics.gs1Validation, {
+    enabled: true,
+    elementCount: 3,
+    ais: ["01", "10", "17"],
+    hasSeparators: true
+  });
 });
 
 test("GS1 helper leaves final variable-length element unterminated", () => {
@@ -430,6 +518,12 @@ test("GS1 human-readable parser round-trips through raw element string creation"
   assert.equal(result.diagnostics.gs1, true);
   assert.equal(result.diagnostics.fnc1, "first-position");
   assert.equal(result.diagnostics.segments[0].mode, "fnc1");
+  assert.deepEqual(result.diagnostics.gs1Validation, {
+    enabled: true,
+    elementCount: 3,
+    ais: ["01", "10", "17"],
+    hasSeparators: true
+  });
 });
 
 test("GS1 human-readable parser omits separator after a final variable-length AI", () => {

@@ -49,6 +49,16 @@ export function validateGs1ElementString(input) {
   return true;
 }
 
+export function getGs1ElementStringDiagnostics(input) {
+  const elements = parseGs1ElementString(input);
+  return {
+    enabled: true,
+    elementCount: elements.length,
+    ais: elements.map((element) => element.ai),
+    hasSeparators: input.includes(GS1_FNC1_SEPARATOR)
+  };
+}
+
 function assertRawElementString(input) {
   if (typeof input !== "string") {
     throw new InvalidGs1Error("GS1 element string input must be a string");
@@ -57,7 +67,9 @@ function assertRawElementString(input) {
     throw new InvalidGs1Error("GS1 element string input must not be empty");
   }
   if (/[()]/u.test(input)) {
-    throw new InvalidGs1Error("GS1 element string input must be raw data without human-readable parentheses");
+    throw new InvalidGs1Error(
+      "GS1 element string input must be raw data without human-readable parentheses; use parseGs1HumanReadable() and createGs1ElementString() before generate(..., { gs1: true })"
+    );
   }
 }
 

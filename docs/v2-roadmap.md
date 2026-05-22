@@ -73,6 +73,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: GS1 Digital Link v2 design documented. `createGs1DigitalLink(elements, options)` と `parseGs1DigitalLink(uri, options?)` の API proposal、FNC1 first GS1 QR と通常 URL QR の区別、validation policy、conversion examples、non-scope を `docs/gs1-digital-link-v2.md` に固定しました。
 - 2026-05-23: GS1 Digital Link URI builder implemented. `createGs1DigitalLink(input, options)` を root export と `QRCode.createGs1DigitalLink()` に追加し、supported AI validation、baseUrl validation、path/query placement、packed package smoke を追加しました。
 - 2026-05-23: GS1 Digital Link URI parser implemented. `parseGs1DigitalLink(uri, options?)` を root export と `QRCode.parseGs1DigitalLink()` に追加し、path/query parsing、unknown query preservation、percent-decoding、builder/parser round-trip、packed package smoke を追加しました。
+- 2026-05-23: GS1 Digital Link role metadata integrated. 現行 supported AI の dictionary に `primary-key` / `key-qualifier` / `data-attribute` を追加し、`createGs1DigitalLink()` / `parseGs1DigitalLink()` の default path/query placement と invalid path placement rejection を catalog-driven にしました。
 
 ## Release Gate
 

@@ -1,11 +1,10 @@
 import { InvalidGs1Error } from "../errors.js";
+import { getGs1AiDictionaryEntry } from "./ai-dictionary.js";
 import { normalizeGs1Element } from "./ai.js";
 
 const DEFAULT_PRIMARY_AI = "01";
-const SUPPORTED_PRIMARY_AIS = new Set(["00", "01", "414"]);
-const DEFAULT_PATH_AIS_BY_PRIMARY = new Map([
-  ["01", new Set(["10", "21", "22"])]
-]);
+const PRIMARY_KEY = "primary-key";
+const KEY_QUALIFIER = "key-qualifier";
 
 export function createGs1DigitalLink(input, options = {}) {
   const elements = normalizeDigitalLinkInput(input);
@@ -14,9 +13,11 @@ export function createGs1DigitalLink(input, options = {}) {
   const pathAis = normalizePathAis(options.pathAis, primaryAi);
   const normalizedElements = normalizeElements(elements);
   const primary = getPrimaryElement(normalizedElements, primaryAi);
-  const pathElements = normalizedElements.filter((element) => element.ai !== primaryAi && pathAis.has(element.ai));
+  const pathElements = normalizedElements.filter((element) =>
+    element.ai !== primaryAi && shouldPlaceInPath(element.ai, primaryAi, pathAis)
+  );
   const queryElements = normalizedElements
-    .filter((element) => element.ai !== primaryAi && !pathAis.has(element.ai))
+    .filter((element) => element.ai !== primaryAi && !shouldPlaceInPath(element.ai, primaryAi, pathAis))
     .sort((a, b) => a.ai.localeCompare(b.ai) || a.value.localeCompare(b.value));
 
   url.pathname = buildPath(url.pathname, [primary, ...pathElements]);
@@ -114,7 +115,7 @@ function normalizeDigitalLinkUri(uri) {
 
 function normalizePrimaryAi(primaryAi) {
   const normalized = primaryAi === undefined ? DEFAULT_PRIMARY_AI : primaryAi;
-  if (typeof normalized !== "string" || !SUPPORTED_PRIMARY_AIS.has(normalized)) {
+  if (typeof normalized !== "string" || !isPrimaryAi(normalized)) {
     throw new InvalidGs1Error("GS1 Digital Link primaryAi must be one of 00, 01, or 414");
   }
   return normalized;
@@ -130,7 +131,7 @@ function normalizeUnknownQueryPolicy(unknownQuery) {
 
 function normalizePathAis(pathAis, primaryAi) {
   if (pathAis === undefined) {
-    return new Set(DEFAULT_PATH_AIS_BY_PRIMARY.get(primaryAi) ?? []);
+    return null;
   }
   if (!Array.isArray(pathAis)) {
     throw new InvalidGs1Error("GS1 Digital Link pathAis must be an array of AI strings");
@@ -142,6 +143,7 @@ function normalizePathAis(pathAis, primaryAi) {
       throw new InvalidGs1Error("GS1 Digital Link pathAis entries must be 2 to 4 digit AI strings");
     }
     if (ai !== primaryAi) {
+      assertCanPlaceInPath(ai, primaryAi);
       normalized.add(ai);
     }
   }
@@ -190,7 +192,7 @@ function parsePathElements(url, primaryAi) {
     if (primaryAi) {
       return segment === primaryAi;
     }
-    return SUPPORTED_PRIMARY_AIS.has(segment);
+    return isPrimaryAi(segment);
   });
 
   if (firstAiIndex === -1) {
@@ -212,6 +214,9 @@ function parsePathElements(url, primaryAi) {
 
     const value = decodePathSegment(pathSegments[index + 1], `value for AI ${ai}`);
     const element = normalizeDigitalLinkElement({ ai, value }, elements.length);
+    if (elements.length > 0) {
+      assertCanPlaceInPath(element.ai, elements[0].ai);
+    }
     rejectDuplicateAi(seen, element.ai);
     seen.add(element.ai);
     elements.push(element);
@@ -258,4 +263,31 @@ function decodePathSegment(segment, label) {
 
 function isGs1AiKey(key) {
   return /^\d{2,4}$/u.test(key);
+}
+
+function shouldPlaceInPath(ai, primaryAi, explicitPathAis) {
+  if (explicitPathAis) {
+    return explicitPathAis.has(ai);
+  }
+  return canPlaceInPath(ai, primaryAi);
+}
+
+function assertCanPlaceInPath(ai, primaryAi) {
+  const metadata = getGs1AiDictionaryEntry(ai);
+  if (!metadata) {
+    throw new InvalidGs1Error(`Unsupported GS1 AI ${ai}. Add explicit support before using it.`);
+  }
+  if (!canPlaceInPath(ai, primaryAi, metadata)) {
+    throw new InvalidGs1Error(`GS1 AI ${ai} cannot be placed in the Digital Link path after primary AI ${primaryAi}`);
+  }
+}
+
+function canPlaceInPath(ai, primaryAi, metadata = getGs1AiDictionaryEntry(ai)) {
+  return metadata?.digitalLinkRole === KEY_QUALIFIER &&
+    Array.isArray(metadata.digitalLinkPathForPrimary) &&
+    metadata.digitalLinkPathForPrimary.includes(primaryAi);
+}
+
+function isPrimaryAi(ai) {
+  return getGs1AiDictionaryEntry(ai)?.digitalLinkRole === PRIMARY_KEY;
 }

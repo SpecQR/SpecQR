@@ -88,8 +88,13 @@ test("GS1 AI dictionary covers the current supported exact and family entries", 
   );
 
   assert.equal(getGs1AiDictionaryEntry("01").checkDigitRule, "gtin");
+  assert.equal(getGs1AiDictionaryEntry("01").digitalLinkRole, "primary-key");
   assert.equal(getGs1AiDictionaryEntry("10").separator, "required-when-followed");
+  assert.equal(getGs1AiDictionaryEntry("10").digitalLinkRole, "key-qualifier");
+  assert.deepEqual(getGs1AiDictionaryEntry("10").digitalLinkPathForPrimary, ["01"]);
+  assert.equal(getGs1AiDictionaryEntry("17").digitalLinkRole, "data-attribute");
   assert.equal(getGs1AiDictionaryEntry("3102").exactLength, 6);
+  assert.equal(getGs1AiDictionaryEntry("3102").digitalLinkRole, "data-attribute");
   assert.equal(getGs1AiDictionaryEntry("91").maxLength, 90);
   assert.equal(getGs1AiDictionaryEntry("250"), null);
 });
@@ -293,6 +298,14 @@ test("GS1 Digital Link helper creates stable URL QR payloads", () => {
     "https://example.com/01/04912345678904/10/ABC123?17=251231"
   );
   assert.equal(
+    createGs1DigitalLink([
+      { ai: "01", value: "04912345678904" },
+      { ai: "21", value: "SER123" },
+      { ai: "3102", value: "001234" }
+    ], { baseUrl: "https://example.com" }),
+    "https://example.com/01/04912345678904/21/SER123?3102=001234"
+  );
+  assert.equal(
     createGs1DigitalLink(elements, { baseUrl: "https://example.com/" }),
     "https://example.com/01/04912345678904/10/ABC123?17=251231"
   );
@@ -417,6 +430,10 @@ test("GS1 Digital Link parser rejects invalid URI values", () => {
       /AI\/value pairs/
     ],
     [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904/17/251231"),
+      /cannot be placed in the Digital Link path/
+    ],
+    [
       () => parseGs1DigitalLink("https://example.com/01/04912345678904/ABC/value"),
       /must be a GS1 AI/
     ],
@@ -493,6 +510,13 @@ test("GS1 Digital Link helper rejects invalid input and base URL values", () => 
     [
       () => createGs1DigitalLink([{ ai: "10", value: "ABC123" }], { baseUrl: "https://example.com" }),
       /must include primary AI 01/
+    ],
+    [
+      () => createGs1DigitalLink([{ ai: "01", value: "04912345678904" }, { ai: "17", value: "251231" }], {
+        baseUrl: "https://example.com",
+        pathAis: ["17"]
+      }),
+      /cannot be placed in the Digital Link path/
     ],
     [
       () => createGs1DigitalLink([{ ai: "01", value: "04912345678904" }, { ai: "01", value: "04912345678904" }], { baseUrl: "https://example.com" }),

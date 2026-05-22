@@ -164,7 +164,7 @@ const svg = QRCode.generate(uri, { output: "svg" });
 
 `options.baseUrl` は必須です。暗黙の `https://id.gs1.org` default はありません。`baseUrl` は `http` または `https` URL のみ許可し、query / fragment は含められません。末尾 slash は normalize されるため、`https://example.com` と `https://example.com/` は同じ URI を返します。
 
-default では AI `01` を primary key として path に置き、AI `10`、`21`、`22` は path qualifier として続けます。それ以外の supported AI は query string に置き、AI key の lexical order で並べます。`primaryAi` は `"00" | "01" | "414"`、`pathAis` は AI string array を指定できます。
+default では dictionary の Digital Link role metadata を使って path / query を決めます。AI `01` を primary key として path に置き、現行 dictionary では GTIN primary (`01`) の key qualifier として AI `10`、`21`、`22` を path に続けます。それ以外の supported AI は data attribute として query string に置き、AI key の lexical order で並べます。`primaryAi` は `"00" | "01" | "414"`、`pathAis` は AI string array を指定できます。明示した `pathAis` は default placement より優先されますが、dictionary 上 path に置けない AI を指定すると `InvalidGs1Error` になります。
 
 Digital Link URI は URL なので、QR 生成時は `QRCode.generate(uri)` を使います。`QRCode.generate(uri, { gs1: true })` は GS1 element string / FNC1 first position 用であり、Digital Link URI には使いません。
 
@@ -172,7 +172,7 @@ Digital Link 生成時も既存 GS1 validation を使うため、unsupported AI�
 
 ### `parseGs1DigitalLink(uri, options?)`
 
-GS1 Digital Link URI を GS1 element data に戻します。`uri` は absolute `http` / `https` URL だけを受け付けます。fragment は reject します。path の AI/value pair と query の AI=value を読み、percent-encoded value は decode してから既存 GS1 validation に通します。
+GS1 Digital Link URI を GS1 element data に戻します。`uri` は absolute `http` / `https` URL だけを受け付けます。fragment は reject します。path の AI/value pair と query の AI=value を読み、percent-encoded value は decode してから既存 GS1 validation に通します。path 上の primary 以降は Digital Link role metadata でも検証し、data attribute など path に置けない AI は `InvalidGs1Error` で reject します。
 
 ```js
 import { createGs1DigitalLink, parseGs1DigitalLink } from "specqr";

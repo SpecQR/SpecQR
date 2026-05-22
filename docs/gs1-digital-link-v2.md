@@ -43,9 +43,9 @@ function createGs1DigitalLink(
 
 `baseUrl` は必須にします。`https://id.gs1.org` のような resolver domain を暗黙 default にしないことで、利用者が自分の brand domain / resolver domain / test domain を意識して選べるようにします。
 
-`primaryAi` は v2 初期実装では `"01"` を default にします。対応候補は既存 dictionary と check digit helper の範囲に合わせて、まず `"01"` GTIN、`"00"` SSCC、`"414"` GLN に絞ります。`"414"` の check digit validation は dictionary 拡張時に明示してから実装します。
+`primaryAi` は `"01"` を default にします。対応 primary key は既存 dictionary の Digital Link role metadata で管理し、現時点では `"01"` GTIN、`"00"` SSCC、`"414"` GLN に絞ります。
 
-`pathAis` は primary key の後ろに path segment として置く AI を指定します。指定がない場合、v2 初期実装は GTIN の代表 qualifier として `"10"` batch/lot、`"21"` serial number、`"22"` consumer product variant を path に置き、それ以外の supported AI は query string に置く方針にします。path / query の完全な GS1 Digital Link semantic classification は、full AI catalog phase まで広げません。
+`pathAis` は primary key の後ろに path segment として置く AI を指定します。指定がない場合、dictionary の Digital Link role metadata に従います。現行 dictionary では GTIN primary (`"01"`) の key qualifier として `"10"` batch/lot、`"21"` serial number、`"22"` consumer product variant を path に置き、それ以外の supported AI は data attribute として query string に置きます。`pathAis` は default placement より優先されますが、dictionary 上 path に置けない AI は `InvalidGs1Error` で reject します。path / query の完全な GS1 Digital Link semantic classification は、full AI catalog phase まで広げません。
 
 `querySort` は v2 初期実装では `"lexical"` 固定です。canonical URI に近づけるため、query string の AI key は lexical order で並べます。`http` と `https` はどちらも許可しますが、`baseUrl` に query / fragment は含められません。
 
@@ -95,7 +95,7 @@ v2 初期実装では、次だけを対象にします。
 - Primary key を path に置く。
 - GTIN `(01)` を default primary key にする。
 - SSCC `(00)` と GLN `(414)` は `primaryAi` option で primary key にできる。
-- Additional supported AI は、代表 qualifier を path、それ以外を query string に置く。
+- Additional supported AI は、dictionary metadata で key qualifier とされたものだけを path に置き、それ以外は query string に置く。
 - Query string の AI key は lexical order で生成する。
 - URL construction / parsing は WHATWG `URL` を使い、network access はしない。
 - QR generation は `QRCode.generate(digitalLinkUri)` で通常 URL QR として行う。
@@ -124,14 +124,15 @@ GS1 resolver 文脈では、同じ AI が同じ value で重複する場合を�
 
 ### Path / query placement
 
-`createGs1DigitalLink()` は primary AI を必ず path に置きます。
+`createGs1DigitalLink()` は primary AI を必ず path に置きます。primary AI と、primary に対して path eligible な key qualifier は dictionary metadata で管理します。
 
-GTIN `(01)` の v2 初期 policy:
+現行 dictionary の Digital Link role:
 
-- Path: `01`, `10`, `21`, `22`
-- Query: `17`, `30`, `37`, `310n`, `320n`, `240`, `241`, `400`, `410` から `426`, `9n`
+- Primary key: `00`, `01`, `414`
+- Key qualifier for GTIN primary (`01`): `10`, `21`, `22`
+- Data attribute: その他の supported AI
 
-この分類は初期 helper の実務的な安全策であり、GS1 Digital Link の全 semantic classification を主張するものではありません。AI catalog 拡張時に、primary key / key qualifier / data attribute の metadata を dictionary に足して置き換えます。
+指定がない場合、GTIN `(01)` の path は `01`, `10`, `21`, `22` までに制限し、`17`, `30`, `37`, `310n`, `320n`, `240`, `241`, `400`, `410` から `426`, `9n` などは query に置きます。`parseGs1DigitalLink()` も同じ metadata を使い、path に置けない AI が primary 以降の path に出た場合は `InvalidGs1Error` にします。この分類は初期 helper の実務的な安全策であり、GS1 Digital Link の全 semantic classification を主張するものではありません。
 
 ### Unknown query params
 
@@ -221,7 +222,7 @@ console.log(parsed.elements);
 - `createGs1DigitalLink(rawElementString, options)`: raw string は separator ambiguity を持つため、まず `parseGs1ElementString()` で明示的に `{ ai, value }[]` へ変換させます。
 - `baseUrl` default を `https://id.gs1.org` にする案: 便利ですが、resolver domain の選択を library が暗黙に決めてしまうため見送ります。
 - Unknown query params を default reject する案: 厳格ですが、Digital Link resolver / web app 文脈では `linkType` など GS1 AI ではない query parameter を保持したい場面が多いため、default は preserve にします。数字 2-4 桁の key は GS1 AI として validation し、unsupported AI は reject します。
-- Full canonicalizer を最初から提供する案: full AI catalog、primary/key-qualifier metadata、industry profile が必要になり、v2 初期 scope を超えるため見送ります。
+- Full canonicalizer を最初から提供する案: full AI catalog、より広い primary/key-qualifier metadata、industry profile が必要になり、v2 初期 scope を超えるため見送ります。
 
 ## Remaining Non-scope
 
@@ -242,8 +243,10 @@ console.log(parsed.elements);
 実装済みの `createGs1DigitalLink()` / `parseGs1DigitalLink()` では、次を tests / smoke で確認しています。
 
 - `createGs1DigitalLink()` constructs GTIN path URI.
-- Path qualifier placement for AI `10`, `21`, `22`.
+- Dictionary role metadata based placement for primary key, key qualifier, and data attribute.
+- Path qualifier placement for AI `10`, `21`, `22` when primary AI is `01`.
 - Query attribute placement and lexical sorting.
+- Invalid path placement rejection for data attributes.
 - `QRCode.createGs1DigitalLink()` static API.
 - `parseGs1ElementString()` result input.
 - baseUrl required / invalid baseUrl rejection.
@@ -263,7 +266,7 @@ console.log(parsed.elements);
 
 ## Implementation Order
 
-1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute.
+1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute. (done for currently supported AI)
 2. Add examples and playground copy that show GS1 QR Code and Digital Link QR side by side.
 3. Revisit full canonicalization after broader AI catalog metadata exists.
 4. Consider resolver / linkset integrations outside the core QR generator.

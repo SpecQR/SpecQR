@@ -42,9 +42,9 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | Binary input | Tested | `Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、byte array、0x00 / 0xff payload を確認しています。 |
 | Manual segments | Tested | `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` を確認しています。 |
 | FNC1 first position | Tested | mode indicator `0101`、`gs1: true`、manual `{ mode: "fnc1" }`、diagnostics を確認しています。 |
-| GS1 helper | Partial | 代表 AI の human-readable parser / raw element string parser / element string builder / Digital Link URI builder/parser / separator insertion / GTIN・SSCC check digit helper を確認しています。全 AI catalog と業界別 rule は対象外です。 |
+| GS1 helper | Partial | 代表 AI の human-readable parser / raw element string parser / element string builder / Digital Link URI builder/parser / separator insertion / GTIN・SSCC check digit helper / Digital Link role metadata を確認しています。全 AI catalog と業界別 rule は対象外です。 |
 | GS1 raw element string parser | Tested | `parseGs1ElementString()` の fixed-length sequence、variable final AI、separator handling、builder round-trip、human-readable round-trip、invalid input rejection を確認しています。 |
-| GS1 Digital Link | Partial | `createGs1DigitalLink()` で supported AI から通常 URL QR 用の Digital Link URI を生成し、`parseGs1DigitalLink()` で URI を element data に戻せます。resolver、compression、full canonicalizer は未実装です。 |
+| GS1 Digital Link | Partial | `createGs1DigitalLink()` で supported AI から通常 URL QR 用の Digital Link URI を生成し、`parseGs1DigitalLink()` で URI を element data に戻せます。default path/query placement と invalid path placement rejection は dictionary role metadata で確認しています。resolver、compression、full canonicalizer は未実装です。 |
 | FNC1 second position | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 | Structured Append | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 

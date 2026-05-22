@@ -164,9 +164,15 @@ export interface GS1Element {
   value: string;
 }
 
+export interface GS1ElementStringParseResult {
+  elements: GS1Element[];
+  hasSeparators: boolean;
+}
+
 export const GS1_FNC1_SEPARATOR: "\x1D";
 export function createGs1ElementString(elements: GS1Element[]): string;
 export function parseGs1HumanReadable(input: string): GS1Element[];
+export function parseGs1ElementString(input: string): GS1ElementStringParseResult;
 export function calculateGs1CheckDigit(digits: string): string;
 export function validateGs1CheckDigit(digitsWithCheckDigit: string): boolean;
 export function calculateGtinCheckDigit(gtinWithoutCheckDigit: string): string;
@@ -228,6 +234,7 @@ export class QRCode {
   static drawToCanvas<T extends QRCanvasTarget>(target: T, input: QRInput, options?: QRCodeOptions): T;
   static createGs1ElementString(elements: GS1Element[]): string;
   static parseGs1HumanReadable(input: string): GS1Element[];
+  static parseGs1ElementString(input: string): GS1ElementStringParseResult;
   static calculateGs1CheckDigit(digits: string): string;
   static validateGs1CheckDigit(digitsWithCheckDigit: string): boolean;
   static calculateGtinCheckDigit(gtinWithoutCheckDigit: string): string;

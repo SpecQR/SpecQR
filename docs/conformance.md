@@ -42,7 +42,8 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | Binary input | Tested | `Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、byte array、0x00 / 0xff payload を確認しています。 |
 | Manual segments | Tested | `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` を確認しています。 |
 | FNC1 first position | Tested | mode indicator `0101`、`gs1: true`、manual `{ mode: "fnc1" }`、diagnostics を確認しています。 |
-| GS1 helper | Partial | 代表 AI の parser / element string builder / separator insertion / GTIN・SSCC check digit helper を確認しています。全 AI catalog と業界別 rule は対象外です。 |
+| GS1 helper | Partial | 代表 AI の human-readable parser / raw element string parser / element string builder / separator insertion / GTIN・SSCC check digit helper を確認しています。全 AI catalog と業界別 rule は対象外です。 |
+| GS1 raw element string parser | Tested | `parseGs1ElementString()` の fixed-length sequence、variable final AI、separator handling、builder round-trip、human-readable round-trip、invalid input rejection を確認しています。 |
 | GS1 Digital Link | Not supported | 通常 URL として QR 化できますが、GS1 Digital Link 専用 helper / validation は未実装です。v2.0.0 の計画範囲です。 |
 | FNC1 second position | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 | Structured Append | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |

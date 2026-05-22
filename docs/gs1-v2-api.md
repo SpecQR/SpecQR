@@ -1,6 +1,6 @@
-# GS1 v2 API Proposal
+# GS1 v2 API
 
-この文書は、SpecQR v2 で公開候補にする GS1 raw element string parser API の提案です。現時点では proposal であり、`specqr` root export、`QRCode` static API、TypeScript declarations、package exports にはまだ追加しません。
+この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。`validateGs1ElementString()`、GS1 Digital Link、FNC1 second position、Structured Append はまだ公開していません。
 
 v1 の public API は次の役割を持ちます。
 
@@ -8,11 +8,11 @@ v1 の public API は次の役割を持ちます。
 - `createGs1ElementString(elements)`: `{ ai, value }[]` から QR に encode する raw GS1 element string を作る。必要な ASCII GS separator (`"\x1D"`) を挿入する。
 - `generate(data, { gs1: true })`: raw GS1 element string を検証し、QR FNC1 first position を付けて GS1 QR Code を生成する。
 
-v2 では、この 3 つに加えて「すでに存在する raw GS1 element string を読み戻す」API を追加するかどうかを検討します。
+v2 では、この 3 つに加えて「すでに存在する raw GS1 element string を読み戻す」API として `parseGs1ElementString(input)` を公開します。
 
-## Proposed Public API
+## Public API
 
-第一候補は `parseGs1ElementString(input)` です。
+公開 API は `parseGs1ElementString(input)` です。
 
 ```ts
 function parseGs1ElementString(input: string): {
@@ -29,7 +29,7 @@ function parseGs1ElementString(input: string): {
 AI label、length rule、check digit rule などの internal dictionary metadata は、初期 public API では返しません。必要になった場合は、将来の minor / major で options を追加する案を別途検討します。
 
 ```ts
-// Future option candidate. Not implemented yet.
+// Future option candidate. Not implemented.
 parseGs1ElementString(input, {
   diagnostics: true
 });
@@ -38,7 +38,7 @@ parseGs1ElementString(input, {
 `validateGs1ElementString(input)` は、第一弾の public API には含めない方針です。理由は、`parseGs1ElementString(input)` が成功すれば validation 済みの `elements` を返し、失敗時は `InvalidGs1Error` を throw するためです。利用者が boolean-only convenience を強く求める場合に限り、次の形を候補にします。
 
 ```ts
-// Deferred convenience API candidate. Not implemented yet.
+// Deferred convenience API candidate. Not implemented.
 function validateGs1ElementString(input: string): true;
 ```
 
@@ -60,10 +60,9 @@ const svg = QRCode.generate(data, {
 });
 ```
 
-v2 の raw parser は、外部システムから受け取った raw GS1 element string を読み戻す用途です。
+raw parser は、外部システムから受け取った raw GS1 element string を読み戻す用途です。
 
 ```js
-// Proposed v2 API. Not implemented/exported yet.
 import { parseGs1ElementString } from "specqr";
 
 const parsed = parseGs1ElementString("010491234567890410ABC123\u001D17251231");
@@ -79,14 +78,13 @@ console.log(parsed);
 // }
 ```
 
-`generate(data, { gs1: true })` は引き続き generation API です。raw string を検証して QR を生成しますが、parse result を返す API ではありません。parse result が必要な場合は、v2 の `parseGs1ElementString()` を呼び出す設計にします。
+`generate(data, { gs1: true })` は引き続き generation API です。raw string を検証して QR を生成しますが、parse result を返す API ではありません。parse result が必要な場合は `parseGs1ElementString()` を呼び出してください。
 
 ## Error Behavior
 
 `parseGs1ElementString(input)` は invalid raw input を `InvalidGs1Error` で reject します。
 
 ```js
-// Proposed v2 API examples. Not implemented/exported yet.
 parseGs1ElementString("(01)04912345678904");
 // InvalidGs1Error: raw parser input must not include human-readable parentheses.
 // Use parseGs1HumanReadable() and createGs1ElementString() for parentheses notation.
@@ -126,7 +124,6 @@ raw GS1 element string は parentheses を含まないため、AI の切り出�
 例えば次は reject します。
 
 ```js
-// Proposed v2 API. Not implemented/exported yet.
 parseGs1ElementString("010491234567890410ABC12317251231");
 ```
 
@@ -146,11 +143,10 @@ parseGs1ElementString("010491234567890410ABC12317251231");
 - public return value に dictionary metadata を含める案: v2 初期 API としては surface が大きすぎ、dictionary 拡張時の互換性制約も強くなるため見送ります。
 - `validateGs1ElementString(input)` が `false` を返す案: error reason が失われ、実務での修正導線が弱くなるため見送ります。
 
-## Non-Scope For This Proposal
+## Non-Scope For This API
 
-- API の実装 / export
-- TypeScript public declarations の追加
 - package exports の変更
+- public `validateGs1ElementString()`
 - full GS1 AI catalog
 - GS1 Digital Link
 - FNC1 second position

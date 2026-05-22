@@ -13,6 +13,7 @@ import {
   QRCode,
   generate,
   generateSegments,
+  parseGs1ElementString,
   parseGs1HumanReadable,
   validateGs1CheckDigit,
   validateGtinCheckDigit,
@@ -26,7 +27,7 @@ import {
 } from "../src/gs1/ai-dictionary.js";
 import {
   getGs1ElementStringDiagnostics,
-  parseGs1ElementString,
+  parseGs1ElementString as parseInternalGs1ElementString,
   validateGs1ElementString
 } from "../src/gs1/validator.js";
 import { getSegmentsBitLength, normalizeManualSegments } from "../src/encoding/modes.js";
@@ -115,7 +116,7 @@ test("GS1 AI dictionary adapts metadata to the validator spec shape", () => {
 });
 
 test("internal GS1 element string validator parses fixed-length sequences", () => {
-  assert.deepEqual(parseGs1ElementString("010491234567890417251231"), [
+  assert.deepEqual(parseInternalGs1ElementString("010491234567890417251231"), [
     { ai: "01", value: "04912345678904" },
     { ai: "17", value: "251231" }
   ]);
@@ -135,14 +136,14 @@ test("internal GS1 element string diagnostics summarize raw validation", () => {
 });
 
 test("internal GS1 element string validator parses variable-length final elements", () => {
-  assert.deepEqual(parseGs1ElementString("010491234567890410ABC123"), [
+  assert.deepEqual(parseInternalGs1ElementString("010491234567890410ABC123"), [
     { ai: "01", value: "04912345678904" },
     { ai: "10", value: "ABC123" }
   ]);
 });
 
 test("internal GS1 element string validator parses variable-length separators", () => {
-  assert.deepEqual(parseGs1ElementString(`010491234567890410ABC123${GS1_FNC1_SEPARATOR}17251231`), [
+  assert.deepEqual(parseInternalGs1ElementString(`010491234567890410ABC123${GS1_FNC1_SEPARATOR}17251231`), [
     { ai: "01", value: "04912345678904" },
     { ai: "10", value: "ABC123" },
     { ai: "17", value: "251231" }
@@ -157,53 +158,123 @@ test("internal GS1 element string validator accepts builder round trips", () => 
   ];
   const data = createGs1ElementString(elements);
 
-  assert.deepEqual(parseGs1ElementString(data), elements);
+  assert.deepEqual(parseInternalGs1ElementString(data), elements);
 });
 
 test("internal GS1 element string validator accepts human-readable round trips", () => {
   const elements = parseGs1HumanReadable("(01)04912345678904(17)251231(10)ABC123");
   const data = createGs1ElementString(elements);
 
-  assert.deepEqual(parseGs1ElementString(data), elements);
+  assert.deepEqual(parseInternalGs1ElementString(data), elements);
 });
 
 test("internal GS1 element string validator rejects malformed raw element strings", () => {
   assert.throws(
-    () => parseGs1ElementString(`010491234567890410ABC12317251231`),
+    () => parseInternalGs1ElementString(`010491234567890410ABC12317251231`),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString("250ABC"),
+    () => parseInternalGs1ElementString("250ABC"),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString("010491234567890"),
+    () => parseInternalGs1ElementString("010491234567890"),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString("10ロット1"),
+    () => parseInternalGs1ElementString("10ロット1"),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString("0104912345678905"),
+    () => parseInternalGs1ElementString("0104912345678905"),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString("00123456789012345670"),
+    () => parseInternalGs1ElementString("00123456789012345670"),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString(`10ABC${GS1_FNC1_SEPARATOR}`),
+    () => parseInternalGs1ElementString(`10ABC${GS1_FNC1_SEPARATOR}`),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString(`0104912345678904${GS1_FNC1_SEPARATOR}17251231`),
+    () => parseInternalGs1ElementString(`0104912345678904${GS1_FNC1_SEPARATOR}17251231`),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
   assert.throws(
-    () => parseGs1ElementString("(01)04912345678904"),
+    () => parseInternalGs1ElementString("(01)04912345678904"),
     (error) => error instanceof InvalidGs1Error && error.code === "INVALID_GS1"
   );
+});
+
+test("public GS1 element string parser returns elements and separator metadata", () => {
+  assert.deepEqual(parseGs1ElementString("010491234567890417251231"), {
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "17", value: "251231" }
+    ],
+    hasSeparators: false
+  });
+
+  assert.deepEqual(QRCode.parseGs1ElementString("010491234567890410ABC123"), {
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "10", value: "ABC123" }
+    ],
+    hasSeparators: false
+  });
+
+  assert.deepEqual(parseGs1ElementString(`010491234567890410ABC123${GS1_FNC1_SEPARATOR}17251231`), {
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "10", value: "ABC123" },
+      { ai: "17", value: "251231" }
+    ],
+    hasSeparators: true
+  });
+});
+
+test("public GS1 element string parser accepts builder and human-readable round trips", () => {
+  const elements = [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ];
+  const data = createGs1ElementString(elements);
+
+  assert.deepEqual(parseGs1ElementString(data), {
+    elements,
+    hasSeparators: true
+  });
+
+  const humanReadableElements = parseGs1HumanReadable("(01)04912345678904(17)251231(10)ABC123");
+  const humanReadableData = createGs1ElementString(humanReadableElements);
+
+  assert.deepEqual(parseGs1ElementString(humanReadableData), {
+    elements: humanReadableElements,
+    hasSeparators: false
+  });
+});
+
+test("public GS1 element string parser rejects malformed raw element strings", () => {
+  const cases = [
+    ["(01)04912345678904", /parseGs1HumanReadable\(\).*createGs1ElementString\(\)/],
+    [`010491234567890410ABC12317251231`, /missing an FNC1 separator/],
+    ["250ABC", /Unsupported GS1 AI/],
+    ["010491234567890", /exactly 14 characters/],
+    ["10ロット1", /printable ASCII/],
+    ["0104912345678905", /invalid GTIN check digit/],
+    ["00123456789012345670", /invalid SSCC check digit/]
+  ];
+
+  for (const [input, message] of cases) {
+    assert.throws(
+      () => parseGs1ElementString(input),
+      (error) => error instanceof InvalidGs1Error &&
+        error.code === "INVALID_GS1" &&
+        message.test(error.message)
+    );
+  }
 });
 
 test("gs1 option prepends FNC1 first position and reports diagnostics", () => {

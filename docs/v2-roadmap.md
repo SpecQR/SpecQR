@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための計画です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
 
-v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 候補は [GS1 v2 API Proposal](./gs1-v2-api.md) に分離して記録します。
+v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に分離して記録します。
 
 ## v2.0.0 の目的
 
@@ -69,7 +69,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-22: GS1 AI dictionary foundation completed. v1 で対応済みの AI metadata を internal dictionary として整理し、validation は dictionary lookup を経由するようにしました。full GS1 AI catalog、GS1 Digital Link、strict parser 拡張は未導入です。
 - 2026-05-22: Internal strict GS1 element string validation groundwork completed. raw element string を dictionary metadata で scan / validate する internal validator を追加しました。public `parseGs1ElementString()` API、GS1 Digital Link、FNC1 second position は未導入です。
 - 2026-05-22: Internal GS1 raw validation integrated into generation. `generate(input, { gs1: true })` は raw GS1 element string を内部 validator に通し、diagnostics には `gs1Validation` metadata を追加しました。public parser API と package exports は変更していません。
-- 2026-05-23: Public GS1 raw parser API proposal drafted. v2 候補の `parseGs1ElementString(input)` return shape、error behavior、ambiguity policy、rejected alternatives を `docs/gs1-v2-api.md` に整理しました。まだ実装 / export はしていません。
+- 2026-05-23: Public GS1 raw parser API implemented. `parseGs1ElementString(input)` を root export と `QRCode.parseGs1ElementString(input)` に追加し、return shape、error behavior、ambiguity policy、rejected alternatives を `docs/gs1-v2-api.md` に整理しました。`validateGs1ElementString()` はまだ public API ではありません。
 
 ## Release Gate
 

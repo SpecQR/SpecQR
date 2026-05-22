@@ -118,7 +118,29 @@ QRCode.generateSegments([
 
 Human-readable input は、表示・入力しやすさのための `(01)04912345678904(10)ABC123` 形式です。実際に QR に encode する raw GS1 element string は parentheses を含みません。GS1 Digital Link は URL ベースの別表現であり、現時点では専用 helper / validator を提供していません。
 
-Human-readable input を直接 `QRCode.generate(input, { gs1: true })` に渡すと `InvalidGs1Error` になります。`parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw GS1 element string を作ってから `gs1: true` に渡してください。raw GS1 element string validator は内部 API であり、root export には出していません。
+Human-readable input を直接 `QRCode.generate(input, { gs1: true })` に渡すと `InvalidGs1Error` になります。`parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw GS1 element string を作ってから `gs1: true` に渡してください。
+
+### `parseGs1ElementString(input)`
+
+外部システムから受け取った raw GS1 element string を、supported AI dictionary に基づいて `{ elements, hasSeparators }` に読み戻します。Human-readable parentheses notation は受け付けません。
+
+```js
+import { parseGs1ElementString } from "specqr";
+
+const parsed = parseGs1ElementString("010491234567890410ABC123\x1D17251231");
+
+console.log(parsed);
+// {
+//   elements: [
+//     { ai: "01", value: "04912345678904" },
+//     { ai: "10", value: "ABC123" },
+//     { ai: "17", value: "251231" }
+//   ],
+//   hasSeparators: true
+// }
+```
+
+invalid raw input は `InvalidGs1Error` で reject します。対象は unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、variable-length AI 後の missing separator、human-readable parentheses direct input です。`validateGs1ElementString()` は public API としてはまだ提供していません。
 
 helper が対応する代表 AI は次の範囲です。
 

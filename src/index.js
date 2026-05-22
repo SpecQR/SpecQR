@@ -28,7 +28,10 @@ import {
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "./gs1.js";
-import { getGs1ElementStringDiagnostics } from "./gs1/validator.js";
+import {
+  getGs1ElementStringDiagnostics,
+  parseGs1ElementString as parseRawGs1ElementString
+} from "./gs1/validator.js";
 import { DataTooLongError, InvalidGs1Error, InvalidOutputError } from "./errors.js";
 import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
@@ -81,6 +84,10 @@ export class QRCode {
 
   static parseGs1HumanReadable(input) {
     return parseGs1HumanReadable(input);
+  }
+
+  static parseGs1ElementString(input) {
+    return parseGs1ElementString(input);
   }
 
   static calculateGs1CheckDigit(digits) {
@@ -142,6 +149,14 @@ export function drawToCanvas(target, input, options = {}) {
   });
 
   return renderCanvas(target, matrix, normalized);
+}
+
+export function parseGs1ElementString(input) {
+  const elements = parseRawGs1ElementString(input);
+  return {
+    elements,
+    hasSeparators: input.includes(GS1_FNC1_SEPARATOR)
+  };
 }
 
 function renderResult(plan, normalized, inputBytes) {

@@ -12,6 +12,7 @@ import {
   InvalidModeError,
   InvalidOutputError,
   InvalidVersionError,
+  parseGs1ElementString,
   parseGs1HumanReadable,
   QRCode
 } from "../src/index.js";
@@ -46,6 +47,17 @@ test("release candidate public API examples execute", () => {
     diagnostics: true
   });
   assert.equal(gs1Result.diagnostics.gs1, true);
+  assert.deepEqual(parseGs1ElementString(gs1Data), {
+    elements: gs1Elements,
+    hasSeparators: true
+  });
+  assert.deepEqual(QRCode.parseGs1ElementString("010491234567890417251231"), {
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "17", value: "251231" }
+    ],
+    hasSeparators: false
+  });
 
   const binary = QRCode.generate(new Uint8Array([0x00, 0x01, 0x02, 0xFF]), {
     output: "matrix",

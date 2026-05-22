@@ -128,6 +128,7 @@ repository には minimal GitHub Actions workflow `.github/workflows/ci.yml` が
 - `npm ci`
 - `npm test`
 - `npm run examples:smoke`
+- `npm run pages:build`
 - `npm run verify:decode:jsqr`
 - `npm run verify:reference:nayuki`
 - `npm pack --dry-run`
@@ -151,3 +152,21 @@ npm run playground
 ```
 
 Open `http://127.0.0.1:4173/playground/`.
+
+GitHub Pages artifact は次で生成します。
+
+```sh
+npm run pages:build
+```
+
+Deploy は `Deploy Playground` workflow の手動実行で行います。push CI では artifact build までを確認し、外部公開は行いません。
+
+## Published Package Smoke
+
+公開済み npm package の install / import smoke は release 前後の確認として実行します。
+
+```sh
+npm run verify:published
+```
+
+この check は一時ディレクトリで `npm install specqr` と `npm install specqr@next` を実行し、root export、`specqr/node`、`specqr/browser`、GS1 helper が install 後に動くことを確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。

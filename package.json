@@ -45,11 +45,13 @@
     "examples:node": "node examples/node-save-png.mjs",
     "examples:gs1": "node examples/gs1-qr.mjs",
     "examples:smoke": "node tools/verify-examples.js",
+    "pages:build": "node tools/build-pages.js",
     "playground": "node tools/serve-playground.js",
     "verify:decode": "node tools/verify-decode.js",
     "verify:decode:optional": "node tools/verify-decode-optional.js",
     "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",
     "verify:decode:independent": "npm run verify:decode:jsqr",
+    "verify:published": "node tools/verify-published-package.js",
     "verify:reference:nayuki": "node tools/verify-reference-nayuki.js"
   },
   "keywords": [

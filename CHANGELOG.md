@@ -9,11 +9,14 @@
 - Added GS1 mod-10 check digit helpers for GTIN and SSCC values.
 - Added a conformance matrix and an external reference comparison report.
 - Added fixed-condition matrix comparison against Nayuki QR Code generator as a dev-only reference check.
+- Added GitHub Pages build/deploy workflow scaffolding for the playground.
+- Added published npm package smoke test tooling for root, node, browser, and GS1 helper imports.
+- Added a release checklist covering dist-tags, package contents, GitHub Release notes, and npm publish verification.
 
 ### Changed
 
 - Strengthened supported GS1 AI validation for GTIN/SSCC check digits and representative country-of-origin AIs.
-- Added examples smoke coverage and Nayuki reference comparison to CI.
+- Added examples smoke coverage, Pages build coverage, and Nayuki reference comparison to CI.
 
 ## 1.0.0-rc.2 - 2026-05-18
 

@@ -1,0 +1,23 @@
+name: Published Package Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_specs:
+        description: "Space-separated npm specs to install"
+        required: false
+        default: "specqr specqr@next"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node tools/verify-published-package.js
+        env:
+          SPECQR_PUBLISHED_SPECS: ${{ inputs.package_specs }}

@@ -1,5 +1,8 @@
 # SpecQR
 
+[![CI](https://github.com/SpecQR/SpecQR/actions/workflows/ci.yml/badge.svg)](https://github.com/SpecQR/SpecQR/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/specqr.svg)](https://www.npmjs.com/package/specqr)
+
 SpecQR is a dependency-free JavaScript QR Code Model 2 generator. It focuses on standards-conscious QR generation with SVG, PNG, matrix, diagnostics, Kanji, ECI, and GS1/FNC1 support.
 
 Repository: https://github.com/SpecQR/SpecQR
@@ -8,9 +11,30 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 
 ## インストール
 
+RC / prerelease channel:
+
 ```sh
 npm install specqr@next
 ```
+
+通常 install:
+
+```sh
+npm install specqr
+```
+
+`1.0.0` 正式版公開前は、npm dist-tag の状態によって `specqr` が RC を指す場合があります。正式版公開後は `specqr` を stable channel、`specqr@next` を prerelease channel として扱います。
+
+## Links
+
+- Playground source: [playground/](playground/)
+- GitHub Pages playground after manual deploy: https://specqr.github.io/SpecQR/playground/
+- Examples: [examples/](examples/)
+- API: [docs/api.md](docs/api.md)
+- Conformance Matrix: [docs/conformance.md](docs/conformance.md)
+- External Reference Comparison: [docs/reference-comparison.md](docs/reference-comparison.md)
+- Test Plan: [docs/test-plan.md](docs/test-plan.md)
+- Release Checklist: [docs/release.md](docs/release.md)
 
 ## v1 RC の対応範囲
 
@@ -232,6 +256,8 @@ npm run playground
 
 Open `http://127.0.0.1:4173/playground/`.
 
+GitHub Pages に公開する場合は、repository settings で Pages source を `GitHub Actions` にし、`Deploy Playground` workflow を手動実行します。push だけでは deploy しません。
+
 ## Errors
 
 エラーは安定した class と `code` field を持ちます。
@@ -292,3 +318,9 @@ npm run verify:reference:nayuki
 ```
 
 この check は fixed payload、fixed Version、fixed ECC、fixed mask の matrix を外部実装と比較します。auto segmentation や GS1 semantics の完全一致は目的にしていません。
+
+公開済み npm package の smoke test は release 前後に実行します。
+
+```sh
+npm run verify:published
+```

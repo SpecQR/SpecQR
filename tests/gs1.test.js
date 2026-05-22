@@ -19,6 +19,11 @@ import {
   validateSsccCheckDigit
 } from "../src/index.js";
 import * as gs1Entrypoint from "../src/gs1.js";
+import {
+  GS1_AI_DICTIONARY,
+  getGs1AiDictionaryEntry,
+  getGs1AiSpec
+} from "../src/gs1/ai-dictionary.js";
 import { getSegmentsBitLength, normalizeManualSegments } from "../src/encoding/modes.js";
 
 test("GS1 compatibility entrypoint preserves public helper exports", () => {
@@ -34,6 +39,74 @@ test("GS1 compatibility entrypoint preserves public helper exports", () => {
     gs1Entrypoint.createGs1ElementString([{ ai: "01", value: "04912345678904" }]),
     "0104912345678904"
   );
+});
+
+test("GS1 AI dictionary covers the current supported exact and family entries", () => {
+  assert.deepEqual(
+    GS1_AI_DICTIONARY.exact.map((metadata) => metadata.ai),
+    [
+      "00",
+      "01",
+      "02",
+      "10",
+      "11",
+      "12",
+      "13",
+      "15",
+      "16",
+      "17",
+      "20",
+      "21",
+      "22",
+      "30",
+      "37",
+      "240",
+      "241",
+      "400",
+      "410",
+      "411",
+      "412",
+      "413",
+      "414",
+      "415",
+      "420",
+      "422",
+      "424",
+      "425",
+      "426"
+    ]
+  );
+
+  assert.equal(getGs1AiDictionaryEntry("01").checkDigitRule, "gtin");
+  assert.equal(getGs1AiDictionaryEntry("10").separator, "required-when-followed");
+  assert.equal(getGs1AiDictionaryEntry("3102").exactLength, 6);
+  assert.equal(getGs1AiDictionaryEntry("91").maxLength, 90);
+  assert.equal(getGs1AiDictionaryEntry("250"), null);
+});
+
+test("GS1 AI dictionary adapts metadata to the validator spec shape", () => {
+  assert.deepEqual(getGs1AiSpec("01"), {
+    content: "numeric",
+    variable: false,
+    length: 14,
+    checkDigit: "gtin"
+  });
+  assert.deepEqual(getGs1AiSpec("10"), {
+    content: "text",
+    variable: true,
+    maxLength: 20
+  });
+  assert.deepEqual(getGs1AiSpec("3105"), {
+    content: "numeric",
+    variable: false,
+    length: 6
+  });
+  assert.deepEqual(getGs1AiSpec("99"), {
+    content: "text",
+    variable: true,
+    maxLength: 90
+  });
+  assert.equal(getGs1AiSpec("9999"), null);
 });
 
 test("gs1 option prepends FNC1 first position and reports diagnostics", () => {

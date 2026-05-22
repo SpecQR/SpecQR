@@ -66,6 +66,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 ## Progress Notes
 
 - 2026-05-22: GS1 module refactor completed. `src/gs1.js` は互換 entrypoint として残し、内部実装を `src/gs1/` 配下の AI metadata、parser、element string builder、check digit helper に分割しました。public API と runtime behavior は v1.0.0 互換を維持します。
+- 2026-05-22: GS1 AI dictionary foundation completed. v1 で対応済みの AI metadata を internal dictionary として整理し、validation は dictionary lookup を経由するようにしました。full GS1 AI catalog、GS1 Digital Link、strict parser 拡張は未導入です。
 
 ## Release Gate
 

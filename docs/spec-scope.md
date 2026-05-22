@@ -50,6 +50,8 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱い、現時点では専用 parser / validator を持ちません。
 
+GS1 AI metadata は、現時点では SpecQR が v1 で対応済みの AI だけを小さな internal dictionary として手書き管理しています。これは supported AI の length、numeric/text constraint、GTIN / SSCC check digit rule、separator behavior を validation から参照しやすくするための内部構造であり、full GS1 AI catalog の取り込みではありません。将来 GS1 Barcode Syntax Dictionary などの外部資料を参照して catalog を広げる場合は、出典、license / usage terms、NOTICE の要否を確認し、仕様本文や大きな表を repository に無断コピーしない方針です。
+
 package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の separate export を持ちます。CommonJS と minified browser build は build pipeline を導入するまで生成しません。source package は dependency-free runtime を保ちます。
 
 ## ISO/IEC 18004:2024 について

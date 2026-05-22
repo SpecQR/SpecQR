@@ -82,7 +82,8 @@ Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、rendere
 v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model を追加する予定のため、次の検証カテゴリを release gate に加える方針です。
 
 - GS1 strict validation: AI metadata、fixed / variable length、numeric / text constraints、separator insertion、GTIN / SSCC check digit、unsupported AI rejection を確認する。
-- GS1 Digital Link conversion: element data と Digital Link URI の相互変換を確認し、FNC1 first の raw GS1 element string と URL-based QR を混同しないことを固定する。
+- GS1 Digital Link conversion: element data と Digital Link URI の相互変換を確認し、FNC1 first の raw GS1 element string と URL-based QR を混同しないことを固定する。詳細な API proposal と validation policy は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) を参照する。
+- GS1 Digital Link future tests: URL construction、path/query placement、parse round-trip、invalid GTIN / SSCC、unsupported AI、duplicate AI、unknown query params、percent encoding、trailing slash handling を確認する。
 - Control segment ordering: ECI、FNC1 first、FNC1 second、Structured Append の併用可否、ordering、capacity accounting、diagnostics を確認する。
 - FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases を確認する。
 - Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks を golden fixtures で固定する。

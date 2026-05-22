@@ -6,7 +6,7 @@ SpecQR `1.0.0` は、実務で使う通常の QR Code Model 2 generation を対�
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
 ## 実装済み範囲
 
@@ -48,7 +48,7 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 `gs1: true` は FNC1 first position を先頭に挿入し、input が raw GS1 element string であることを期待します。この generation path は raw payload を internal validator に通し、unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、missing separator などを `InvalidGs1Error` として reject します。`parseGs1HumanReadable()` は対応 AI の parentheses notation を `{ ai, value }[]` に変換し、`createGs1ElementString()` は値を検証して、必要な位置に ASCII GS (`"\x1D"`) separator を挿入します。GTIN / SSCC check digit helper と AI `00`/`01`/`02` の check digit validation は実装済みです。全 GS1 AI catalog validation、業界別 AI rule、FNC1 second position はこの phase には含めません。ECI と GS1/FNC1 first position は control-mode ordering が曖昧になるため併用を reject します。
 
-GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱い、現時点では専用 parser / validator を持ちません。
+GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱い、現時点では専用 parser / validator を持ちません。Digital Link URI は通常 URL QR として `QRCode.generate(uri)` で生成し、`gs1: true` は指定しません。v2 design では、この区別を API 名と examples で固定します。
 
 GS1 AI metadata は、現時点では SpecQR が v1 で対応済みの AI だけを小さな internal dictionary として手書き管理しています。これは supported AI の length、numeric/text constraint、GTIN / SSCC check digit rule、separator behavior を validation から参照しやすくするための内部構造であり、full GS1 AI catalog の取り込みではありません。将来 GS1 Barcode Syntax Dictionary などの外部資料を参照して catalog を広げる場合は、出典、license / usage terms、NOTICE の要否を確認し、仕様本文や大きな表を repository に無断コピーしない方針です。
 
@@ -82,7 +82,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 では、通常 QR Code Model 2 core を維持したまま次を優先します。
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
-- GS1 Digital Link helper: URL-based Digital Link と FNC1 first の GS1 element string QR を API と docs で分ける。
+- GS1 Digital Link helper: URL-based Digital Link と FNC1 first の GS1 element string QR を API と docs で分ける。詳細は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に固定する。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append の ordering / capacity / diagnostics を整理する。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures。
 - Structured Append: low-level header encoding と high-level automatic splitting API。

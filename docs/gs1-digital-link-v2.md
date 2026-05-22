@@ -102,6 +102,80 @@ v2 初期実装では、次だけを対象にします。
 
 v2 初期実装では、Digital Link URI が実際に resolver として応答するか、特定の industry profile に合っているか、linkType の解決結果が正しいかは確認しません。
 
+## Current Output Policy
+
+`createGs1DigitalLink()` の現在の出力は、full canonicalizer ではなく deterministic builder として固定します。目的は、対応済み GS1 element data から安全で再現可能な Digital Link URI を作り、`parseGs1DigitalLink()` で同じ element data に戻せることです。
+
+### Builder output
+
+- `input` は `{ ai, value }[]` または `parseGs1ElementString()` の戻り値だけを受け付ける。
+- すべての AI/value は既存 GS1 dictionary validation に通す。
+- Duplicate AI は reject する。
+- `primaryAi` が指定されない場合は AI `01` を primary key とする。
+- primary element は必ず path に置く。
+- explicit `pathAis` がない場合、dictionary の Digital Link role metadata で path/query を決める。
+- explicit `pathAis` がある場合、その指定を default placement より優先する。ただし path eligible でない AI は reject する。
+- query に置く AI は `ai`、同一 AI 内では `value` の lexical order で並べる。
+- query string は builder が生成した GS1 AI query だけを含む。unknown query parameter は builder では生成しない。
+
+### `baseUrl` normalization
+
+- `baseUrl` は必須で、暗黙の resolver domain default は持たない。
+- `http:` / `https:` だけを許可する。
+- `baseUrl` の query / fragment は reject する。
+- `baseUrl` の path は URI stem として保持する。
+- trailing slash は取り除き、stem の後ろに primary AI/value pair を連結する。
+- scheme / host / percent-encoding の細かな正規化は WHATWG `URL` に任せる。
+
+### Path / query placement
+
+Digital Link role metadata は `src/gs1/ai-dictionary.js` に置きます。現時点では supported AI に限り、次の最小分類を持ちます。
+
+- `primary-key`: Digital Link path の識別子として使える AI。
+- `key-qualifier`: 特定 primary AI の後ろに path segment として置ける AI。
+- `data-attribute`: default では query string に置く AI。
+
+現行 supported AI の default placement:
+
+- Primary key: `00`, `01`, `414`
+- Key qualifier for GTIN primary (`01`): `10`, `21`, `22`
+- Data attribute: その他の supported AI
+
+この分類は full GS1 Digital Link semantic classification ではありません。dictionary が role を知らない AI は supported AI としても Digital Link path に置けません。`parseGs1DigitalLink()` も同じ metadata を使い、primary 以降の path に data attribute や unsupported AI が出た場合は `InvalidGs1Error` にします。
+
+### Unknown query policy
+
+`parseGs1DigitalLink()` は default で `unknownQuery: "preserve"` です。
+
+- 数字 2-4 桁の query key は GS1 AI とみなし、dictionary validation に通す。
+- dictionary にない numeric query key は unsupported AI として reject する。
+- non-numeric query key は extension parameter として `unknownQuery` に保持する。
+- `unknownQuery: "reject"` では non-numeric query key も reject する。
+- `createGs1DigitalLink()` は unknown query を再生成しない。parse result から再生成する場合も、GS1 AI elements だけを URI に戻す。
+
+### Percent encoding / decoding
+
+- path AI value は `encodeURIComponent()` で path segment として encode する。
+- query AI value は WHATWG `URLSearchParams` で encode する。
+- `/`, `?`, `#`, `&`, `=` など URI 構文と衝突する文字は literal path/query 構文として扱わない。
+- `parseGs1DigitalLink()` は path segment と query value を decode してから GS1 validation に通す。
+- invalid percent escape は `InvalidGs1Error` にする。
+
+### Why full canonicalization is not implemented yet
+
+Full canonicalization は、単なる並び替えではありません。安全に実装するには、より広い AI catalog、primary key と key qualifier の正確な対応、data attribute / query-only classification、industry profile、resolver extension parameter、重複 AI の扱い、case / percent-encoding normalization の互換性判断が必要です。
+
+SpecQR はこの段階で「canonical-looking but incomplete」な URI を出すより、現在 supported な AI に限定した deterministic builder と explicit validation を優先します。そのため、次は canonicalizer を先に作るのではなく、metadata の範囲と control segment model を固めてから canonical output を広げます。
+
+### Future compatibility policy
+
+将来 canonicalization を追加する場合は、既存 `createGs1DigitalLink()` の出力を不用意に変えません。候補は次のどちらかです。
+
+- 新しい option を追加する: 例 `canonical: true`
+- 新しい helper を追加する: 例 `canonicalizeGs1DigitalLink(uri)` または `createCanonicalGs1DigitalLink(elements, options)`
+
+どちらの場合も、`parseGs1DigitalLink()` の return shape は維持し、既存 `elements` / `pathElements` / `queryElements` / `unknownQuery` を migration anchor にします。default behavior を変える必要が出た場合は、major release の breaking change として CHANGELOG と migration guide に明記します。
+
 ## Validation Policy
 
 ### AI validation
@@ -154,6 +228,74 @@ SpecQR は resolver ではないため、unknown query params を勝手に解釈
 - Canonical output は trailing slash を付けない。
 - `parseGs1DigitalLink()` は edge slash を除いた path から最初の supported primary AI を探す。primary より前の segments は URI stem として扱う。
 - Host / scheme の case normalization は WHATWG `URL` に任せる。path AI と query AI は numeric string として扱う。
+
+## Supported AI Metadata Expansion Plan
+
+### Why not add the full catalog at once
+
+SpecQR は GS1 AI catalog を一気に取り込まない方針です。理由は次の通りです。
+
+- 公式 catalog / syntax dictionary の利用条件、出典表示、NOTICE 要否を確認する必要がある。
+- AI ごとに length、charset、check digit、decimal indicator、date semantics、path/query role が異なり、表を増やすだけでは安全な validation にならない。
+- Digital Link path role は primary AI との関係で決まるため、単独 AI metadata だけでは不足する。
+- 一度 supported と表明した AI は、実務利用では後方互換性を強く期待される。
+
+そのため、AI group ごとに metadata、validation、negative tests、docs を揃えてから増やします。
+
+### Current supported AI range
+
+現時点で SpecQR が helper validation と Digital Link conversion の対象にする AI は、`docs/api.md` の supported AI list と同じ範囲です。
+
+- Fixed length: `00`, `01`, `02`, `11`, `12`, `13`, `15`, `16`, `17`, `20`, `410` through `415`, `422`, `424`, `425`, `426`, `3100` through `3105`, `3200` through `3205`
+- Variable length: `10`, `21`, `22`, `30`, `37`, `240`, `241`, `400`, `420`, `91` through `99`
+
+Digital Link role metadata は、この supported AI の中でだけ `primary-key` / `key-qualifier` / `data-attribute` を持ちます。
+
+### Candidate AI groups to add next
+
+次に広げる候補は、runtime 実装ではなく設計上の優先順位として次の順に扱います。
+
+1. Trade item identification 周辺: GTIN primary (`01`) と関連する key qualifier / data attribute を増やす。
+2. Logistics / shipment 周辺: SSCC (`00`) primary と shipment / consignment / route 系 AI を整理する。
+3. Location 周辺: GLN (`414`) primary と location qualifier / attribute を整理する。
+4. Date / lot / serial / quantity 周辺: 既存 AI と組み合わせた validation と Digital Link placement を厚くする。
+5. Regulated / industry-specific AI: 医療、食品、物流など profile が強い AI は、業界別 rule を docs に分けてから追加する。
+6. Internal/company AI: `91` through `99` は validation を広げすぎず、Digital Link では data attribute として保守的に扱う。
+
+### Role metadata criteria
+
+`primary-key` として追加する AI:
+
+- Digital Link path の先頭識別子として使う意味が明確である。
+- value validation が実装済みである。
+- 必要な check digit / length / charset rule が tests で固定されている。
+- `primaryAi` option と parse path discovery の対象にしても既存 primary と衝突しない。
+
+`key-qualifier` として追加する AI:
+
+- 対象 primary AI が明確で、`digitalLinkPathForPrimary` の対応を持てる。
+- path に置いた場合の順序と round-trip が tests で固定できる。
+- 対象外 primary の path に置いた場合は `InvalidGs1Error` にできる。
+- query に置かれても parse 可能か、path-only とすべきかを docs に明記できる。
+
+`data-attribute` として追加する AI:
+
+- primary / key qualifier として扱う根拠がまだない、または属性情報として query に置くのが安全である。
+- query key/value validation が実装済みである。
+- path に置かれた場合は reject する。
+
+将来必要になった場合だけ、`query-only` や `unsupported-in-path` のような role を追加します。現時点では `data-attribute` が「default query placement and path rejection」の意味を持ちます。
+
+### Validation metadata criteria
+
+新しい AI を supported にする時は、少なくとも次を同じ変更で追加します。
+
+- length rule: exact length、min/max length、family AI の variable digit handling。
+- charset rule: numeric-only、printable text、separator/parentheses rejection、percent-encoding 後に戻る文字の扱い。
+- check digit rule: GTIN / SSCC など既知 rule がある場合は helper と negative tests。
+- date / decimal semantics: YYMMDD や implied decimal など、文字列 length だけでは不十分な場合の docs と tests。
+- Digital Link role: `primary-key` / `key-qualifier` / `data-attribute` のいずれか、または明示的な非対応理由。
+- Round-trip tests: human-readable -> raw element string -> Digital Link URI -> parse result。
 
 ## Conversion Examples
 
@@ -223,6 +365,7 @@ console.log(parsed.elements);
 - `baseUrl` default を `https://id.gs1.org` にする案: 便利ですが、resolver domain の選択を library が暗黙に決めてしまうため見送ります。
 - Unknown query params を default reject する案: 厳格ですが、Digital Link resolver / web app 文脈では `linkType` など GS1 AI ではない query parameter を保持したい場面が多いため、default は preserve にします。数字 2-4 桁の key は GS1 AI として validation し、unsupported AI は reject します。
 - Full canonicalizer を最初から提供する案: full AI catalog、より広い primary/key-qualifier metadata、industry profile が必要になり、v2 初期 scope を超えるため見送ります。
+- Default builder を将来 silently canonicalizer に変える案: 既存利用者の URL 比較、snapshot、resolver routing を壊し得るため見送ります。
 
 ## Remaining Non-scope
 
@@ -230,6 +373,7 @@ console.log(parsed.elements);
 - Network resolver / redirect / linkset lookup
 - Resolver Description File lookup
 - Digital Link compression / decompression
+- Digital Link full canonicalization
 - Full GS1 Digital Link standard conformance claim
 - Full GS1 AI catalog
 - Industry-specific validation
@@ -261,12 +405,14 @@ console.log(parsed.elements);
 - Unknown query preserve / rejection option.
 - Percent-encoding parse cases for `/` in path values.
 - `QRCode.generate(uri, { gs1: true })` misuse stays rejected through existing GS1 raw validator.
+- Full canonicalization remains out of scope for the current helper.
 
-次フェーズでは、query/path placement metadata の full catalog 化、Digital Link canonicalization、resolver integration を検討します。
+次フェーズでは、control segment model refactor を先に進めます。その後、AI metadata の拡張単位を決め、必要な範囲で Digital Link canonicalization、resolver integration を検討します。
 
 ## Implementation Order
 
 1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute. (done for currently supported AI)
-2. Add examples and playground copy that show GS1 QR Code and Digital Link QR side by side.
-3. Revisit full canonicalization after broader AI catalog metadata exists.
-4. Consider resolver / linkset integrations outside the core QR generator.
+2. Document current canonical output policy and supported AI metadata expansion plan. (done)
+3. Refactor the control segment model so ECI / FNC1 first can share infrastructure with FNC1 second / Structured Append.
+4. Revisit supported AI expansion and full canonicalization after broader metadata exists.
+5. Consider resolver / linkset integrations outside the core QR generator.

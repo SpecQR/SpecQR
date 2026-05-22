@@ -17,7 +17,7 @@ v2 planning の対象は roadmap であり、現時点の runtime behavior や p
 SpecQR v1.0.0 は、通常 QR Code Model 2 generation、Kanji、ECI、FNC1 first position、限定 GS1 helper、renderer、diagnostics、Nayuki reference comparison を持っています。v2.0.0 ではこの土台を壊さず、既存の `generate()` / `generateSegments()` / helper API と互換性を保ちながら次の領域を伸ばします。
 
 - v1 の partial GS1 helper を、AI catalog driven な parser / validator へ広げる。
-- v1 で未対応だった GS1 Digital Link helper を追加する。
+- GS1 Digital Link helper は minimal create/parse + role metadata まで到達済みとして、full canonicalization は metadata 拡張後に検討する。
 - v1 で個別処理されている ECI / FNC1 first を、今後の FNC1 second / Structured Append と同じ control segment 設計へ寄せる。
 - v1 で対象外としていた Structured Append を、low-level header encoding から high-level splitting API へ段階的に追加する。
 
@@ -26,7 +26,7 @@ SpecQR v1.0.0 は、通常 QR Code Model 2 generation、Kanji、ECI、FNC1 first
 | 領域 | v2.0.0 の到達点 |
 | --- | --- |
 | GS1 syntax layer | GS1 Application Identifier catalog、strict parser、fixed / variable length validation、GTIN / SSCC / representative AI validation の拡張。 |
-| GS1 Digital Link | element data と Digital Link URI の変換 helper。Digital Link は通常 URL QR、GS1 element string は FNC1 first QR として区別する。 |
+| GS1 Digital Link | element data と Digital Link URI の変換 helper。現段階は minimal create/parse + role metadata。Full canonicalization、resolver、compression は後続 phase。 |
 | Control segment model | ECI、FNC1 first、FNC1 second、Structured Append の ordering、capacity accounting、diagnostics を整理する内部 model。 |
 | FNC1 second position | application indicator validation、encoding、diagnostics、golden / negative tests。 |
 | Structured Append | low-level header encoding、manual chunks、high-level `generateStructuredAppend()` 相当の automatic splitting、最大 16 symbols の validation。 |
@@ -55,8 +55,8 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 1. **GS1 module refactor**: 既存 public API を維持しながら、GS1 helper の内部を parser、dictionary、check digit、element string builder に分ける。
 2. **GS1 AI dictionary**: GS1 Application Identifier metadata を static runtime data として導入し、source attribution と license / NOTICE 方針を明確にする。
 3. **Strict GS1 parser / validator**: bracketed human-readable input、unbracketed element string、raw element string の validation を拡張する。
-4. **GS1 Digital Link helpers**: Digital Link URI と GS1 element data の相互変換を追加し、FNC1 first QR と通常 URL QR の違いを docs で固定する。
-5. **Control segment model refactor**: ECI / FNC1 first の挙動を保ったまま、FNC1 second / Structured Append を載せられる internal model に整理する。
+4. **GS1 Digital Link helpers**: Digital Link URI と GS1 element data の相互変換を追加し、FNC1 first QR と通常 URL QR の違いを docs で固定する。Minimal create/parse + role metadata は完了済みとし、canonicalization は supported AI metadata 拡張後に扱う。
+5. **Control segment model refactor**: 次の大きな実装。ECI / FNC1 first の挙動を保ったまま、FNC1 second / Structured Append を載せられる internal model に整理する。
 6. **FNC1 second position**: API、validation、diagnostics、golden fixtures、negative tests を追加する。
 7. **Structured Append low-level**: header encoding、sequence / total / parity、manual chunks を golden fixtures で固定する。
 8. **Structured Append high-level**: automatic splitting API、capacity handling、diagnostics、failure modes を追加する。
@@ -74,6 +74,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: GS1 Digital Link URI builder implemented. `createGs1DigitalLink(input, options)` を root export と `QRCode.createGs1DigitalLink()` に追加し、supported AI validation、baseUrl validation、path/query placement、packed package smoke を追加しました。
 - 2026-05-23: GS1 Digital Link URI parser implemented. `parseGs1DigitalLink(uri, options?)` を root export と `QRCode.parseGs1DigitalLink()` に追加し、path/query parsing、unknown query preservation、percent-decoding、builder/parser round-trip、packed package smoke を追加しました。
 - 2026-05-23: GS1 Digital Link role metadata integrated. 現行 supported AI の dictionary に `primary-key` / `key-qualifier` / `data-attribute` を追加し、`createGs1DigitalLink()` / `parseGs1DigitalLink()` の default path/query placement と invalid path placement rejection を catalog-driven にしました。
+- 2026-05-23: GS1 Digital Link canonical policy documented. 現在の output は full canonicalizer ではなく deterministic builder として固定し、baseUrl normalization、path/query placement、unknown query、percent encoding、supported AI metadata expansion plan を `docs/gs1-digital-link-v2.md` に整理しました。次の大きな実装は control segment model refactor に進みます。
 
 ## Release Gate
 

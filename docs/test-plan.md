@@ -145,6 +145,7 @@ repository には minimal GitHub Actions workflow `.github/workflows/ci.yml` が
 - `npm run pages:build`
 - `npm run verify:decode:jsqr`
 - `npm run verify:reference:nayuki`
+- `npm run verify:pack`
 - `npm pack --dry-run`
 
 macOS Vision validation は Swift、Vision、ImageMagick に依存するため、local/macOS release check として扱います。
@@ -176,6 +177,14 @@ npm run pages:build
 Deploy は `Deploy Playground` workflow の手動実行で行います。push CI では artifact build までを確認し、外部公開は行いません。
 
 ## Published Package Smoke
+
+pack した local package の install / import smoke は push CI と release 前の確認として実行します。
+
+```sh
+npm run verify:pack
+```
+
+この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` と `QRCode.parseGs1ElementString()` を実行します。`validateGs1ElementString()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、invalid raw GS1 payload の `InvalidGs1Error`、同梱 `src/index.d.ts` の GS1 raw parser surface も確認します。TypeScript compiler pipeline は package の runtime / dev workflow を重くしないため導入せず、配布物に含まれる declaration text の軽量検査に留めています。
 
 公開済み npm package の install / import smoke は release 前後の確認として実行します。
 

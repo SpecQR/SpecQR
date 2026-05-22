@@ -327,6 +327,14 @@ npm run verify:reference:nayuki
 
 この check は fixed payload、fixed Version、fixed ECC、fixed mask の matrix を外部実装と比較します。auto segmentation や GS1 semantics の完全一致は目的にしていません。
 
+pack した package を一時 install し、公開 API と型定義の surface を確認します。
+
+```sh
+npm run verify:pack
+```
+
+この check は `parseGs1ElementString()`、`QRCode.parseGs1ElementString()`、`specqr/node` / `specqr/browser` とは独立した root install smoke と、同梱 `.d.ts` の軽量確認を行います。
+
 公開済み npm package の smoke test は release 前後に実行します。
 
 ```sh

@@ -1,0 +1,143 @@
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+const root = process.cwd();
+const cacheDir = process.env.SPECQR_NPM_CACHE ?? path.join(tmpdir(), "specqr-packed-npm-cache");
+const directory = await mkdtemp(path.join(tmpdir(), "specqr-packed-"));
+const packDirectory = path.join(directory, "pack");
+const installDirectory = path.join(directory, "install");
+
+try {
+  await mkdir(packDirectory);
+  await mkdir(installDirectory);
+
+  const packOutput = await runCapture(
+    "npm",
+    ["pack", "--json", "--pack-destination", packDirectory, "--cache", cacheDir],
+    root
+  );
+  const [packed] = JSON.parse(packOutput);
+  const tarball = path.join(packDirectory, packed.filename);
+
+  await writeFile(path.join(installDirectory, "package.json"), JSON.stringify({ type: "module" }, null, 2));
+  await run(
+    "npm",
+    ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--cache", cacheDir, tarball],
+    installDirectory
+  );
+
+  await writeSmokeTest(installDirectory);
+  await run("node", ["smoke.mjs"], installDirectory);
+  await assertTypeDeclarations(installDirectory);
+
+  console.log(`ok packed package smoke ${packed.id}`);
+} finally {
+  await rm(directory, { recursive: true, force: true });
+}
+
+async function writeSmokeTest(directory) {
+  await writeFile(
+    path.join(directory, "smoke.mjs"),
+    `import assert from "node:assert/strict";
+import * as specqr from "specqr";
+
+assert.equal(typeof specqr.parseGs1ElementString, "function");
+assert.equal(typeof specqr.QRCode.parseGs1ElementString, "function");
+assert.equal(specqr.validateGs1ElementString, undefined);
+assert.equal(specqr.QRCode.validateGs1ElementString, undefined);
+
+const rawWithSeparator = "010491234567890410ABC123\\x1D17251231";
+assert.deepEqual(specqr.parseGs1ElementString(rawWithSeparator), {
+  elements: [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ],
+  hasSeparators: true
+});
+
+assert.deepEqual(specqr.QRCode.parseGs1ElementString("010491234567890417251231"), {
+  elements: [
+    { ai: "01", value: "04912345678904" },
+    { ai: "17", value: "251231" }
+  ],
+  hasSeparators: false
+});
+
+assert.throws(
+  () => specqr.parseGs1ElementString("010491234567890410ABC12317251231"),
+  (error) => error instanceof specqr.InvalidGs1Error && error.code === "INVALID_GS1"
+);
+`
+  );
+}
+
+async function assertTypeDeclarations(directory) {
+  const declarations = await readFile(
+    path.join(directory, "node_modules", "specqr", "src", "index.d.ts"),
+    "utf8"
+  );
+
+  assert.match(declarations, /export interface GS1Element\s*{\s*ai: string;\s*value: string;\s*}/);
+  assert.match(
+    declarations,
+    /export interface GS1ElementStringParseResult\s*{\s*elements: GS1Element\[];\s*hasSeparators: boolean;\s*}/
+  );
+  assert.match(
+    declarations,
+    /export function parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
+  );
+  assert.match(
+    declarations,
+    /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
+  );
+}
+
+function run(command, args, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: "inherit"
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`${command} ${args.join(" ")} exited with ${code}`));
+      }
+    });
+  });
+}
+
+function runCapture(command, args, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(`${command} ${args.join(" ")} exited with ${code}\n${stderr}`));
+      }
+    });
+  });
+}

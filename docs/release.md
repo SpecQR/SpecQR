@@ -28,6 +28,7 @@ npm install specqr@next
 - `npm run pages:build` が green。
 - `npm run verify:decode:jsqr` が green。
 - `npm run verify:reference:nayuki` が green。
+- `npm run verify:pack` が green。
 - macOS release machine で `npm run verify:decode` が green。
 - `npm pack --dry-run` が clean な npm cache / CI 上で green。
 - 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@1.0.0` に対して green。
@@ -43,6 +44,7 @@ npm run examples:smoke
 npm run pages:build
 npm run verify:decode:jsqr
 npm run verify:reference:nayuki
+npm run verify:pack
 npm run verify:decode
 npm pack --dry-run
 npm publish --dry-run --tag latest
@@ -56,6 +58,14 @@ npm publish --dry-run --tag latest --cache /private/tmp/specqr-npm-cache
 ```
 
 ## Published Package Smoke
+
+local pack install smoke は npm 公開前の配布物確認として実行します。
+
+```sh
+npm run verify:pack
+```
+
+この script は `npm pack` した tarball を一時 install し、root export と TypeScript declarations が source とずれていないことを確認します。特に GS1 raw parser の `parseGs1ElementString()`、`QRCode.parseGs1ElementString()`、非公開のままにする `validateGs1ElementString()` を検査します。
 
 公開済み package が npm install 後に利用できることを確認します。
 

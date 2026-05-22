@@ -21,4 +21,5 @@ jobs:
       - run: npm run pages:build
       - run: npm run verify:decode:jsqr
       - run: npm run verify:reference:nayuki
+      - run: npm run verify:pack
       - run: npm pack --dry-run

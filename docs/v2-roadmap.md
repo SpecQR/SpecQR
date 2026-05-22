@@ -56,7 +56,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 2. **GS1 AI dictionary**: GS1 Application Identifier metadata を static runtime data として導入し、source attribution と license / NOTICE 方針を明確にする。
 3. **Strict GS1 parser / validator**: bracketed human-readable input、unbracketed element string、raw element string の validation を拡張する。
 4. **GS1 Digital Link helpers**: Digital Link URI と GS1 element data の相互変換を追加し、FNC1 first QR と通常 URL QR の違いを docs で固定する。Minimal create/parse + role metadata は完了済みとし、canonicalization は supported AI metadata 拡張後に扱う。
-5. **Control segment model refactor**: 次の大きな実装。ECI / FNC1 first の挙動を保ったまま、FNC1 second / Structured Append を載せられる internal model に整理する。
+5. **Control segment model refactor**: ECI / FNC1 first の挙動を保ったまま、FNC1 second / Structured Append を載せられる internal model に整理する。完了済み。
 6. **FNC1 second position**: API、validation、diagnostics、golden fixtures、negative tests を追加する。
 7. **Structured Append low-level**: header encoding、sequence / total / parity、manual chunks を golden fixtures で固定する。
 8. **Structured Append high-level**: automatic splitting API、capacity handling、diagnostics、failure modes を追加する。
@@ -75,6 +75,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: GS1 Digital Link URI parser implemented. `parseGs1DigitalLink(uri, options?)` を root export と `QRCode.parseGs1DigitalLink()` に追加し、path/query parsing、unknown query preservation、percent-decoding、builder/parser round-trip、packed package smoke を追加しました。
 - 2026-05-23: GS1 Digital Link role metadata integrated. 現行 supported AI の dictionary に `primary-key` / `key-qualifier` / `data-attribute` を追加し、`createGs1DigitalLink()` / `parseGs1DigitalLink()` の default path/query placement と invalid path placement rejection を catalog-driven にしました。
 - 2026-05-23: GS1 Digital Link canonical policy documented. 現在の output は full canonicalizer ではなく deterministic builder として固定し、baseUrl normalization、path/query placement、unknown query、percent encoding、supported AI metadata expansion plan を `docs/gs1-digital-link-v2.md` に整理しました。次の大きな実装は control segment model refactor に進みます。
+- 2026-05-23: Internal control segment model refactor completed. ECI / FNC1 first の既存挙動を保ったまま、control segment validation、option-driven prepend、bit length、encoding、diagnostic helpers を `src/encoding/control-segments.js` に集約しました。Public API は増やしていません。次は FNC1 second position の validation / encoding design に進めます。
 
 ## Release Gate
 

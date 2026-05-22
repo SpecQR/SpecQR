@@ -13,6 +13,11 @@ import {
   prependFnc1Segment,
   toByteArray
 } from "./encoding/modes.js";
+import {
+  getFirstEciAssignmentNumber,
+  getFirstFnc1Mode,
+  isControlSegment
+} from "./encoding/control-segments.js";
 import { ERROR_CORRECTION_LEVEL_ORDER, getDataCodewordCount, getSize } from "./core/tables.js";
 import { createDiagnostics } from "./diagnostics.js";
 import {
@@ -330,17 +335,9 @@ function withBoostedErrorCorrection(plan, options) {
 }
 
 function getDiagnosticMode(segments) {
-  const dataSegments = segments.filter((segment) => !["eci", "fnc1"].includes(segment.mode));
+  const dataSegments = segments.filter((segment) => !isControlSegment(segment));
   const mode = dataSegments[0]?.mode ?? "byte";
   return dataSegments.every((segment) => segment.mode === mode) ? mode : "mixed";
-}
-
-function getFirstEciAssignmentNumber(segments) {
-  return segments.find((segment) => segment.mode === "eci")?.assignmentNumber ?? null;
-}
-
-function getFirstFnc1Mode(segments) {
-  return segments.some((segment) => segment.mode === "fnc1") ? "first-position" : null;
 }
 
 function getInputByteCount(input) {

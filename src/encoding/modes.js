@@ -1,12 +1,16 @@
 import { BitBuffer } from "./bit-buffer.js";
 import { getCharacterCountBitLength, getDataCodewordCount } from "../core/tables.js";
+import { DataTooLongError, InvalidInputError, InvalidModeError } from "../errors.js";
 import {
-  DataTooLongError,
-  InvalidEciError,
-  InvalidGs1Error,
-  InvalidInputError,
-  InvalidModeError
-} from "../errors.js";
+  appendControlSegmentBits,
+  getControlSegmentBitLength,
+  isControlSegment,
+  prependEciSegment,
+  prependFnc1Segment,
+  validateControlSegment,
+  validateEciAssignmentNumber,
+  validateManualControlSegments
+} from "./control-segments.js";
 import {
   assertKanjiModeText,
   canEncodeKanjiModeCharacter,
@@ -15,8 +19,6 @@ import {
 } from "./shift-jis.js";
 
 const MODE_INDICATORS = {
-  eci: 0b0111,
-  fnc1: 0b0101,
   numeric: 0b0001,
   alphanumeric: 0b0010,
   byte: 0b0100,
@@ -124,32 +126,10 @@ export function normalizeManualSegments(segments) {
     throw new InvalidInputError("manual segments must be an array");
   }
 
-  return validateControlSegments(segments.map((segment, index) => normalizeManualSegment(segment, index)));
+  return validateManualControlSegments(segments.map((segment, index) => normalizeManualSegment(segment, index)));
 }
 
-export function prependEciSegment(segments, eciAssignmentNumber = false) {
-  if (eciAssignmentNumber !== false) {
-    if (segments.some((segment) => segment.mode === "fnc1")) {
-      throw new InvalidGs1Error("eci cannot be combined with FNC1 first position in this implementation");
-    }
-    validateEciAssignmentNumber(eciAssignmentNumber);
-    return [{ mode: "eci", assignmentNumber: eciAssignmentNumber }, ...segments];
-  }
-  return segments;
-}
-
-export function prependFnc1Segment(segments, enabled = false) {
-  if (!enabled) {
-    return segments;
-  }
-  if (segments.some((segment) => segment.mode === "fnc1")) {
-    throw new InvalidGs1Error("gs1 option cannot be combined with a manual fnc1 segment");
-  }
-  if (segments.some((segment) => segment.mode === "eci")) {
-    throw new InvalidGs1Error("gs1 and eci cannot be combined in this FNC1 first position implementation");
-  }
-  return [{ mode: "fnc1" }, ...segments];
-}
+export { prependEciSegment, prependFnc1Segment };
 
 export function getSegmentsBitLength(segments, version) {
   return segments.reduce((total, segment) => total + getSegmentBitLength(segment, version), 0);
@@ -157,7 +137,7 @@ export function getSegmentsBitLength(segments, version) {
 
 export function getSegmentByteCount(segment) {
   validateSegment(segment);
-  if (segment.mode === "eci" || segment.mode === "fnc1") {
+  if (isControlSegment(segment)) {
     return 0;
   }
   if (segment.mode === "byte") {
@@ -171,7 +151,7 @@ export function getSegmentByteCount(segment) {
 
 export function getSegmentTextCharacterCount(segment) {
   validateSegment(segment);
-  if (segment.mode === "eci" || segment.mode === "fnc1" || segment.bytes !== undefined) {
+  if (isControlSegment(segment) || segment.bytes !== undefined) {
     return 0;
   }
   return Array.from(segment.text).length;
@@ -187,14 +167,8 @@ export function encodeSegments(segments, version, errorCorrectionLevel) {
   const buffer = new BitBuffer();
 
   for (const segment of segments) {
-    if (segment.mode === "fnc1") {
-      buffer.append(MODE_INDICATORS.fnc1, 4);
-      continue;
-    }
-
-    if (segment.mode === "eci") {
-      buffer.append(MODE_INDICATORS.eci, 4);
-      appendEciDesignatorBits(buffer, segment.assignmentNumber);
+    if (isControlSegment(segment)) {
+      appendControlSegmentBits(buffer, segment);
       continue;
     }
 
@@ -264,14 +238,8 @@ function getPayloadBitLength(segment) {
 }
 
 function getSegmentBitLength(segment, version) {
-  if (segment.mode === "fnc1") {
-    validateSegment(segment);
-    return 4;
-  }
-
-  if (segment.mode === "eci") {
-    validateEciAssignmentNumber(segment.assignmentNumber);
-    return 4 + getEciDesignatorBitLength(segment.assignmentNumber);
+  if (isControlSegment(segment)) {
+    return getControlSegmentBitLength(segment);
   }
 
   validateSegment(segment);
@@ -497,44 +465,12 @@ function validateSegment(segment) {
     throw new InvalidInputError("segment must be an object");
   }
 
-  if (segment.mode === "fnc1") {
-    validateFnc1Segment(segment);
-  } else if (segment.mode === "eci") {
-    validateEciAssignmentNumber(segment.assignmentNumber);
+  if (isControlSegment(segment)) {
+    validateControlSegment(segment);
   } else if (segment.mode === "byte" && segment.bytes !== undefined) {
     validateByteValues(segment.bytes, "byte segment");
   } else {
     validateTextForMode(segment.text, segment.mode);
-  }
-}
-
-function validateEciAssignmentNumber(value) {
-  if (!Number.isInteger(value) || value < 0 || value >= 1000000) {
-    throw new InvalidEciError(`ECI assignment number must be an integer from 0 to 999999; got ${value}`);
-  }
-}
-
-function getEciDesignatorBitLength(value) {
-  validateEciAssignmentNumber(value);
-  if (value < 2 ** 7) {
-    return 8;
-  }
-  if (value < 2 ** 14) {
-    return 16;
-  }
-  return 24;
-}
-
-function appendEciDesignatorBits(buffer, value) {
-  validateEciAssignmentNumber(value);
-  if (value < 2 ** 7) {
-    buffer.append(value, 8);
-  } else if (value < 2 ** 14) {
-    buffer.append(0b10, 2);
-    buffer.append(value, 14);
-  } else {
-    buffer.append(0b110, 3);
-    buffer.append(value, 21);
   }
 }
 
@@ -551,7 +487,7 @@ function normalizeManualSegment(segment, index) {
 
   switch (segment.mode) {
     case "fnc1":
-      validateFnc1Segment(segment, `segments[${index}]`);
+      validateControlSegment(segment, `segments[${index}]`);
       return { mode: "fnc1" };
     case "eci":
       validateEciAssignmentNumber(segment.assignmentNumber);
@@ -576,42 +512,6 @@ function normalizeManualSegment(segment, index) {
     }
     default:
       throw new InvalidModeError(`segments[${index}].mode must be "fnc1", "eci", "numeric", "alphanumeric", "byte", or "kanji"`);
-  }
-}
-
-function validateControlSegments(segments) {
-  const fnc1Indexes = [];
-  const eciIndexes = [];
-
-  segments.forEach((segment, index) => {
-    if (segment.mode === "fnc1") {
-      fnc1Indexes.push(index);
-    } else if (segment.mode === "eci") {
-      eciIndexes.push(index);
-    }
-  });
-
-  if (fnc1Indexes.length > 1) {
-    throw new InvalidGs1Error("manual segments can include at most one fnc1 segment");
-  }
-  if (fnc1Indexes.length === 1 && fnc1Indexes[0] !== 0) {
-    throw new InvalidGs1Error("manual fnc1 segment must be the first segment");
-  }
-  if (fnc1Indexes.length === 1 && eciIndexes.length > 0) {
-    throw new InvalidGs1Error("FNC1 first position cannot be combined with ECI in this implementation");
-  }
-
-  return segments;
-}
-
-function validateFnc1Segment(segment, label = "fnc1 segment") {
-  if (
-    Object.hasOwn(segment, "data") ||
-    Object.hasOwn(segment, "text") ||
-    Object.hasOwn(segment, "bytes") ||
-    Object.hasOwn(segment, "assignmentNumber")
-  ) {
-    throw new InvalidGs1Error(`${label} must not include data, text, bytes, or assignmentNumber`);
   }
 }
 

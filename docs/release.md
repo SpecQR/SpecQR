@@ -34,7 +34,7 @@ npm install specqr@next
 - 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@1.0.0` に対して green。
 - GitHub Actions `CI` が green。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
-- v1 で未対応の Micro QR、rMQR、Structured Append、FNC1 second position、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link parser / resolver が docs に明記されている。
+- v1 で未対応の Micro QR、rMQR、Structured Append、FNC1 second position、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に明記されている。
 
 ## Pre-Publish Commands
 
@@ -119,7 +119,7 @@ Release draft に含める内容:
   ```
 - 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、SVG/PNG/canvas/Node/browser helpers。
 - 検証: golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison。
-- 非対応: Micro QR、rMQR、Structured Append、FNC1 second position、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link parser / resolver。
+- 非対応: Micro QR、rMQR、Structured Append、FNC1 second position、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
 - Links: README、playground、conformance matrix、reference comparison、test plan。
 
 ## npm Publish

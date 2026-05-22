@@ -13,6 +13,7 @@ import {
   InvalidModeError,
   InvalidOutputError,
   InvalidVersionError,
+  parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
   QRCode
@@ -46,6 +47,18 @@ test("release candidate public API examples execute", () => {
     createGs1DigitalLink(gs1Elements, { baseUrl: "https://example.com/" }),
     `https://example.com/01/${gtin}/10/ABC123?17=251231`
   );
+  assert.deepEqual(parseGs1DigitalLink(`https://example.com/01/${gtin}/10/ABC123?17=251231`), {
+    elements: gs1Elements,
+    primary: { ai: "01", value: gtin },
+    pathElements: [
+      { ai: "01", value: gtin },
+      { ai: "10", value: "ABC123" }
+    ],
+    queryElements: [
+      { ai: "17", value: "251231" }
+    ],
+    unknownQuery: []
+  });
   const gs1Result = QRCode.generate(gs1Data, {
     gs1: true,
     output: "matrix",

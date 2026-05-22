@@ -14,6 +14,7 @@ import {
   QRCode,
   generate,
   generateSegments,
+  parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
   validateGs1CheckDigit,
@@ -37,6 +38,7 @@ test("GS1 compatibility entrypoint preserves public helper exports", () => {
   assert.equal(gs1Entrypoint.GS1_FNC1_SEPARATOR, GS1_FNC1_SEPARATOR);
   assert.equal(typeof gs1Entrypoint.createGs1ElementString, "function");
   assert.equal(typeof gs1Entrypoint.createGs1DigitalLink, "function");
+  assert.equal(typeof gs1Entrypoint.parseGs1DigitalLink, "function");
   assert.equal(typeof gs1Entrypoint.parseGs1HumanReadable, "function");
   assert.equal(typeof gs1Entrypoint.calculateGs1CheckDigit, "function");
   assert.equal(typeof gs1Entrypoint.appendGtinCheckDigit, "function");
@@ -312,6 +314,141 @@ test("GS1 Digital Link helper accepts parseGs1ElementString result input", () =>
     createGs1DigitalLink(parsed, { baseUrl: "https://example.com/" }),
     "https://example.com/01/04912345678904/10/ABC123?17=251231"
   );
+});
+
+test("GS1 Digital Link parser round-trips builder output", () => {
+  const elements = [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ];
+  const uri = createGs1DigitalLink(elements, { baseUrl: "https://example.com" });
+  const parsed = parseGs1DigitalLink(uri);
+
+  assert.deepEqual(parsed, {
+    elements,
+    primary: { ai: "01", value: "04912345678904" },
+    pathElements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "10", value: "ABC123" }
+    ],
+    queryElements: [
+      { ai: "17", value: "251231" }
+    ],
+    unknownQuery: []
+  });
+  assert.equal(
+    createGs1DigitalLink(parsed, { baseUrl: "https://example.com" }),
+    uri
+  );
+  assert.deepEqual(QRCode.parseGs1DigitalLink(uri), parsed);
+});
+
+test("GS1 Digital Link parser preserves unknown query and percent-decodes values", () => {
+  const parsed = parseGs1DigitalLink(
+    "https://example.com/stem/01/04912345678904/21/SER%2F1?foo=bar&17=251231&linkType=all"
+  );
+
+  assert.deepEqual(parsed, {
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "21", value: "SER/1" },
+      { ai: "17", value: "251231" }
+    ],
+    primary: { ai: "01", value: "04912345678904" },
+    pathElements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "21", value: "SER/1" }
+    ],
+    queryElements: [
+      { ai: "17", value: "251231" }
+    ],
+    unknownQuery: [
+      { key: "foo", value: "bar" },
+      { key: "linkType", value: "all" }
+    ]
+  });
+  assert.equal(
+    createGs1DigitalLink(parsed, { baseUrl: "https://example.com/stem", pathAis: ["21"] }),
+    "https://example.com/stem/01/04912345678904/21/SER%2F1?17=251231"
+  );
+});
+
+test("GS1 Digital Link parser supports explicit primary AI", () => {
+  const parsed = parseGs1DigitalLink(
+    "https://example.com/00/195201234567891232?02=09520123456788&37=25",
+    { primaryAi: "00" }
+  );
+
+  assert.deepEqual(parsed, {
+    elements: [
+      { ai: "00", value: "195201234567891232" },
+      { ai: "02", value: "09520123456788" },
+      { ai: "37", value: "25" }
+    ],
+    primary: { ai: "00", value: "195201234567891232" },
+    pathElements: [
+      { ai: "00", value: "195201234567891232" }
+    ],
+    queryElements: [
+      { ai: "02", value: "09520123456788" },
+      { ai: "37", value: "25" }
+    ],
+    unknownQuery: []
+  });
+  assert.equal(
+    createGs1DigitalLink(parsed, { baseUrl: "https://example.com", primaryAi: parsed.primary.ai }),
+    "https://example.com/00/195201234567891232?02=09520123456788&37=25"
+  );
+});
+
+test("GS1 Digital Link parser rejects invalid URI values", () => {
+  const cases = [
+    [
+      () => parseGs1DigitalLink("ftp://example.com/01/04912345678904"),
+      /http or https/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904#frag"),
+      /must not include a fragment/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904/10"),
+      /AI\/value pairs/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904/ABC/value"),
+      /must be a GS1 AI/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/%E0%A4%A"),
+      /valid percent-encoding/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904?01=04912345678904"),
+      /duplicate AI 01/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678905"),
+      /invalid GTIN check digit/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904?9999=ABC"),
+      /Unsupported GS1 AI/
+    ],
+    [
+      () => parseGs1DigitalLink("https://example.com/01/04912345678904?linkType=all", { unknownQuery: "reject" }),
+      /not a GS1 AI/
+    ]
+  ];
+
+  for (const [fn, message] of cases) {
+    assert.throws(
+      fn,
+      (error) => error instanceof InvalidGs1Error && message.test(error.message),
+      `Expected InvalidGs1Error matching ${message}`
+    );
+  }
 });
 
 test("GS1 Digital Link helper supports explicit primary and path AI options", () => {

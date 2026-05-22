@@ -111,6 +111,7 @@ QRCode.generateSegments([
 - `parseGs1HumanReadable(input)`: `(01)04912345678904(10)ABC123(17)251231` のような parentheses-based input を `{ ai, value }[]` に変換します。
 - `createGs1ElementString(elements)`: 対応 AI の `{ ai, value }` string entries を検証し、QR input として使う raw GS1 element string を返します。leading zero を保持するため、AI values は string で渡す必要があります。
 - `createGs1DigitalLink(input, options)`: 対応 AI の element data から GS1 Digital Link URI を返します。これは通常 URL QR 用の helper であり、`gs1: true` は使いません。
+- `parseGs1DigitalLink(uri, options?)`: GS1 Digital Link URI から `{ elements, primary, pathElements, queryElements, unknownQuery }` を返します。
 - `GS1_FNC1_SEPARATOR`: 可変長 AI の後に別の element が続く場合に挿入される ASCII GS separator `"\x1D"` です。
 - `calculateGs1CheckDigit(digits)`: GS1 mod-10 check digit を計算します。
 - `validateGs1CheckDigit(digitsWithCheckDigit)`: 末尾 check digit を検証します。
@@ -167,7 +168,47 @@ default では AI `01` を primary key として path に置き、AI `10`、`21`
 
 Digital Link URI は URL なので、QR 生成時は `QRCode.generate(uri)` を使います。`QRCode.generate(uri, { gs1: true })` は GS1 element string / FNC1 first position 用であり、Digital Link URI には使いません。
 
-Digital Link 生成時も既存 GS1 validation を使うため、unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、duplicate AI、invalid `baseUrl` は `InvalidGs1Error` になります。`parseGs1DigitalLink()` はまだ public API として提供していません。
+Digital Link 生成時も既存 GS1 validation を使うため、unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、duplicate AI、invalid `baseUrl` は `InvalidGs1Error` になります。
+
+### `parseGs1DigitalLink(uri, options?)`
+
+GS1 Digital Link URI を GS1 element data に戻します。`uri` は absolute `http` / `https` URL だけを受け付けます。fragment は reject します。path の AI/value pair と query の AI=value を読み、percent-encoded value は decode してから既存 GS1 validation に通します。
+
+```js
+import { createGs1DigitalLink, parseGs1DigitalLink } from "specqr";
+
+const parsed = parseGs1DigitalLink(
+  "https://example.com/01/04912345678904/10/ABC123?17=251231&linkType=all"
+);
+
+console.log(parsed);
+// {
+//   elements: [
+//     { ai: "01", value: "04912345678904" },
+//     { ai: "10", value: "ABC123" },
+//     { ai: "17", value: "251231" }
+//   ],
+//   primary: { ai: "01", value: "04912345678904" },
+//   pathElements: [
+//     { ai: "01", value: "04912345678904" },
+//     { ai: "10", value: "ABC123" }
+//   ],
+//   queryElements: [
+//     { ai: "17", value: "251231" }
+//   ],
+//   unknownQuery: [
+//     { key: "linkType", value: "all" }
+//   ]
+// }
+
+const regenerated = createGs1DigitalLink(parsed, {
+  baseUrl: "https://example.com"
+});
+```
+
+`unknownQuery` には GS1 AI として扱わない query parameter を `{ key, value }` で保持します。数字 2-4 桁の query key は GS1 AI として validation されるため、unsupported AI や invalid value は `InvalidGs1Error` になります。`options.unknownQuery: "reject"` を指定すると、GS1 AI ではない query parameter も reject します。
+
+`options.primaryAi` は `"00" | "01" | "414"` を指定できます。指定しない場合は path 内の最初の supported primary AI を探します。path 上で primary AI より前にある segment は URI stem として扱い、返り値には含めません。
 
 helper が対応する代表 AI は次の範囲です。
 

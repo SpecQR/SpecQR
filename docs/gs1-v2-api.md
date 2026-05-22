@@ -1,6 +1,6 @@
 # GS1 v2 API
 
-この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。Digital Link URI builder の `createGs1DigitalLink()` も公開済みですが、`validateGs1ElementString()`、`parseGs1DigitalLink()`、FNC1 second position、Structured Append はまだ公開していません。
+この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。Digital Link URI helper の `createGs1DigitalLink()` / `parseGs1DigitalLink()` も公開済みですが、`validateGs1ElementString()`、FNC1 second position、Structured Append はまだ公開していません。
 
 v1 の public API は次の役割を持ちます。
 
@@ -148,7 +148,7 @@ parseGs1ElementString("010491234567890410ABC12317251231");
 - package exports の変更
 - public `validateGs1ElementString()`
 - full GS1 AI catalog
-- GS1 Digital Link parser / resolver
+- GS1 Digital Link resolver / compression / full canonicalizer
 - FNC1 second position
 - Structured Append
 - Micro QR / rMQR

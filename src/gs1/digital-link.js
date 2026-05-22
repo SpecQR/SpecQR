@@ -28,6 +28,38 @@ export function createGs1DigitalLink(input, options = {}) {
   return url.toString();
 }
 
+export function parseGs1DigitalLink(uri, options = {}) {
+  const url = normalizeDigitalLinkUri(uri);
+  const primaryAi = options.primaryAi === undefined ? null : normalizePrimaryAi(options.primaryAi);
+  const unknownQueryPolicy = normalizeUnknownQueryPolicy(options.unknownQuery);
+  const pathElements = parsePathElements(url, primaryAi);
+  const queryElements = [];
+  const unknownQuery = [];
+  const seen = new Set(pathElements.map((element) => element.ai));
+
+  for (const [key, value] of url.searchParams) {
+    if (isGs1AiKey(key)) {
+      const element = normalizeDigitalLinkElement({ ai: key, value }, pathElements.length + queryElements.length);
+      rejectDuplicateAi(seen, element.ai);
+      seen.add(element.ai);
+      queryElements.push(element);
+    } else if (unknownQueryPolicy === "preserve") {
+      unknownQuery.push({ key, value });
+    } else {
+      throw new InvalidGs1Error(`GS1 Digital Link query parameter ${JSON.stringify(key)} is not a GS1 AI`);
+    }
+  }
+
+  const primary = pathElements[0] ?? null;
+  return {
+    elements: [...pathElements, ...queryElements],
+    primary,
+    pathElements,
+    queryElements,
+    unknownQuery
+  };
+}
+
 function normalizeDigitalLinkInput(input) {
   if (Array.isArray(input)) {
     return input;
@@ -62,10 +94,36 @@ function normalizeBaseUrl(baseUrl) {
   return url;
 }
 
+function normalizeDigitalLinkUri(uri) {
+  let url;
+  try {
+    url = uri instanceof URL ? new URL(uri.href) : new URL(String(uri));
+  } catch {
+    throw new InvalidGs1Error("GS1 Digital Link URI must be an absolute http or https URL");
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new InvalidGs1Error("GS1 Digital Link URI must use http or https");
+  }
+  if (url.hash) {
+    throw new InvalidGs1Error("GS1 Digital Link URI must not include a fragment");
+  }
+
+  return url;
+}
+
 function normalizePrimaryAi(primaryAi) {
   const normalized = primaryAi === undefined ? DEFAULT_PRIMARY_AI : primaryAi;
   if (typeof normalized !== "string" || !SUPPORTED_PRIMARY_AIS.has(normalized)) {
     throw new InvalidGs1Error("GS1 Digital Link primaryAi must be one of 00, 01, or 414");
+  }
+  return normalized;
+}
+
+function normalizeUnknownQueryPolicy(unknownQuery) {
+  const normalized = unknownQuery === undefined ? "preserve" : unknownQuery;
+  if (normalized !== "preserve" && normalized !== "reject") {
+    throw new InvalidGs1Error("GS1 Digital Link unknownQuery must be \"preserve\" or \"reject\"");
   }
   return normalized;
 }
@@ -97,16 +155,25 @@ function normalizeElements(elements) {
 
   const seen = new Set();
   return elements.map((element, index) => {
-    const normalized = normalizeGs1Element(element, index);
-    if (seen.has(normalized.ai)) {
-      throw new InvalidGs1Error(`GS1 Digital Link input must not contain duplicate AI ${normalized.ai}`);
-    }
+    const normalized = normalizeDigitalLinkElement(element, index);
+    rejectDuplicateAi(seen, normalized.ai);
     seen.add(normalized.ai);
-    return {
-      ai: normalized.ai,
-      value: normalized.value
-    };
+    return normalized;
   });
+}
+
+function normalizeDigitalLinkElement(element, index) {
+  const normalized = normalizeGs1Element(element, index);
+  return {
+    ai: normalized.ai,
+    value: normalized.value
+  };
+}
+
+function rejectDuplicateAi(seen, ai) {
+  if (seen.has(ai)) {
+    throw new InvalidGs1Error(`GS1 Digital Link input must not contain duplicate AI ${ai}`);
+  }
 }
 
 function getPrimaryElement(elements, primaryAi) {
@@ -115,6 +182,55 @@ function getPrimaryElement(elements, primaryAi) {
     throw new InvalidGs1Error(`GS1 Digital Link input must include primary AI ${primaryAi}`);
   }
   return primary;
+}
+
+function parsePathElements(url, primaryAi) {
+  const segments = getPathSegments(url.pathname);
+  const firstAiIndex = segments.findIndex((segment) => {
+    if (primaryAi) {
+      return segment === primaryAi;
+    }
+    return SUPPORTED_PRIMARY_AIS.has(segment);
+  });
+
+  if (firstAiIndex === -1) {
+    throw new InvalidGs1Error("GS1 Digital Link path must include primary AI 00, 01, or 414");
+  }
+
+  const pathSegments = segments.slice(firstAiIndex);
+  if (pathSegments.length % 2 !== 0) {
+    throw new InvalidGs1Error("GS1 Digital Link path must contain AI/value pairs");
+  }
+
+  const elements = [];
+  const seen = new Set();
+  for (let index = 0; index < pathSegments.length; index += 2) {
+    const ai = pathSegments[index];
+    if (!isGs1AiKey(ai)) {
+      throw new InvalidGs1Error(`GS1 Digital Link path segment ${index + firstAiIndex + 1} must be a GS1 AI`);
+    }
+
+    const value = decodePathSegment(pathSegments[index + 1], `value for AI ${ai}`);
+    const element = normalizeDigitalLinkElement({ ai, value }, elements.length);
+    rejectDuplicateAi(seen, element.ai);
+    seen.add(element.ai);
+    elements.push(element);
+  }
+
+  return elements;
+}
+
+function getPathSegments(pathname) {
+  const withoutEdgeSlashes = pathname.replace(/^\/+|\/+$/gu, "");
+  if (withoutEdgeSlashes === "") {
+    throw new InvalidGs1Error("GS1 Digital Link path must include primary AI 00, 01, or 414");
+  }
+
+  const segments = withoutEdgeSlashes.split("/");
+  if (segments.some((segment) => segment === "")) {
+    throw new InvalidGs1Error("GS1 Digital Link path must not contain empty segments");
+  }
+  return segments;
 }
 
 function buildPath(basePathname, elements) {
@@ -130,4 +246,16 @@ function stripTrailingSlashes(pathname) {
 
 function encodePathSegment(value) {
   return encodeURIComponent(value);
+}
+
+function decodePathSegment(segment, label) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    throw new InvalidGs1Error(`GS1 Digital Link path ${label} must be valid percent-encoding`);
+  }
+}
+
+function isGs1AiKey(key) {
+  return /^\d{2,4}$/u.test(key);
 }

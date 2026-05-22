@@ -175,12 +175,34 @@ export interface GS1DigitalLinkOptions {
   pathAis?: string[];
 }
 
+export interface GS1DigitalLinkParseOptions {
+  primaryAi?: "00" | "01" | "414";
+  unknownQuery?: "preserve" | "reject";
+}
+
+export interface GS1DigitalLinkUnknownQuery {
+  key: string;
+  value: string;
+}
+
+export interface GS1DigitalLinkParseResult {
+  elements: GS1Element[];
+  primary: GS1Element | null;
+  pathElements: GS1Element[];
+  queryElements: GS1Element[];
+  unknownQuery: GS1DigitalLinkUnknownQuery[];
+}
+
 export const GS1_FNC1_SEPARATOR: "\x1D";
 export function createGs1ElementString(elements: GS1Element[]): string;
 export function createGs1DigitalLink(
   input: GS1Element[] | GS1ElementStringParseResult,
   options: GS1DigitalLinkOptions
 ): string;
+export function parseGs1DigitalLink(
+  uri: string | URL,
+  options?: GS1DigitalLinkParseOptions
+): GS1DigitalLinkParseResult;
 export function parseGs1HumanReadable(input: string): GS1Element[];
 export function parseGs1ElementString(input: string): GS1ElementStringParseResult;
 export function calculateGs1CheckDigit(digits: string): string;
@@ -247,6 +269,10 @@ export class QRCode {
     input: GS1Element[] | GS1ElementStringParseResult,
     options: GS1DigitalLinkOptions
   ): string;
+  static parseGs1DigitalLink(
+    uri: string | URL,
+    options?: GS1DigitalLinkParseOptions
+  ): GS1DigitalLinkParseResult;
   static parseGs1HumanReadable(input: string): GS1Element[];
   static parseGs1ElementString(input: string): GS1ElementStringParseResult;
   static calculateGs1CheckDigit(digits: string): string;

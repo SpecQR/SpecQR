@@ -48,8 +48,8 @@ assert.equal(typeof specqr.parseGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.parseGs1ElementString, "function");
 assert.equal(typeof specqr.createGs1DigitalLink, "function");
 assert.equal(typeof specqr.QRCode.createGs1DigitalLink, "function");
-assert.equal(specqr.parseGs1DigitalLink, undefined);
-assert.equal(specqr.QRCode.parseGs1DigitalLink, undefined);
+assert.equal(typeof specqr.parseGs1DigitalLink, "function");
+assert.equal(typeof specqr.QRCode.parseGs1DigitalLink, "function");
 assert.equal(specqr.validateGs1DigitalLink, undefined);
 assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
 assert.equal(specqr.validateGs1ElementString, undefined);
@@ -85,6 +85,31 @@ assert.equal(
   }),
   "https://example.com/stem/01/04912345678904"
 );
+assert.deepEqual(specqr.parseGs1DigitalLink("https://example.com/01/04912345678904/10/ABC123?17=251231&foo=bar"), {
+  elements: [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ],
+  primary: { ai: "01", value: "04912345678904" },
+  pathElements: [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" }
+  ],
+  queryElements: [
+    { ai: "17", value: "251231" }
+  ],
+  unknownQuery: [
+    { key: "foo", value: "bar" }
+  ]
+});
+assert.equal(
+  specqr.createGs1DigitalLink(
+    specqr.QRCode.parseGs1DigitalLink("https://example.com/01/04912345678904/10/ABC123?17=251231"),
+    { baseUrl: "https://example.com" }
+  ),
+  "https://example.com/01/04912345678904/10/ABC123?17=251231"
+);
 
 assert.throws(
   () => specqr.parseGs1ElementString("010491234567890410ABC12317251231"),
@@ -94,6 +119,10 @@ assert.throws(
   () => specqr.createGs1DigitalLink([{ ai: "01", value: "04912345678905" }], {
     baseUrl: "https://example.com"
   }),
+  (error) => error instanceof specqr.InvalidGs1Error && error.code === "INVALID_GS1"
+);
+assert.throws(
+  () => specqr.parseGs1DigitalLink("https://example.com/01/04912345678905"),
   (error) => error instanceof specqr.InvalidGs1Error && error.code === "INVALID_GS1"
 );
 `
@@ -121,9 +150,14 @@ async function assertTypeDeclarations(directory) {
   );
   assert.match(
     declarations,
+    /export function parseGs1DigitalLink\(\s*uri: string \| URL,\s*options\?: GS1DigitalLinkParseOptions\s*\): GS1DigitalLinkParseResult;/
+  );
+  assert.match(
+    declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
   assert.match(declarations, /static createGs1DigitalLink\(/);
+  assert.match(declarations, /static parseGs1DigitalLink\(/);
 }
 
 function run(command, args, cwd) {

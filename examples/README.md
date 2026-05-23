@@ -30,6 +30,14 @@ npm run examples:gs1-digital-link
 
 This creates a normal URL QR SVG from a GS1 Digital Link URI. It intentionally does not use `gs1: true`.
 
+## Structured Append
+
+```sh
+npm run examples:structured-append
+```
+
+This writes string and binary Structured Append sets as SVG/PNG symbols, plus a summary JSON file with total, parity, per-symbol chunk offsets, and diagnostics.
+
 ## Browser Blob / Object URL
 
 Serve the repository and open `examples/browser-blob-object-url.html`.

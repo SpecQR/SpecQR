@@ -22,6 +22,19 @@ try {
   const digitalLinkSvg = await readFile(digitalLinkSvgPath, "utf8");
   assert.match(digitalLinkSvg, /^<svg /);
 
+  const structuredAppendDir = join(directory, "structured-append");
+  await run("node", ["examples/structured-append.mjs", structuredAppendDir]);
+  const structuredSummary = JSON.parse(await readFile(join(structuredAppendDir, "summary.json"), "utf8"));
+  assert.equal(structuredSummary.string.total, 2);
+  assert.equal(structuredSummary.string.parity, 65);
+  assert.deepEqual(structuredSummary.string.symbols.map((symbol) => symbol.index), [1, 2]);
+  assert.equal(structuredSummary.binary.total, 3);
+  assert.ok(structuredSummary.binary.symbols.every((symbol) => symbol.parity === structuredSummary.binary.parity));
+  const structuredSvg = await readFile(join(structuredAppendDir, "string-1.svg"), "utf8");
+  assert.match(structuredSvg, /^<svg /);
+  const structuredPng = await readFile(join(structuredAppendDir, "binary-1.png"));
+  assert.deepEqual(Array.from(structuredPng.subarray(0, 8)), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
   await assertReadable("examples/typescript-usage.ts");
   await assertReadable("examples/browser-blob-object-url.html");
   await assertReadable("playground/index.html");

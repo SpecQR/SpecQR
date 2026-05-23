@@ -111,6 +111,12 @@ textarea {
   text-decoration: none;
 }
 
+.button--small {
+  font-size: 0.82rem;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
 .button[aria-disabled="true"] {
   background: #94a3b8;
   pointer-events: none;
@@ -127,6 +133,7 @@ textarea {
 
 .preview {
   display: grid;
+  gap: 18px;
   justify-content: center;
   overflow: auto;
 }
@@ -136,6 +143,48 @@ textarea {
   max-height: min(66vh, 680px);
   max-width: 100%;
   width: min(62vw, 680px);
+}
+
+.preview--set {
+  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  justify-content: stretch;
+  width: 100%;
+}
+
+.preview-card {
+  border: 1px solid #dbe3ea;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.preview-card h2 {
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.symbol-image {
+  display: grid;
+  justify-content: center;
+  min-height: 180px;
+  overflow: auto;
+}
+
+.symbol-image svg {
+  max-height: 260px;
+  width: min(100%, 260px);
+}
+
+.symbol-meta {
+  font-size: 0.82rem;
+  gap: 7px;
+}
+
+.symbol-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .error {
@@ -180,6 +229,10 @@ ul {
 li {
   color: #475569;
   font-size: 0.9rem;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 @media (max-width: 980px) {

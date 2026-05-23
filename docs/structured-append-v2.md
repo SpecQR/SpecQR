@@ -60,6 +60,8 @@ interface QRStructuredAppendResult<TSymbol = QRGenerateResult> {
 
 top-level `diagnostics` は常に返します。`diagnostics: true` の場合は、各 symbol の既存 diagnostics も `symbols[index].diagnostics` で取得できます。
 
+実利用の入口として、`examples/structured-append.mjs` は string input と binary input の自動分割、SVG / PNG symbol output、`total`、`parity`、per-symbol diagnostics summary を保存します。Playground は `Single QR` / `Structured Append` を切り替え、複数 symbol preview、`maxSymbols`、ECC、Version、warnings を確認できます。
+
 ## Options
 
 高レベル API は、既存 `QRCodeOptions` のうち Structured Append と衝突しないものを再利用します。新しい短縮名は増やしません。
@@ -295,6 +297,8 @@ The implementation includes tests for:
 - output shapes for `svg`, `png`, `matrix`, and `diagnostics: true`.
 - golden fixture set for a deterministic multi-symbol payload.
 - packed package smoke and TypeScript declaration smoke.
+- examples smoke for `examples/structured-append.mjs`.
+- playground source coverage for Structured Append mode and multi-symbol preview.
 
 ## Release Gate
 

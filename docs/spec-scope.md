@@ -39,8 +39,8 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめ�
 - Browser canvas drawing
 - Node PNG buffer/file helpers
 - Browser Blob/ImageData/Object URL helpers
-- 実利用向け examples
-- 小さな browser playground
+- 実利用向け examples。Node PNG、GS1 QR、GS1 Digital Link、Structured Append SVG/PNG symbol output を含みます。
+- 小さな browser playground。通常 QR / GS1 / Structured Append mode、複数 symbol preview、diagnostics / warnings を確認できます。
 - quiet zone、contrast、capacity、mask/version selection、scan risk、print DPI の diagnostics / warnings
 
 ## Compatibility Notes

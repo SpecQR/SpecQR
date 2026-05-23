@@ -22,6 +22,13 @@
 
           <div class="control-grid">
             <label>
+              生成
+              <select id="qr-workflow">
+                <option value="single" selected>Single QR</option>
+                <option value="structured">Structured Append</option>
+              </select>
+            </label>
+            <label>
               入力形式
               <select id="qr-kind">
                 <option value="text">Text / URL</option>
@@ -36,6 +43,16 @@
                 <option value="Q">Q</option>
                 <option value="H">H</option>
               </select>
+            </label>
+            <label>
+              Version
+              <select id="qr-version">
+                <option value="auto" selected>auto</option>
+              </select>
+            </label>
+            <label id="qr-max-symbols-control">
+              Max symbols
+              <input id="qr-max-symbols" type="number" min="2" max="16" value="16">
             </label>
             <label>
               Scale

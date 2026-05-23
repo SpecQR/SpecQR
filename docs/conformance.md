@@ -47,7 +47,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | GS1 raw element string parser | Tested | `parseGs1ElementString()` の fixed-length sequence、variable final AI、separator handling、builder round-trip、human-readable round-trip、invalid input rejection を確認しています。 |
 | GS1 Digital Link | Partial | `createGs1DigitalLink()` で supported AI から通常 URL QR 用の Digital Link URI を生成し、`parseGs1DigitalLink()` で URI を element data に戻せます。現在の output は deterministic builder であり、default path/query placement と invalid path placement rejection は dictionary role metadata で確認しています。resolver、compression、full canonicalizer は未実装です。 |
 | Structured Append low-level header | Tested | mode indicator `0011`、1-based public index / total / parity validation、0-based sequence encoding、option / manual segment、diagnostics、golden fixture、invalid combination rejection を確認しています。 |
-| Structured Append high-level splitting | Tested | `generateStructuredAppend()` / `QRCode.generateStructuredAppend()`、string / binary input、original payload byte parity、deterministic greedy split、fixed / auto Version selection、maxSymbols、symbol diagnostics、packed package smoke、fixed version / ECC / mask golden fixture を確認しています。Manual segment splitting、public parity helper、decode / merge helper は未対応です。 |
+| Structured Append high-level splitting | Tested | `generateStructuredAppend()` / `QRCode.generateStructuredAppend()`、string / binary input、original payload byte parity、deterministic greedy split、fixed / auto Version selection、maxSymbols、symbol diagnostics、packed package smoke、examples smoke、playground source、fixed version / ECC / mask golden fixture を確認しています。Manual segment splitting、public parity helper、decode / merge helper は未対応です。 |
 
 ## Rendering / Runtime Helpers
 

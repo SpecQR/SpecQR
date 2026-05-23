@@ -31,7 +31,7 @@ SpecQR v1.0.0 は、通常 QR Code Model 2 generation、Kanji、ECI、FNC1 first
 | FNC1 second position | application indicator validation、encoding、diagnostics、golden / negative tests は実装済み。 |
 | Structured Append | low-level header encoding、manual chunks、高レベル `generateStructuredAppend()`、automatic splitting、最大 16 symbols、parity consistency validation は実装済み。分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に固定済み。 |
 | Validation expansion | v2 feature 向け golden fixtures、bitstream / matrix checks、decoder validation の限界説明、reference comparison の対象外領域の明記。 |
-| Docs / examples / playground | GS1 QR、GS1 Digital Link、FNC1 second、Structured Append を誤用しにくい examples と docs。 |
+| Docs / examples / playground | GS1 QR、GS1 Digital Link、FNC1 second、Structured Append を誤用しにくい examples と docs。Structured Append は string / binary example と playground mode まで追加済み。 |
 
 ## v2.0.0 に含めないもの
 
@@ -81,6 +81,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: Structured Append low-level header implemented. `structuredAppend` option と manual `{ mode: "structured-append", index, total, parity }` を追加し、1-based public index、2..16 total、0..255 parity validation、0-based sequence encoding、diagnostics、golden fixture、negative tests を追加しました。ECI / FNC1 first / FNC1 second との併用は安全側で reject します。この時点では自動分割と parity 自動計算は未実装でした。
 - 2026-05-23: Structured Append high-level API design documented. `generateStructuredAppend(input, options)` / `QRCode.generateStructuredAppend(input, options)` の proposal、return shape、string / binary initial scope、greedy split strategy、original payload byte parity、diagnostics、error behavior、release gate を `docs/structured-append-v2.md` に固定しました。この時点では runtime behavior と package exports は変更していません。
 - 2026-05-23: Structured Append high-level API implemented. `generateStructuredAppend(input, options)` と `QRCode.generateStructuredAppend(input, options)` を追加し、string / binary input、greedy largest-fitting split、最大 16 symbols、original payload byte parity、top-level diagnostics、fixed version / ECC / mask golden fixture、packed package smoke を追加しました。ECI / GS1 / FNC1 との併用、manual segments splitting、public parity helper、decode / merge helper は未対応です。
+- 2026-05-23: Structured Append examples and playground support added. `examples/structured-append.mjs` で string / binary input の自動分割、SVG / PNG symbol output、summary diagnostics を smoke し、playground に `Structured Append` mode、maxSymbols / ECC / Version controls、multi-symbol preview、per-symbol downloads、warnings display を追加しました。QR core と splitting logic は変更していません。
 
 ## Release Gate
 

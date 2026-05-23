@@ -202,6 +202,10 @@ console.log(set.parity);
 console.log(set.symbols);
 ```
 
+各 symbol を SVG / PNG として保存する例は [examples/structured-append.mjs](examples/structured-append.mjs) にあります。Playground でも `Structured Append` mode を選ぶと、複数 symbol の preview、parity、per-symbol diagnostics を確認できます。
+
+Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。
+
 利用者が各 symbol の `index`、`total`、`parity` を明示したい場合は、低レベル header API も使えます。
 
 ```js
@@ -313,6 +317,7 @@ const url = toObjectURL("https://example.com");
 ```sh
 npm run examples:node
 npm run examples:gs1
+npm run examples:structured-append
 npm run examples:smoke
 ```
 

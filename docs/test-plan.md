@@ -21,7 +21,7 @@
 - Diagnostics が capacity、mask/version selection reasons、quiet-zone status、contrast、print hints、warnings を出すこと。
 - Node helpers が PNG buffers を返し、PNG file を書き出すこと。
 - Browser helpers が platform support のある環境で Blob/ImageData/Object URL output を返すこと。
-- Examples smoke が Node PNG / GS1 SVG examples と browser/playground source files を確認すること。
+- Examples smoke が Node PNG / GS1 SVG / GS1 Digital Link / Structured Append examples と browser/playground source files を確認すること。
 - Nayuki reference comparison が fixed payload / fixed Version / fixed ECC / fixed mask の matrix exact match を確認すること。
 - Root、Node、browser subpath exports が import 可能であること。
 - Deterministic random payloads が matrix shape、capacity、masking、diagnostics invariants を満たすこと。
@@ -162,7 +162,7 @@ macOS Vision validation は Swift、Vision、ImageMagick に依存するため�
 npm run examples:smoke
 ```
 
-この check は Node PNG 保存 example、GS1 SVG example、TypeScript usage file、browser helper example、playground source files が実行または読み取り可能であることを確認します。
+この check は Node PNG 保存 example、GS1 SVG example、GS1 Digital Link example、Structured Append string / binary SVG・PNG output example、TypeScript usage file、browser helper example、playground source files が実行または読み取り可能であることを確認します。
 
 Playground は dependency-free な static files として提供し、local server で確認します。
 

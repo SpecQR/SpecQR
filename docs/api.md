@@ -57,9 +57,13 @@ console.log(result.diagnostics.symbols);
 
 `symbols` の各要素は既存 `generate()` と同じ output shape です。`diagnostics: true` の場合、各要素は `QRCodeDiagnosticResult` になり、通常の per-symbol diagnostics も取得できます。top-level `diagnostics` は常に返り、選択 Version、total、parity、chunk offsets、各 symbol の Structured Append sequence metadata を含みます。
 
+Node で各 symbol を SVG / PNG として保存する例は [../examples/structured-append.mjs](../examples/structured-append.mjs) にあります。Playground では `Single QR` / `Structured Append` を切り替え、複数 preview、`total`、`parity`、per-symbol index、capacity diagnostics、warnings を確認できます。
+
 初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版の `generateSegmentsStructuredAppend()`、public parity override、decode / merge helper はまだ提供していません。
 
 `generateStructuredAppend()` は高レベル API が header を管理するため、`eci`、`gs1: true`、`fnc1Second`、`structuredAppend`、`boostErrorCorrection` との併用を reject します。1 symbol に収まる input も Structured Append set としては不正なので、`generate()` または low-level `structuredAppend` option を使うよう `InvalidInputError` で reject します。
+
+Structured Append を読める scanner でも、API が複数 symbols を自動結合して返すとは限りません。SpecQR は decoder merge を release gate の唯一の根拠にせず、Structured Append header、parity、matrix / golden fixture、diagnostics consistency を検証対象にします。
 
 ### `QRCode.generateSegments(segments, options)`
 

@@ -377,7 +377,7 @@ console.log(parsed.elements);
 - Full GS1 Digital Link standard conformance claim
 - Full GS1 AI catalog
 - Industry-specific validation
-- FNC1 second position
+- FNC1 second position integration。FNC1 second 自体は QR control option として別途実装済みです。
 - Structured Append
 - Micro QR / rMQR
 - Logo overlay / styled modules
@@ -407,12 +407,12 @@ console.log(parsed.elements);
 - `QRCode.generate(uri, { gs1: true })` misuse stays rejected through existing GS1 raw validator.
 - Full canonicalization remains out of scope for the current helper.
 
-次フェーズでは、control segment model refactor を先に進めます。その後、AI metadata の拡張単位を決め、必要な範囲で Digital Link canonicalization、resolver integration を検討します。
+次フェーズでは、AI metadata の拡張単位を決め、必要な範囲で Digital Link canonicalization、resolver integration を検討します。Control segment model refactor と FNC1 second position の基本実装は完了済みです。
 
 ## Implementation Order
 
 1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute. (done for currently supported AI)
 2. Document current canonical output policy and supported AI metadata expansion plan. (done)
-3. Refactor the control segment model so ECI / FNC1 first can share infrastructure with FNC1 second / Structured Append.
+3. Refactor the control segment model so ECI / FNC1 first can share infrastructure with FNC1 second / Structured Append. (done for ECI / FNC1 first / FNC1 second)
 4. Revisit supported AI expansion and full canonicalization after broader metadata exists.
 5. Consider resolver / linkset integrations outside the core QR generator.

@@ -13,8 +13,11 @@ export function createDiagnostics({
   interleaved,
   getSize,
   getDiagnosticMode,
+  getControlSegmentDiagnostics,
   getFirstEciAssignmentNumber,
   getFirstFnc1Mode,
+  getFirstFnc1SecondApplicationIndicator,
+  getFirstFnc1SecondApplicationIndicatorCodeword,
   gs1Validation,
   getSegmentDiagnostics
 }) {
@@ -23,6 +26,7 @@ export function createDiagnostics({
   const print = getPrintDiagnostics(plan, options);
   const fnc1 = getFirstFnc1Mode(plan.segments);
   const gs1 = fnc1 === "first-position";
+  const fnc1SecondApplicationIndicator = getFirstFnc1SecondApplicationIndicator(plan.segments);
   const warnings = createWarnings({
     options,
     remainingBits,
@@ -44,8 +48,14 @@ export function createDiagnostics({
     maskPenalties: built.maskPenalties,
     maskSelectionReason: getMaskSelectionReason(built, options),
     mode: getDiagnosticMode(plan.segments),
+    controlSegments: getControlSegmentDiagnostics(plan.segments),
     eciAssignmentNumber: getFirstEciAssignmentNumber(plan.segments),
     fnc1,
+    fnc1Second: {
+      enabled: fnc1 === "second-position",
+      applicationIndicator: fnc1SecondApplicationIndicator,
+      applicationIndicatorCodeword: getFirstFnc1SecondApplicationIndicatorCodeword(plan.segments)
+    },
     gs1,
     gs1Validation: gs1Validation ?? createDefaultGs1ValidationDiagnostics(gs1),
     segments: plan.segments.map(getSegmentDiagnostics),

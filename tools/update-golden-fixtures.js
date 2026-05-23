@@ -3,7 +3,14 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { interleaveCodewords } from "../src/core/codewords.js";
-import { encodeSegments, normalizeManualSegments, createSegments, prependEciSegment, prependFnc1Segment } from "../src/encoding/modes.js";
+import {
+  encodeSegments,
+  normalizeManualSegments,
+  createSegments,
+  prependEciSegment,
+  prependFnc1Segment,
+  prependFnc1SecondSegment
+} from "../src/encoding/modes.js";
 import { generate, generateSegments } from "../src/index.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -77,6 +84,16 @@ const CASES = [
     coverage: ["gs1", "fnc1", "capacity-edge", "numeric"],
     input: "0104912345678904",
     options: { version: 1, errorCorrectionLevel: "H", maskPattern: 4, mode: "numeric", gs1: true }
+  },
+  {
+    id: "fnc1-second-v2-q-mask6",
+    description: "FNC1 second position with AIM application indicator 37 and mixed alphanumeric/byte data.",
+    coverage: ["fnc1-second", "manual-segments", "alphanumeric", "byte", "alignment"],
+    segments: [
+      { mode: "alphanumeric", text: "AA1234BBB112" },
+      { mode: "byte", text: "text text" }
+    ],
+    options: { version: 2, errorCorrectionLevel: "Q", maskPattern: 6, fnc1Second: "37" }
   },
   {
     id: "binary-v1-q-mask7",
@@ -180,21 +197,28 @@ function getCodewords(testCase, version, errorCorrectionLevel) {
 
 function getSegments(testCase, version) {
   const eciAssignmentNumber = normalizeEciOption(testCase.options.eci ?? false);
+  const fnc1Second = testCase.options.fnc1Second ?? false;
   if (testCase.segments) {
-    return prependFnc1Segment(
-      prependEciSegment(normalizeManualSegments(testCase.segments), eciAssignmentNumber),
-      testCase.options.gs1 ?? false
+    return prependFnc1SecondSegment(
+      prependFnc1Segment(
+        prependEciSegment(normalizeManualSegments(testCase.segments), eciAssignmentNumber),
+        testCase.options.gs1 ?? false
+      ),
+      fnc1Second
     );
   }
-  return prependFnc1Segment(
-    createSegments(
-      getInput(testCase),
-      testCase.options.mode ?? "auto",
-      version,
-      testCase.options.optimizeSegments ?? true,
-      eciAssignmentNumber
+  return prependFnc1SecondSegment(
+    prependFnc1Segment(
+      createSegments(
+        getInput(testCase),
+        testCase.options.mode ?? "auto",
+        version,
+        testCase.options.optimizeSegments ?? true,
+        eciAssignmentNumber
+      ),
+      testCase.options.gs1 ?? false
     ),
-    testCase.options.gs1 ?? false
+    fnc1Second
   );
 }
 
@@ -218,8 +242,10 @@ function pickDiagnostics(diagnostics) {
     maskPenalty: diagnostics.maskPenalty,
     maskPenalties: diagnostics.maskPenalties,
     mode: diagnostics.mode,
+    controlSegments: diagnostics.controlSegments,
     eciAssignmentNumber: diagnostics.eciAssignmentNumber,
     fnc1: diagnostics.fnc1,
+    fnc1Second: diagnostics.fnc1Second,
     gs1: diagnostics.gs1,
     dataBitLength: diagnostics.dataBitLength,
     capacityBits: diagnostics.capacityBits,

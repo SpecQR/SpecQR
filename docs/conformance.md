@@ -40,12 +40,12 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | --- | --- | --- |
 | JavaScript string input | Tested | UTF-8 byte mode、auto segmentation、Kanji segmentation を確認しています。 |
 | Binary input | Tested | `Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、byte array、0x00 / 0xff payload を確認しています。 |
-| Manual segments | Tested | `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` を確認しています。 |
+| Manual segments | Tested | `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` / `fnc1-second` を確認しています。 |
 | FNC1 first position | Tested | mode indicator `0101`、`gs1: true`、manual `{ mode: "fnc1" }`、diagnostics を確認しています。 |
+| FNC1 second position | Tested | mode indicator `1001`、8-bit Application Indicator、`fnc1Second` option、manual `{ mode: "fnc1-second" }`、diagnostics、golden fixture、invalid combination rejection を確認しています。 |
 | GS1 helper | Partial | 代表 AI の human-readable parser / raw element string parser / element string builder / Digital Link URI builder/parser / separator insertion / GTIN・SSCC check digit helper / Digital Link role metadata を確認しています。Supported AI metadata は current supported AI に限定し、全 AI catalog と業界別 rule は対象外です。 |
 | GS1 raw element string parser | Tested | `parseGs1ElementString()` の fixed-length sequence、variable final AI、separator handling、builder round-trip、human-readable round-trip、invalid input rejection を確認しています。 |
 | GS1 Digital Link | Partial | `createGs1DigitalLink()` で supported AI から通常 URL QR 用の Digital Link URI を生成し、`parseGs1DigitalLink()` で URI を element data に戻せます。現在の output は deterministic builder であり、default path/query placement と invalid path placement rejection は dictionary role metadata で確認しています。resolver、compression、full canonicalizer は未実装です。 |
-| FNC1 second position | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 | Structured Append | Not supported | v1 系では対象外です。v2.0.0 の計画範囲です。 |
 
 ## Rendering / Runtime Helpers
@@ -74,18 +74,18 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 
 SpecQR の現在の対象は通常 QR Code Model 2 です。Version、mode、format / version information、masking、Reed-Solomon、remainder bits など、通常 QR Code Model 2 generation に必要な主要領域はテストで固定しています。
 
-ただし、ISO/IEC 18004:2024 の全項目を網羅監査したものではありません。2015 版との差分、Structured Append、Micro QR、rMQR、FNC1 second position、その他 domain-specific usage は今後の確認範囲として扱います。
+ただし、ISO/IEC 18004:2024 の全項目を網羅監査したものではありません。2015 版との差分、Structured Append、Micro QR、rMQR、その他 domain-specific usage は今後の確認範囲として扱います。
 
 ## v2.0.0 Planning Notes
 
-v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系を強化する計画です。詳細な実装順と release gate は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) を参照してください。
+v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model、検証体系を強化する計画です。FNC1 second position の基本実装は完了済みです。詳細な実装順と release gate は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) を参照してください。
 
 | 項目 | v2.0.0 での扱い | 理由 |
 | --- | --- | --- |
 | Full GS1 AI catalog / strict validation | Planned | v1 の partial GS1 helper を実務向け syntax layer に進めるため。Metadata expansion は AI group ごとに validation と tests を揃えて進めます。 |
 | GS1 Digital Link helper | Partial / tested | `createGs1DigitalLink()` と `parseGs1DigitalLink()` は minimal create/parse + role metadata として実装済みです。resolver、compression、full canonicalizer は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に deferred として残しています。 |
-| Control segment model | Planned | ECI、FNC1 first、FNC1 second、Structured Append の ordering / capacity / diagnostics を一貫して扱うため。 |
-| FNC1 second position | Planned | 通常 QR Code Model 2 の optional FNC1 coverage を広げるため。 |
+| Control segment model | Partial / tested | ECI、FNC1 first、FNC1 second の ordering / capacity / diagnostics は実装済みです。Structured Append は未実装です。 |
+| FNC1 second position | Tested | 通常 QR Code Model 2 の optional FNC1 coverage として実装済みです。Decoder による symbology identifier の露出差は unit / golden diagnostics で補います。 |
 | Structured Append | Planned | Model 2 の multi-symbol generation を低レベル header と高レベル splitting API の両方で扱うため。 |
 | v2 validation expansion | Planned | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics を組み合わせて確認するため。 |
 

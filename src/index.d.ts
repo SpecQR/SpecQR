@@ -12,6 +12,7 @@ export type QRInput = string | QRBinaryInput;
 export type QRTextSegmentMode = "numeric" | "alphanumeric" | "kanji";
 export type QRSegmentInput =
   | { mode: "fnc1" }
+  | { mode: "fnc1-second"; applicationIndicator: string }
   | { mode: "eci"; assignmentNumber: number }
   | { mode: QRTextSegmentMode; data: string }
   | { mode: QRTextSegmentMode; text: string }
@@ -50,16 +51,32 @@ export interface QRCodeOptions {
   boostErrorCorrection?: boolean;
   eci?: boolean | number;
   gs1?: boolean;
+  fnc1Second?: false | string;
   diagnostics?: boolean;
   printDpi?: number | null;
 }
 
 export interface QRSegmentDiagnostics {
-  mode: "fnc1" | "eci" | "numeric" | "alphanumeric" | "byte" | "kanji";
+  mode: "fnc1" | "fnc1-second" | "eci" | "numeric" | "alphanumeric" | "byte" | "kanji";
   assignmentNumber?: number;
+  applicationIndicator?: string;
+  applicationIndicatorCodeword?: number;
   characterCount: number;
   byteCount: number;
   bitLength: number;
+}
+
+export interface QRControlSegmentDiagnostics {
+  mode: "fnc1" | "fnc1-second" | "eci";
+  assignmentNumber?: number;
+  applicationIndicator?: string;
+  applicationIndicatorCodeword?: number;
+}
+
+export interface QRFnc1SecondDiagnostics {
+  enabled: boolean;
+  applicationIndicator: string | null;
+  applicationIndicatorCodeword: number | null;
 }
 
 export interface QRWarning {
@@ -122,8 +139,10 @@ export interface QRDiagnostics {
   maskPenalties: Array<{ maskPattern: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; penalty: number }>;
   maskSelectionReason: string;
   mode: "numeric" | "alphanumeric" | "byte" | "kanji" | "mixed";
+  controlSegments: QRControlSegmentDiagnostics[];
   eciAssignmentNumber: number | null;
-  fnc1: "first-position" | null;
+  fnc1: "first-position" | "second-position" | null;
+  fnc1Second: QRFnc1SecondDiagnostics;
   gs1: boolean;
   gs1Validation: QRGs1ValidationDiagnostics;
   segments: QRSegmentDiagnostics[];

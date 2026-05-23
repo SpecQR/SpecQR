@@ -25,6 +25,8 @@ test("package root, node, and browser subpath exports are importable", async () 
   assert.equal(root.QRCode.applyControlSegments, undefined);
   assert.equal(root.createControlSegments, undefined);
   assert.equal(root.QRCode.createControlSegments, undefined);
+  assert.equal(root.createFnc1SecondSegment, undefined);
+  assert.equal(root.QRCode.createFnc1SecondSegment, undefined);
   assert.equal(typeof node.toPngBuffer, "function");
   assert.equal(typeof node.writePngFile, "function");
   assert.equal(typeof browser.toBlob, "function");

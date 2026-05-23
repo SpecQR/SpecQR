@@ -30,8 +30,14 @@
           }
         ],
         "mode": "numeric",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 41,
         "capacityBits": 152,
@@ -164,8 +170,14 @@
           }
         ],
         "mode": "alphanumeric",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 74,
         "capacityBits": 128,
@@ -296,8 +308,14 @@
           }
         ],
         "mode": "byte",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 164,
         "capacityBits": 176,
@@ -456,8 +474,14 @@
           }
         ],
         "mode": "byte",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 132,
         "capacityBits": 224,
@@ -621,8 +645,14 @@
           }
         ],
         "mode": "kanji",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 38,
         "capacityBits": 128,
@@ -772,8 +802,14 @@
           }
         ],
         "mode": "mixed",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 184,
         "capacityBits": 272,
@@ -994,8 +1030,19 @@
           }
         ],
         "mode": "byte",
+        "controlSegments": [
+          {
+            "mode": "eci",
+            "assignmentNumber": 26
+          }
+        ],
         "eciAssignmentNumber": 26,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 144,
         "capacityBits": 176,
@@ -1164,8 +1211,19 @@
           }
         ],
         "mode": "mixed",
+        "controlSegments": [
+          {
+            "mode": "eci",
+            "assignmentNumber": 26
+          }
+        ],
         "eciAssignmentNumber": 26,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 104,
         "capacityBits": 104,
@@ -1314,8 +1372,18 @@
           }
         ],
         "mode": "numeric",
+        "controlSegments": [
+          {
+            "mode": "fnc1"
+          }
+        ],
         "eciAssignmentNumber": null,
         "fnc1": "first-position",
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": true,
         "dataBitLength": 72,
         "capacityBits": 72,
@@ -1414,6 +1482,203 @@
     }
   },
   {
+    "id": "fnc1-second-v2-q-mask6",
+    "description": "FNC1 second position with AIM application indicator 37 and mixed alphanumeric/byte data.",
+    "coverage": [
+      "fnc1-second",
+      "manual-segments",
+      "alphanumeric",
+      "byte",
+      "alignment"
+    ],
+    "segments": [
+      {
+        "mode": "alphanumeric",
+        "text": "AA1234BBB112"
+      },
+      {
+        "mode": "byte",
+        "text": "text text"
+      }
+    ],
+    "options": {
+      "version": 2,
+      "errorCorrectionLevel": "Q",
+      "maskPattern": 6,
+      "fnc1Second": "37"
+    },
+    "expected": {
+      "diagnostics": {
+        "version": 2,
+        "size": 25,
+        "errorCorrectionLevel": "Q",
+        "requestedErrorCorrectionLevel": "Q",
+        "boostedErrorCorrection": false,
+        "versionSelection": "fixed",
+        "maskPattern": 6,
+        "maskPenalty": 708,
+        "maskPenalties": [
+          {
+            "maskPattern": 6,
+            "penalty": 708
+          }
+        ],
+        "mode": "mixed",
+        "controlSegments": [
+          {
+            "mode": "fnc1-second",
+            "applicationIndicator": "37",
+            "applicationIndicatorCodeword": 37
+          }
+        ],
+        "eciAssignmentNumber": null,
+        "fnc1": "second-position",
+        "fnc1Second": {
+          "enabled": true,
+          "applicationIndicator": "37",
+          "applicationIndicatorCodeword": 37
+        },
+        "gs1": false,
+        "dataBitLength": 175,
+        "capacityBits": 176,
+        "remainingBits": 1,
+        "inputBytes": 21,
+        "dataCodewords": 22,
+        "errorCorrectionCodewords": 22,
+        "totalCodewords": 44
+      },
+      "segments": [
+        {
+          "mode": "fnc1-second",
+          "characterCount": 0,
+          "byteCount": 0,
+          "bitLength": 12,
+          "applicationIndicator": "37",
+          "applicationIndicatorCodeword": 37
+        },
+        {
+          "mode": "alphanumeric",
+          "characterCount": 12,
+          "byteCount": 12,
+          "bitLength": 79
+        },
+        {
+          "mode": "byte",
+          "characterCount": 9,
+          "byteCount": 9,
+          "bitLength": 84
+        }
+      ],
+      "dataCodewords": [
+        146,
+        82,
+        6,
+        28,
+        192,
+        94,
+        34,
+        207,
+        209,
+        240,
+        5,
+        232,
+        18,
+        232,
+        202,
+        240,
+        232,
+        64,
+        232,
+        202,
+        240,
+        232
+      ],
+      "interleavedCodewords": [
+        146,
+        82,
+        6,
+        28,
+        192,
+        94,
+        34,
+        207,
+        209,
+        240,
+        5,
+        232,
+        18,
+        232,
+        202,
+        240,
+        232,
+        64,
+        232,
+        202,
+        240,
+        232,
+        40,
+        241,
+        3,
+        150,
+        125,
+        178,
+        144,
+        243,
+        117,
+        190,
+        198,
+        123,
+        178,
+        88,
+        176,
+        144,
+        121,
+        111,
+        112,
+        228,
+        135,
+        110
+      ],
+      "matrixRows": [
+        "1111111000010011101111111",
+        "1000001011000101001000001",
+        "1011101000010000001011101",
+        "1011101011000111101011101",
+        "1011101010001111001011101",
+        "1000001000010110101000001",
+        "1111111010101010101111111",
+        "0000000010010100100000000",
+        "0101111010011101111011010",
+        "1101110010101110111111001",
+        "0111101100110100000011000",
+        "0000010111011101010000101",
+        "0001001110101110110111111",
+        "1111010111111110001111000",
+        "1101011110100001001010111",
+        "1001110010011111011101001",
+        "1001011110000010111111111",
+        "0000000010110100100010110",
+        "1111111001000000101011011",
+        "1000001011110100100010011",
+        "1011101011101100111111011",
+        "1011101011110000101111000",
+        "1011101000010010110011011",
+        "1000001010011000100101001",
+        "1111111001100011010000010"
+      ],
+      "matrixSha256": "fc7bdf2b2eb7417dda1908bf117726f8c62a715422f0e4260c0449b1972bd510",
+      "darkModules": 332,
+      "formatBits": {
+        "value": 11994,
+        "bits": "010111011011010"
+      },
+      "versionBits": null,
+      "functionModuleCount": 266,
+      "dataModuleCount": 359,
+      "remainderBits": 7
+    }
+  },
+  {
     "id": "binary-v1-q-mask7",
     "description": "Binary byte payload including 0x00 and 0xff.",
     "coverage": [
@@ -1451,8 +1716,14 @@
           }
         ],
         "mode": "byte",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 52,
         "capacityBits": 104,
@@ -1580,8 +1851,14 @@
           }
         ],
         "mode": "byte",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 180,
         "capacityBits": 528,
@@ -1960,8 +2237,14 @@
           }
         ],
         "mode": "numeric",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 976,
         "capacityBits": 976,
@@ -2559,8 +2842,14 @@
           }
         ],
         "mode": "kanji",
+        "controlSegments": [],
         "eciAssignmentNumber": null,
         "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
         "gs1": false,
         "dataBitLength": 6464,
         "capacityBits": 6464,

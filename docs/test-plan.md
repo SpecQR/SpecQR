@@ -14,7 +14,8 @@
 - ECI metadata が leading control segment として追加され、decode 可能な output を保つこと。
 - ECI capacity accounting が option-driven ECI、manual ECI segments、mixed segments、exact-fit payloads、max+1 `DataTooLongError` を覆うこと。
 - GS1/FNC1 first position が `0101` mode indicator を encode し、diagnostics、API collision、supported human-readable parser、GS1 element-string helper を検証すること。
-- Control segment model が ECI / FNC1 first の既存 output、capacity accounting、diagnostics、invalid combination rejection を保ったまま、FNC1 second / Structured Append を追加できる内部境界を持つこと。
+- FNC1 second position が `1001` mode indicator と 8-bit Application Indicator を encode し、option / manual segment、diagnostics、invalid combination rejection を検証すること。
+- Control segment model が ECI / FNC1 first / FNC1 second の output、capacity accounting、diagnostics、invalid combination rejection を保ったまま、Structured Append を追加できる内部境界を持つこと。
 - Kanji mode が Shift_JIS `TextDecoder` のない環境で明確に fallback / reject すること。
 - Diagnostics が capacity、mask/version selection reasons、quiet-zone status、contrast、print hints、warnings を出すこと。
 - Node helpers が PNG buffers を返し、PNG file を書き出すこと。
@@ -49,11 +50,11 @@ Golden fixtures は `fixtures/golden-cases.json` にあり、`tests/golden-confo
 - version 7+ の independently computed version information bits
 - function-module、data-module、remainder-bit counts
 
-現在の golden coverage は、numeric、alphanumeric、byte URL、UTF-8 byte text、QR Kanji mode、manual mixed segments、ECI-prefixed UTF-8 byte text、ECI-prefixed auto mixed exact-fit fixture、GS1/FNC1 first-position exact-fit fixture、raw binary byte data、version information modules を使う version 7 symbol、version 10 / version 27 の exact-fit boundary fixtures を含みます。
+現在の golden coverage は、numeric、alphanumeric、byte URL、UTF-8 byte text、QR Kanji mode、manual mixed segments、ECI-prefixed UTF-8 byte text、ECI-prefixed auto mixed exact-fit fixture、GS1/FNC1 first-position exact-fit fixture、FNC1 second-position fixture、raw binary byte data、version information modules を使う version 7 symbol、version 10 / version 27 の exact-fit boundary fixtures を含みます。
 
 Version boundary conformance は `tests/version-boundaries.test.js` でも検証します。この test は 1-9、10-26、27-40 の version ranges で numeric、alphanumeric、byte、Kanji mode の payload bit length を独立に計算し、automatic input と manual segments の両方を確認します。そのうえで fixed-version max payloads と max+1 `DataTooLongError` failure を検証します。
 
-`tests/eci-mixed-capacity.test.js`、`tests/control-segments.test.js`、`tests/mask-penalty.test.js` は、ECI bit accounting、control segment ordering / invalid combination、mixed-segment boundaries、individual mask penalty rules、auto/fixed mask diagnostics consistency を固定します。
+`tests/eci-mixed-capacity.test.js`、`tests/control-segments.test.js`、`tests/fnc1-second.test.js`、`tests/mask-penalty.test.js` は、ECI bit accounting、FNC1 second Application Indicator encoding、control segment ordering / invalid combination、mixed-segment boundaries、individual mask penalty rules、auto/fixed mask diagnostics consistency を固定します。
 
 GS1/FNC1 first-position coverage は `tests/gs1.test.js` にあります。raw element strings、manual FNC1 segments、supported human-readable parser cases、fixed/variable AI validation、separator insertion、invalid-input rejection を検証します。decoder によって FNC1 control mode や symbology identifier の露出方法が異なるため、GS1 semantics の唯一の根拠を decoder validation には置きません。
 
@@ -80,13 +81,13 @@ Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、rendere
 
 ## v2.0.0 Validation Planning
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model を追加する予定のため、次の検証カテゴリを release gate に加える方針です。
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model を追加する予定のため、次の検証カテゴリを release gate に加える方針です。FNC1 second position の基本 encoding / diagnostics / golden coverage は実装済みです。
 
 - GS1 strict validation: current supported AI に限定して AI metadata、fixed / variable length、numeric / text constraints、separator insertion、GTIN / SSCC check digit、unsupported AI rejection を確認する。Supported AI metadata を広げる場合は、AI group ごとに validation と negative tests を追加する。
 - GS1 Digital Link conversion: `createGs1DigitalLink()` の URL construction、baseUrl validation、dictionary role metadata based path/query placement、invalid path placement rejection、invalid GS1 value rejection、`parseGs1DigitalLink()` の path/query parsing、unknown query preservation、percent-decoding、round-trip を確認する。FNC1 first の raw GS1 element string と URL-based QR を混同しないことを固定する。現在の output は deterministic builder であり、full canonicalization は未対応として docs に固定する。詳細な API proposal と validation policy は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) を参照する。
 - GS1 Digital Link future tests: full AI catalog metadata、canonicalization、resolver integration、compression、broader percent-encoding cases、industry-specific validation を確認する。Canonicalization を実装する場合は既存 builder output との互換性 test と migration test を追加する。
-- Control segment ordering: ECI、FNC1 first の内部 model は実装済み。FNC1 second、Structured Append を追加するときは、併用可否、ordering、capacity accounting、diagnostics を同じ model に載せ、既存 output が変わらないことを golden / regression tests で確認する。
-- FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases を確認する。
+- Control segment ordering: ECI、FNC1 first、FNC1 second の内部 model は実装済み。Structured Append を追加するときは、併用可否、ordering、capacity accounting、diagnostics を同じ model に載せ、既存 output が変わらないことを golden / regression tests で確認する。
+- FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases は unit / golden tests で確認済み。今後は decoder ごとの symbology identifier 表示差を optional validation として整理する。
 - Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks を golden fixtures で固定する。
 - Structured Append high-level: automatic splitting、最大 16 symbols、split failure、symbol diagnostics、payload parity consistency を確認する。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。

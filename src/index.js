@@ -11,11 +11,16 @@ import {
   normalizeManualSegments,
   prependEciSegment,
   prependFnc1Segment,
+  prependFnc1SecondSegment,
   toByteArray
 } from "./encoding/modes.js";
 import {
+  getControlSegmentDiagnostics,
   getFirstEciAssignmentNumber,
   getFirstFnc1Mode,
+  getFirstFnc1SecondApplicationIndicator,
+  getFirstFnc1SecondApplicationIndicatorCodeword,
+  getFnc1SecondApplicationIndicatorCodeword,
   isControlSegment
 } from "./encoding/control-segments.js";
 import { ERROR_CORRECTION_LEVEL_ORDER, getDataCodewordCount, getSize } from "./core/tables.js";
@@ -203,16 +208,13 @@ function renderResult(plan, normalized, inputBytes) {
         interleaved,
         getSize,
         getDiagnosticMode,
+        getControlSegmentDiagnostics,
         getFirstEciAssignmentNumber,
         getFirstFnc1Mode,
+        getFirstFnc1SecondApplicationIndicator,
+        getFirstFnc1SecondApplicationIndicatorCodeword,
         gs1Validation: plan.gs1Validation,
-        getSegmentDiagnostics: (segment) => ({
-          mode: segment.mode,
-          assignmentNumber: segment.assignmentNumber,
-          characterCount: getSegmentTextCharacterCount(segment),
-          byteCount: getSegmentByteCount(segment),
-          bitLength: getSegmentsBitLength([segment], plan.version)
-        })
+        getSegmentDiagnostics: (segment) => getSegmentDiagnostics(segment, plan.version)
       })
     };
   }
@@ -236,9 +238,12 @@ function renderResult(plan, normalized, inputBytes) {
 function selectPlanForInput(input, options) {
   const gs1Validation = getGs1ValidationForInput(input, options);
   const plan = selectPlan(
-    (version) => prependFnc1Segment(
-      createSegments(input, options.mode, version, options.optimizeSegments, options.eci),
-      options.gs1
+    (version) => prependFnc1SecondSegment(
+      prependFnc1Segment(
+        createSegments(input, options.mode, version, options.optimizeSegments, options.eci),
+        options.gs1
+      ),
+      options.fnc1Second
     ),
     options
   );
@@ -247,7 +252,10 @@ function selectPlanForInput(input, options) {
 
 function selectPlanForManualSegments(segments, options) {
   return selectPlan(
-    () => prependFnc1Segment(prependEciSegment(segments, options.eci), options.gs1),
+    () => prependFnc1SecondSegment(
+      prependFnc1Segment(prependEciSegment(segments, options.eci), options.gs1),
+      options.fnc1Second
+    ),
     options
   );
 }
@@ -338,6 +346,21 @@ function getDiagnosticMode(segments) {
   const dataSegments = segments.filter((segment) => !isControlSegment(segment));
   const mode = dataSegments[0]?.mode ?? "byte";
   return dataSegments.every((segment) => segment.mode === mode) ? mode : "mixed";
+}
+
+function getSegmentDiagnostics(segment, version) {
+  const diagnostics = {
+    mode: segment.mode,
+    assignmentNumber: segment.assignmentNumber,
+    characterCount: getSegmentTextCharacterCount(segment),
+    byteCount: getSegmentByteCount(segment),
+    bitLength: getSegmentsBitLength([segment], version)
+  };
+  if (segment.applicationIndicator !== undefined) {
+    diagnostics.applicationIndicator = segment.applicationIndicator;
+    diagnostics.applicationIndicatorCodeword = getFnc1SecondApplicationIndicatorCodeword(segment.applicationIndicator);
+  }
+  return diagnostics;
 }
 
 function getInputByteCount(input) {

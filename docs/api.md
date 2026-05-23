@@ -28,6 +28,7 @@ const svg = QRCode.generate("https://example.com", {
   boostErrorCorrection: false,
   eci: false,
   gs1: false,
+  fnc1Second: false,
   diagnostics: false,
   printDpi: null
 });
@@ -35,7 +36,7 @@ const svg = QRCode.generate("https://example.com", {
 
 ### `QRCode.generateSegments(segments, options)`
 
-呼び出し側が明示した segment から QR Code を生成します。対応する segment mode は `fnc1`, `eci`, `numeric`, `alphanumeric`, `byte`, `kanji` です。
+呼び出し側が明示した segment から QR Code を生成します。対応する segment mode は `fnc1`, `fnc1-second`, `eci`, `numeric`, `alphanumeric`, `byte`, `kanji` です。
 
 ```js
 QRCode.generateSegments([
@@ -77,6 +78,7 @@ QRCode.drawToCanvas(canvas, "https://example.com", {
 - `boostErrorCorrection`: `true` の場合、選択 Version を増やさずに収まる範囲で error correction level を上げます。default は `false`。
 - `eci`: `false | true | number`。default は `false`。`true` は UTF-8 ECI assignment number `26` を挿入し、auto-selected non-ASCII text を byte mode に保ちます。
 - `gs1`: boolean。default は `false`。`true` の場合、input を raw GS1 element string として内部 validator で検証し、GS1 QR Code 用に QR FNC1 first position (`0101`) を先頭に挿入します。この実装では ECI と併用できません。
+- `fnc1Second`: `false | string`。default は `false`。2 桁数字または 1 文字 Latin alphabetic の Application Indicator を指定すると、QR FNC1 second position (`1001`) と 8-bit Application Indicator codeword を先頭に挿入します。この実装では GS1/FNC1 first position と ECI との併用を reject します。
 - `diagnostics`: `true` の場合、生成詳細と warnings を返します。
 - `printDpi`: print-size diagnostics のための optional DPI。生成結果そのものには影響しません。
 
@@ -105,6 +107,34 @@ QRCode.generateSegments([
   { mode: "alphanumeric", data: "10ABC123" }
 ]);
 ```
+
+## FNC1 Second Position
+
+FNC1 second position は GS1 QR Code 用ではありません。AIM International と合意済みの業界・アプリケーション仕様を示すための QR control mode で、FNC1 second mode indicator `1001` に続けて 8-bit Application Indicator codeword を encode します。
+
+SpecQR では Application Indicator を次のどちらかとして受け付けます。
+
+- 2 桁数字: `"00"` から `"99"`。codeword は数値をそのまま 8-bit で encode します。
+- 1 文字 Latin alphabetic: `"A"` から `"Z"` または `"a"` から `"z"`。codeword は ASCII value + 100 です。
+
+```js
+QRCode.generate("AA1234BBB112", {
+  fnc1Second: "37",
+  mode: "alphanumeric",
+  output: "svg"
+});
+```
+
+manual segment でも明示できます。
+
+```js
+QRCode.generateSegments([
+  { mode: "fnc1-second", applicationIndicator: "A" },
+  { mode: "byte", data: "application payload" }
+]);
+```
+
+`fnc1Second` は `gs1: true` / manual `{ mode: "fnc1" }` と併用できません。SpecQR では現在、ECI と FNC1 second も安全側で reject します。Structured Append は未実装です。
 
 ### GS1 Helpers
 
@@ -217,7 +247,7 @@ helper が対応する代表 AI は次の範囲です。
 
 validation は、対応 AI format、fixed/max length、numeric-only AI、printable ASCII text values、raw value 内の separator/parentheses rejection、AI `00` の SSCC check digit、AI `01`/`02` の GTIN check digit を対象にします。可変長 AI の後に別の element が続く場合は `"\x1D"` を挿入し、最後の可変長 AI は separator なしで終端します。
 
-GTIN / SSCC 以外の check digit rule、全 GS1 AI catalog、業界別 AI rule、FNC1 second position は v1 の対象外です。
+GTIN / SSCC 以外の check digit rule、全 GS1 AI catalog、業界別 AI rule は v1 の対象外です。FNC1 second position は GS1 helper ではなく、独立した QR control mode として `fnc1Second` で扱います。
 
 ## Return Values
 
@@ -250,8 +280,10 @@ PNG と ImageData output は `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `"black"`,
     maskPenalties,
     maskSelectionReason,
     mode,
+    controlSegments,
     eciAssignmentNumber,
     fnc1,
+    fnc1Second,
     gs1,
     gs1Validation,
     segments,
@@ -270,6 +302,8 @@ PNG と ImageData output は `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `"black"`,
   }
 }
 ```
+
+`diagnostics.controlSegments` は ECI / FNC1 first / FNC1 second の control segment ordering を表します。`diagnostics.fnc1` は `null`、`"first-position"`、`"second-position"` のいずれかです。`diagnostics.fnc1Second` は `{ enabled, applicationIndicator, applicationIndicatorCodeword }` です。
 
 `diagnostics.gs1` は v1 互換の boolean です。`diagnostics.gs1Validation` は追加 metadata で、shape は `{ enabled, elementCount, ais, hasSeparators }` です。`generate(input, { gs1: true })` の raw string path では `elementCount` と `ais` が入ります。manual `{ mode: "fnc1" }` path では raw element string validation を行わないため、`elementCount` は `null` になります。
 

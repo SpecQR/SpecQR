@@ -5,7 +5,14 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { interleaveCodewords } from "../src/core/codewords.js";
-import { encodeSegments, normalizeManualSegments, createSegments, prependEciSegment, prependFnc1Segment } from "../src/encoding/modes.js";
+import {
+  encodeSegments,
+  normalizeManualSegments,
+  createSegments,
+  prependEciSegment,
+  prependFnc1Segment,
+  prependFnc1SecondSegment
+} from "../src/encoding/modes.js";
 import { generate, generateSegments } from "../src/index.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -28,7 +35,8 @@ test("golden fixtures cover representative QR Model 2 modes and metadata", () =>
     "capacity-edge",
     "eci-mixed",
     "gs1",
-    "fnc1"
+    "fnc1",
+    "fnc1-second"
   ]) {
     assert.equal(coverage.has(item), true, `missing golden coverage: ${item}`);
   }
@@ -87,21 +95,28 @@ function getCodewords(fixture, version, errorCorrectionLevel) {
 
 function getSegments(fixture, version) {
   const eciAssignmentNumber = normalizeEciOption(fixture.options.eci ?? false);
+  const fnc1Second = fixture.options.fnc1Second ?? false;
   if (fixture.segments) {
-    return prependFnc1Segment(
-      prependEciSegment(normalizeManualSegments(fixture.segments), eciAssignmentNumber),
-      fixture.options.gs1 ?? false
+    return prependFnc1SecondSegment(
+      prependFnc1Segment(
+        prependEciSegment(normalizeManualSegments(fixture.segments), eciAssignmentNumber),
+        fixture.options.gs1 ?? false
+      ),
+      fnc1Second
     );
   }
-  return prependFnc1Segment(
-    createSegments(
-      getInput(fixture),
-      fixture.options.mode ?? "auto",
-      version,
-      fixture.options.optimizeSegments ?? true,
-      eciAssignmentNumber
+  return prependFnc1SecondSegment(
+    prependFnc1Segment(
+      createSegments(
+        getInput(fixture),
+        fixture.options.mode ?? "auto",
+        version,
+        fixture.options.optimizeSegments ?? true,
+        eciAssignmentNumber
+      ),
+      fixture.options.gs1 ?? false
     ),
-    fixture.options.gs1 ?? false
+    fnc1Second
   );
 }
 
@@ -125,8 +140,10 @@ function pickDiagnostics(diagnostics) {
     maskPenalty: diagnostics.maskPenalty,
     maskPenalties: diagnostics.maskPenalties,
     mode: diagnostics.mode,
+    controlSegments: diagnostics.controlSegments,
     eciAssignmentNumber: diagnostics.eciAssignmentNumber,
     fnc1: diagnostics.fnc1,
+    fnc1Second: diagnostics.fnc1Second,
     gs1: diagnostics.gs1,
     dataBitLength: diagnostics.dataBitLength,
     capacityBits: diagnostics.capacityBits,

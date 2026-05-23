@@ -7,6 +7,7 @@ import {
   isControlSegment,
   prependEciSegment,
   prependFnc1Segment,
+  prependFnc1SecondSegment,
   validateControlSegment,
   validateEciAssignmentNumber,
   validateManualControlSegments
@@ -129,7 +130,7 @@ export function normalizeManualSegments(segments) {
   return validateManualControlSegments(segments.map((segment, index) => normalizeManualSegment(segment, index)));
 }
 
-export { prependEciSegment, prependFnc1Segment };
+export { prependEciSegment, prependFnc1Segment, prependFnc1SecondSegment };
 
 export function getSegmentsBitLength(segments, version) {
   return segments.reduce((total, segment) => total + getSegmentBitLength(segment, version), 0);
@@ -489,6 +490,9 @@ function normalizeManualSegment(segment, index) {
     case "fnc1":
       validateControlSegment(segment, `segments[${index}]`);
       return { mode: "fnc1" };
+    case "fnc1-second":
+      validateControlSegment(segment, `segments[${index}]`);
+      return { mode: "fnc1-second", applicationIndicator: segment.applicationIndicator };
     case "eci":
       validateEciAssignmentNumber(segment.assignmentNumber);
       return { mode: "eci", assignmentNumber: segment.assignmentNumber };
@@ -511,7 +515,7 @@ function normalizeManualSegment(segment, index) {
       return { mode: "byte", bytes: toByteArray(data, `segments[${index}].data`) };
     }
     default:
-      throw new InvalidModeError(`segments[${index}].mode must be "fnc1", "eci", "numeric", "alphanumeric", "byte", or "kanji"`);
+      throw new InvalidModeError(`segments[${index}].mode must be "fnc1", "fnc1-second", "eci", "numeric", "alphanumeric", "byte", or "kanji"`);
   }
 }
 

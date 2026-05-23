@@ -55,6 +55,32 @@ assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
 assert.equal(specqr.validateGs1ElementString, undefined);
 assert.equal(specqr.QRCode.validateGs1ElementString, undefined);
 
+const fnc1Second = specqr.generate("AA1234BBB112", {
+  fnc1Second: "37",
+  mode: "alphanumeric",
+  version: 1,
+  errorCorrectionLevel: "Q",
+  output: "matrix",
+  diagnostics: true
+});
+assert.equal(fnc1Second.diagnostics.fnc1, "second-position");
+assert.deepEqual(fnc1Second.diagnostics.fnc1Second, {
+  enabled: true,
+  applicationIndicator: "37",
+  applicationIndicatorCodeword: 37
+});
+
+const manualFnc1Second = specqr.QRCode.generateSegments([
+  { mode: "fnc1-second", applicationIndicator: "A" },
+  { mode: "byte", data: "abc" }
+], {
+  version: 1,
+  errorCorrectionLevel: "L",
+  output: "matrix",
+  diagnostics: true
+});
+assert.equal(manualFnc1Second.diagnostics.fnc1Second.applicationIndicatorCodeword, 165);
+
 const rawWithSeparator = "010491234567890410ABC123\\x1D17251231";
 assert.deepEqual(specqr.parseGs1ElementString(rawWithSeparator), {
   elements: [
@@ -144,6 +170,9 @@ async function assertTypeDeclarations(directory) {
     declarations,
     /export function parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /fnc1Second\?: false \| string;/);
+  assert.match(declarations, /\| { mode: "fnc1-second"; applicationIndicator: string }/);
+  assert.match(declarations, /export interface QRFnc1SecondDiagnostics\s*{/);
   assert.match(
     declarations,
     /export function createGs1DigitalLink\(\s*input: GS1Element\[] \| GS1ElementStringParseResult,\s*options: GS1DigitalLinkOptions\s*\): string;/

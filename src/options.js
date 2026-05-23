@@ -7,6 +7,7 @@ import {
   InvalidOutputError,
   InvalidVersionError
 } from "./errors.js";
+import { validateFnc1SecondApplicationIndicator } from "./encoding/control-segments.js";
 
 const DEFAULT_OPTIONS = {
   errorCorrectionLevel: "M",
@@ -25,6 +26,7 @@ const DEFAULT_OPTIONS = {
   boostErrorCorrection: false,
   eci: false,
   gs1: false,
+  fnc1Second: false,
   diagnostics: false,
   printDpi: null
 };
@@ -62,6 +64,16 @@ export function normalizeOptions(options = {}) {
   }
   if (normalized.gs1 && normalized.eci !== false) {
     throw new InvalidGs1Error("gs1 and eci cannot be combined in this FNC1 first position implementation");
+  }
+
+  if (normalized.fnc1Second !== false) {
+    normalized.fnc1Second = validateFnc1SecondApplicationIndicator(normalized.fnc1Second, "fnc1Second");
+  }
+  if (normalized.gs1 && normalized.fnc1Second !== false) {
+    throw new InvalidGs1Error("gs1 and fnc1Second cannot be combined");
+  }
+  if (normalized.fnc1Second !== false && normalized.eci !== false) {
+    throw new InvalidModeError("fnc1Second and eci cannot be combined in this implementation");
   }
 
   validateVersionBound("minVersion", normalized.minVersion);

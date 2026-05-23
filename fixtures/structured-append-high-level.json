@@ -1,0 +1,62 @@
+[
+  {
+    "id": "structured-append-high-level-v1-l-mask0",
+    "description": "High-level Structured Append split with fixed version 1-L and mask 0.",
+    "input": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "options": {
+      "version": 1,
+      "errorCorrectionLevel": "L",
+      "maskPattern": 0,
+      "mode": "alphanumeric",
+      "output": "matrix"
+    },
+    "expected": {
+      "total": 2,
+      "parity": 65,
+      "inputLength": 31,
+      "byteLength": 31,
+      "chunks": [
+        {
+          "index": 1,
+          "total": 2,
+          "parity": 65,
+          "sequenceIndex": 0,
+          "sequenceTotal": 1,
+          "sequenceIndicator": 1,
+          "inputStart": 0,
+          "inputLength": 21,
+          "byteStart": 0,
+          "byteLength": 21,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 149,
+          "capacityBits": 152,
+          "remainingBits": 3,
+          "maskPattern": 0,
+          "matrixSha256": "fd73348ee286d6a4e25704e88d34f1342523ac2850eef066a1c2c607fdac8420",
+          "darkModules": 232
+        },
+        {
+          "index": 2,
+          "total": 2,
+          "parity": 65,
+          "sequenceIndex": 1,
+          "sequenceTotal": 1,
+          "sequenceIndicator": 17,
+          "inputStart": 21,
+          "inputLength": 10,
+          "byteStart": 21,
+          "byteLength": 10,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 88,
+          "capacityBits": 152,
+          "remainingBits": 64,
+          "maskPattern": 0,
+          "matrixSha256": "ec9e0086883e50d28f136164ed0f61d45ff722b16d5c8266d4aa21ae4813b648",
+          "darkModules": 226
+        }
+      ]
+    }
+  }
+]

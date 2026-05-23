@@ -6,7 +6,7 @@ SpecQR `1.0.0` は、実務で使う通常の QR Code Model 2 generation を対�
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position と Structured Append low-level header encoding は実装済みで、Structured Append high-level splitting の API 設計は [Structured Append v2 API Design](./structured-append-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting は実装済みです。Structured Append の分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
 ## 実装済み範囲
 
@@ -25,6 +25,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめ�
 - GS1 QR Code / FNC1 first position mode
 - FNC1 second position mode
 - Structured Append low-level header mode
+- Structured Append high-level automatic splitting API
 - 代表的な fixed-length / variable-length AI 向けの GS1 element string helper、human-readable parser、Digital Link URI builder
 - GTIN / SSCC check digit helper と、AI `00`/`01`/`02` の check digit validation
 - 選択 Version を増やさない optional error correction boosting
@@ -52,7 +53,7 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 `fnc1Second` は FNC1 second position を先頭に挿入します。これは GS1 QR Code ではなく、AIM International と合意済みの業界・アプリケーション仕様を示す control mode です。Application Indicator は 2 桁数字または 1 文字 Latin alphabetic character に限定し、invalid value は `InvalidModeError` として reject します。SpecQR では FNC1 first / GS1 と FNC1 second の同時利用を reject し、ECI との併用も安全側で reject します。
 
-`structuredAppend` は Structured Append mode indicator `0011`、4-bit 0-based index、4-bit 0-based total count、8-bit parity data を先頭に挿入します。public API では `index` を 1-based とし、`total` は `2..16`、`index` は `1..total`、`parity` は `0..255` integer です。SpecQR は現時点では low-level header encoding のみを提供し、自動分割、parity 自動計算、decode / merge helper は提供しません。ECI / FNC1 first / FNC1 second / `gs1: true` との併用は安全側で reject します。
+`structuredAppend` は Structured Append mode indicator `0011`、4-bit 0-based index、4-bit 0-based total count、8-bit parity data を先頭に挿入します。public API では `index` を 1-based とし、`total` は `2..16`、`index` は `1..total`、`parity` は `0..255` integer です。`generateStructuredAppend()` は string / binary input を deterministic greedy largest-fitting で最大 16 symbols に分割し、元 payload bytes の XOR parity を各 symbol の low-level header に設定します。manual segments 版、public parity helper、decode / merge helper は提供しません。ECI / FNC1 first / FNC1 second / `gs1: true` との併用は安全側で reject します。
 
 GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱います。`createGs1DigitalLink()` は supported AI から Digital Link URI を作り、`parseGs1DigitalLink()` は URI を `{ elements, primary, pathElements, queryElements, unknownQuery }` に戻します。Digital Link URI は通常 URL QR として `QRCode.generate(uri)` で生成し、`gs1: true` は指定しません。
 
@@ -66,7 +67,7 @@ package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の sep
 
 SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていますが、ISO/IEC 18004:2024 の全項目について「完全準拠」とは表現しません。Version 1-40、mode encoding、format / version information、Reed-Solomon、masking、remainder bits など、core generation に必要な領域を tests と golden fixtures で固定しています。
 
-2015 版と 2024 版の差分、Micro QR、rMQR、Structured Append high-level splitting などは、今後の監査・別 module の対象です。ISO 本文や仕様表のコピーは repository に含めません。
+2015 版と 2024 版の差分、Micro QR、rMQR などは、今後の監査・別 module の対象です。ISO 本文や仕様表のコピーは repository に含めません。
 
 ## v1 で意図的に対象外とするもの
 
@@ -74,7 +75,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 - Full GS1 AI catalog validation
 - Industry-specific GS1 AI rules
-- Structured Append automatic splitting / parity helper
+- Structured Append public parity helper / decode・merge helper / manual segment splitting
 - Micro QR
 - rMQR
 - Frame QR
@@ -90,7 +91,7 @@ v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定�
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
-- Structured Append: low-level header encoding は実装済み。High-level automatic splitting API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に固定済みで、次は runtime implementation。
+- Structured Append: low-level header encoding と high-level automatic splitting API は実装済み。manual segment splitting、public parity helper、decode / merge helper は未対応。
 - v2 validation expansion: golden / bitstream / matrix / decoder / reference comparison の範囲整理。
 
 通常 QR Code Model 2 以外の symbol family や visual customization は、v2.0.0 には混ぜず、将来の別 module として扱う方針です。

@@ -378,7 +378,7 @@ console.log(parsed.elements);
 - Full GS1 AI catalog
 - Industry-specific validation
 - FNC1 second position integration。FNC1 second 自体は QR control option として別途実装済みです。
-- Structured Append high-level splitting。Structured Append low-level header は QR control option として別途実装済みです。
+- Structured Append high-level splitting。Structured Append low-level header と high-level automatic splitting は QR control feature として別途実装済みです。
 - Micro QR / rMQR
 - Logo overlay / styled modules
 

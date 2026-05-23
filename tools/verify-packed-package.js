@@ -46,6 +46,8 @@ import * as specqr from "specqr";
 
 assert.equal(typeof specqr.parseGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.parseGs1ElementString, "function");
+assert.equal(typeof specqr.generateStructuredAppend, "function");
+assert.equal(typeof specqr.QRCode.generateStructuredAppend, "function");
 assert.equal(typeof specqr.createGs1DigitalLink, "function");
 assert.equal(typeof specqr.QRCode.createGs1DigitalLink, "function");
 assert.equal(typeof specqr.parseGs1DigitalLink, "function");
@@ -109,6 +111,40 @@ const manualStructuredAppend = specqr.QRCode.generateSegments([
   diagnostics: true
 });
 assert.deepEqual(manualStructuredAppend.diagnostics.structuredAppend, structuredAppend.diagnostics.structuredAppend);
+
+const highLevelStructuredAppend = specqr.generateStructuredAppend("A".repeat(31), {
+  version: 1,
+  errorCorrectionLevel: "L",
+  mode: "alphanumeric",
+  output: "matrix",
+  diagnostics: true
+});
+assert.equal(highLevelStructuredAppend.total, 2);
+assert.equal(highLevelStructuredAppend.parity, 65);
+assert.deepEqual(
+  highLevelStructuredAppend.diagnostics.symbols.map((symbol) => ({
+    index: symbol.index,
+    total: symbol.total,
+    parity: symbol.parity,
+    version: symbol.version,
+    maskPattern: symbol.maskPattern
+  })),
+  [
+    { index: 1, total: 2, parity: 65, version: 1, maskPattern: highLevelStructuredAppend.diagnostics.symbols[0].maskPattern },
+    { index: 2, total: 2, parity: 65, version: 1, maskPattern: highLevelStructuredAppend.diagnostics.symbols[1].maskPattern }
+  ]
+);
+assert.equal(highLevelStructuredAppend.symbols[0].diagnostics.structuredAppend.sequenceIndicator, 1);
+assert.equal(highLevelStructuredAppend.symbols[1].diagnostics.structuredAppend.sequenceIndicator, 17);
+
+const highLevelStructuredAppendStatic = specqr.QRCode.generateStructuredAppend("A".repeat(31), {
+  version: 1,
+  errorCorrectionLevel: "L",
+  mode: "alphanumeric",
+  output: "svg"
+});
+assert.equal(highLevelStructuredAppendStatic.total, 2);
+assert.match(highLevelStructuredAppendStatic.symbols[0], /^<svg /);
 
 const rawWithSeparator = "010491234567890410ABC123\\x1D17251231";
 assert.deepEqual(specqr.parseGs1ElementString(rawWithSeparator), {
@@ -205,6 +241,12 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /\| \({ mode: "structured-append" } & QRStructuredAppendOptions\)/);
   assert.match(declarations, /export interface QRFnc1SecondDiagnostics\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendDiagnostics\s*{/);
+  assert.match(declarations, /export interface QRStructuredAppendGenerateOptions extends Omit</);
+  assert.match(declarations, /export interface QRStructuredAppendSummaryDiagnostics\s*{/);
+  assert.match(
+    declarations,
+    /export function generateStructuredAppend\(input: QRInput, options\?: QRStructuredAppendGenerateOptions & \{ diagnostics: true \}\): QRStructuredAppendResult<QRCodeDiagnosticResult>;/
+  );
   assert.match(
     declarations,
     /export function createGs1DigitalLink\(\s*input: GS1Element\[] \| GS1ElementStringParseResult,\s*options: GS1DigitalLinkOptions\s*\): string;/
@@ -217,6 +259,7 @@ async function assertTypeDeclarations(directory) {
     declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /static generateStructuredAppend\(input: QRInput/);
   assert.match(declarations, /static createGs1DigitalLink\(/);
   assert.match(declarations, /static parseGs1DigitalLink\(/);
 }

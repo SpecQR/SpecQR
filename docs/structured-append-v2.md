@@ -1,12 +1,12 @@
 # Structured Append v2 API Design
 
-この文書は、SpecQR v2 系で実装する高レベル Structured Append API の設計記録です。現在の runtime には、低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` だけが実装済みです。この文書の `generateStructuredAppend()` は proposal であり、まだ public export ではありません。
+この文書は、SpecQR v2 系で設計し、現在の runtime に実装した高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。
 
 ## Goal
 
 `generateStructuredAppend(input, options)` は、1 つの input を最大 16 個の QR Code Model 2 symbols に自動分割し、それぞれに Structured Append header を付与して返します。利用者が index / total / parity を個別に管理しなくても、安全に multi-symbol QR set を作れる API にします。
 
-今回の設計で決める範囲は次の通りです。
+この文書で固定している範囲は次の通りです。
 
 - public API shape
 - input / option validation
@@ -16,20 +16,20 @@
 - error classes
 - release gate
 
-実装は次フェーズです。この文書を追加しても runtime behavior、package exports、package version は変わりません。
+現在の実装では package version は変えず、runtime dependency も追加していません。
 
-## Proposed Public API
+## Public API
 
 ```ts
 function generateStructuredAppend(
   input: QRInput,
-  options?: QRStructuredAppendOptions
+  options?: QRStructuredAppendGenerateOptions
 ): QRStructuredAppendResult;
 
 class QRCode {
   static generateStructuredAppend(
     input: QRInput,
-    options?: QRStructuredAppendOptions
+    options?: QRStructuredAppendGenerateOptions
   ): QRStructuredAppendResult;
 }
 ```
@@ -39,8 +39,8 @@ class QRCode {
 `generateStructuredAppend()` は常に object を返します。各 symbol の生成結果は、既存 `generate()` と同じ output type です。
 
 ```ts
-interface QRStructuredAppendResult {
-  symbols: GenerateResult[];
+interface QRStructuredAppendResult<TSymbol = QRGenerateResult> {
+  symbols: TSymbol[];
   total: number;
   parity: number;
   inputLength: number;
@@ -49,7 +49,7 @@ interface QRStructuredAppendResult {
 }
 ```
 
-`GenerateResult` は `generate(chunk, options)` の戻り値と同じです。
+`QRGenerateResult` は `generate(chunk, options)` の戻り値と同じです。TypeScript では `diagnostics` / `output` に応じた overload で `symbols` の型を絞ります。
 
 - `output: "svg"`: `symbols` は SVG string の array
 - `output: "svg-data-url"`: `symbols` は SVG Data URL string の array
@@ -65,7 +65,7 @@ top-level `diagnostics` は常に返します。`diagnostics: true` の場合は
 高レベル API は、既存 `QRCodeOptions` のうち Structured Append と衝突しないものを再利用します。新しい短縮名は増やしません。
 
 ```ts
-interface QRStructuredAppendOptions {
+interface QRStructuredAppendGenerateOptions {
   errorCorrectionLevel?: "L" | "M" | "Q" | "H";
   version?: 1..40 | "auto";
   minVersion?: 1..40;
@@ -239,7 +239,7 @@ interface QRStructuredAppendSymbolDiagnostics {
 }
 ```
 
-When `diagnostics: true`, each generated symbol already contains the normal QR diagnostics. The top-level summary should avoid duplicating the entire per-symbol diagnostics tree and instead expose the set-level fields needed to audit the split.
+When `diagnostics: true`, each generated symbol already contains the normal QR diagnostics. The top-level summary avoids duplicating the entire per-symbol diagnostics tree and instead exposes the set-level fields needed to audit the split.
 
 Warnings:
 
@@ -277,9 +277,9 @@ Errors from existing `generate()` calls should bubble when they already describe
 - Return normal single-symbol QR when the input fits one symbol: rejected because the function name promises Structured Append semantics.
 - Allow per-symbol Version selection by default: rejected to keep symbols visually consistent and diagnostics simple.
 
-## Tests For Implementation Phase
+## Implementation Coverage
 
-When implementing `generateStructuredAppend()`, add tests for:
+The implementation includes tests for:
 
 - root export and `QRCode.generateStructuredAppend()` static method.
 - string input split into 2+ symbols.
@@ -316,9 +316,7 @@ Decoder validation should not be the only proof for Structured Append. Some deco
 
 ## Non-Scope
 
-- Runtime implementation in this docs-only phase.
 - Public parity helper.
-- Automatic chunking implementation in this docs-only phase.
 - Decode / merge helper.
 - ECI / FNC1 / GS1 combinations.
 - Manual segment splitting.

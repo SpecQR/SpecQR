@@ -48,7 +48,7 @@ import {
   getGs1ElementStringDiagnostics,
   parseGs1ElementString as parseRawGs1ElementString
 } from "./gs1/validator.js";
-import { DataTooLongError, InvalidGs1Error, InvalidOutputError } from "./errors.js";
+import { DataTooLongError, InvalidGs1Error, InvalidInputError, InvalidModeError, InvalidOutputError } from "./errors.js";
 import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
 import { renderPng, renderPngDataUrl } from "./render/png.js";
@@ -86,6 +86,10 @@ export {
 export class QRCode {
   static generate(input, options = {}) {
     return generate(input, options);
+  }
+
+  static generateStructuredAppend(input, options = {}) {
+    return generateStructuredAppend(input, options);
   }
 
   static generateSegments(segments, options = {}) {
@@ -153,6 +157,49 @@ export function generate(input, options = {}) {
   const normalized = normalizeOptions(options);
   const plan = selectPlanForInput(input, normalized);
   return renderResult(plan, normalized, getInputByteCount(input));
+}
+
+export function generateStructuredAppend(input, options = {}) {
+  const normalized = normalizeStructuredAppendGenerateOptions(options);
+  const inputInfo = createStructuredAppendInputInfo(input);
+  const selected = selectStructuredAppendSplit(inputInfo, normalized);
+  const symbols = [];
+  const symbolDiagnostics = [];
+
+  selected.chunks.forEach((chunk, index) => {
+    const symbolOptions = createStructuredAppendSymbolOptions(normalized, selected.version, {
+      index: index + 1,
+      total: selected.chunks.length,
+      parity: inputInfo.parity
+    });
+    const diagnosticResult = generate(chunk.value, {
+      ...symbolOptions,
+      output: "matrix",
+      diagnostics: true
+    });
+    symbolDiagnostics.push(createStructuredAppendSymbolDiagnostics({
+      chunk,
+      diagnostics: diagnosticResult.diagnostics
+    }));
+
+    symbols.push(normalized.diagnostics
+      ? diagnosticResult
+      : generate(chunk.value, symbolOptions));
+  });
+
+  return {
+    symbols,
+    total: symbols.length,
+    parity: inputInfo.parity,
+    inputLength: inputInfo.inputLength,
+    byteLength: inputInfo.byteLength,
+    diagnostics: createStructuredAppendSummaryDiagnostics({
+      normalized,
+      selected,
+      inputInfo,
+      symbolDiagnostics
+    })
+  };
 }
 
 export function generateSegments(segments, options = {}) {
@@ -270,6 +317,297 @@ function selectPlanForManualSegments(segments, options) {
     ),
     options
   );
+}
+
+function normalizeStructuredAppendGenerateOptions(options = {}) {
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    throw new InvalidInputError("generateStructuredAppend options must be an object");
+  }
+
+  if (Object.hasOwn(options, "errorCorrection")) {
+    throw new InvalidModeError("generateStructuredAppend uses errorCorrectionLevel; errorCorrection is not supported");
+  }
+  if (Object.hasOwn(options, "mask")) {
+    throw new InvalidModeError("generateStructuredAppend uses maskPattern; mask is not supported");
+  }
+  if (Object.hasOwn(options, "parity")) {
+    throw new InvalidModeError("generateStructuredAppend computes parity from the original payload bytes; parity override is not supported");
+  }
+  if (Object.hasOwn(options, "structuredAppend") && options.structuredAppend !== false) {
+    throw new InvalidModeError("generateStructuredAppend owns the Structured Append header; structuredAppend option is not supported");
+  }
+
+  const maxSymbols = Object.hasOwn(options, "maxSymbols") ? options.maxSymbols : 16;
+  if (!Number.isInteger(maxSymbols) || maxSymbols < 2 || maxSymbols > 16) {
+    throw new InvalidModeError(`maxSymbols must be an integer from 2 to 16; got ${maxSymbols}`);
+  }
+
+  const normalized = normalizeOptions(options);
+  if (normalized.eci !== false) {
+    throw new InvalidModeError("generateStructuredAppend cannot be combined with ECI in this implementation");
+  }
+  if (normalized.gs1) {
+    throw new InvalidGs1Error("generateStructuredAppend cannot be combined with gs1: true in this implementation");
+  }
+  if (normalized.fnc1Second !== false) {
+    throw new InvalidModeError("generateStructuredAppend cannot be combined with FNC1 second position in this implementation");
+  }
+  if (normalized.boostErrorCorrection) {
+    throw new InvalidModeError("generateStructuredAppend does not support boostErrorCorrection in this implementation");
+  }
+
+  return {
+    ...normalized,
+    maxSymbols,
+    eci: false,
+    gs1: false,
+    fnc1Second: false,
+    structuredAppend: false,
+    boostErrorCorrection: false
+  };
+}
+
+function createStructuredAppendInputInfo(input) {
+  const binary = isBinaryInput(input);
+  const units = binary ? toByteArray(input) : Array.from(assertStructuredAppendTextInput(input));
+  const byteLengths = binary ? units.map(() => 1) : units.map((unit) => encodeUtf8(unit).length);
+  const bytes = binary ? units : encodeUtf8(input);
+
+  if (units.length === 0) {
+    throw new InvalidInputError("generateStructuredAppend requires input that can be split into at least two non-empty symbols");
+  }
+
+  const byteStarts = [];
+  let offset = 0;
+  for (const byteLength of byteLengths) {
+    byteStarts.push(offset);
+    offset += byteLength;
+  }
+
+  return {
+    binary,
+    units,
+    byteLengths,
+    byteStarts,
+    inputLength: units.length,
+    byteLength: bytes.length,
+    parity: bytes.reduce((parity, byte) => parity ^ byte, 0),
+    makeChunk: (start, length) => {
+      const unitSlice = units.slice(start, start + length);
+      const byteLength = byteLengths.slice(start, start + length).reduce((total, value) => total + value, 0);
+      return {
+        value: binary ? Uint8Array.from(unitSlice) : unitSlice.join(""),
+        inputStart: start,
+        inputLength: length,
+        byteStart: byteStarts[start] ?? 0,
+        byteLength
+      };
+    }
+  };
+}
+
+function assertStructuredAppendTextInput(input) {
+  if (typeof input !== "string") {
+    throw new InvalidInputError(`QR input must be a string, Uint8Array, ArrayBuffer, or ArrayBuffer view; got ${typeof input}`);
+  }
+  return input;
+}
+
+function selectStructuredAppendSplit(inputInfo, normalized) {
+  if (normalized.version !== "auto") {
+    const attempt = attemptStructuredAppendSplitAtVersion(inputInfo, normalized, normalized.version);
+    if (attempt.status === "single") {
+      throw new InvalidInputError(
+        `Input fits in one version ${normalized.version}-${normalized.errorCorrectionLevel} symbol; use generate() or the low-level structuredAppend option instead`
+      );
+    }
+    if (attempt.status === "ok") {
+      return {
+        ...attempt,
+        versionSelection: "fixed",
+        versionSelectionReason: `Version ${attempt.version} was requested explicitly.`
+      };
+    }
+    throw new DataTooLongError(
+      `Input cannot be split into ${normalized.maxSymbols} or fewer version ${normalized.version}-${normalized.errorCorrectionLevel} Structured Append symbols`
+    );
+  }
+
+  let sawTooLong = false;
+  let sawSingle = false;
+  for (let version = normalized.minVersion; version <= normalized.maxVersion; version += 1) {
+    const attempt = attemptStructuredAppendSplitAtVersion(inputInfo, normalized, version);
+    if (attempt.status === "ok") {
+      return {
+        ...attempt,
+        versionSelection: "auto-minimum",
+        versionSelectionReason: `Version ${version} is the smallest version in ${normalized.minVersion}..${normalized.maxVersion} that can split the payload into ${attempt.chunks.length} Structured Append symbols at error correction ${normalized.errorCorrectionLevel}.`
+      };
+    }
+    if (attempt.status === "single") {
+      sawSingle = true;
+    } else {
+      sawTooLong = true;
+    }
+  }
+
+  if (sawTooLong) {
+    throw new DataTooLongError(
+      `Input cannot be split into ${normalized.maxSymbols} or fewer Structured Append symbols for versions ${normalized.minVersion}..${normalized.maxVersion} at error correction ${normalized.errorCorrectionLevel}`
+    );
+  }
+  if (sawSingle) {
+    throw new InvalidInputError("Input fits in one symbol in the selected version range; use generate() or the low-level structuredAppend option instead");
+  }
+  throw new DataTooLongError(
+    `Input cannot be split into Structured Append symbols for versions ${normalized.minVersion}..${normalized.maxVersion}`
+  );
+}
+
+function attemptStructuredAppendSplitAtVersion(inputInfo, normalized, version) {
+  const wholeChunk = inputInfo.makeChunk(0, inputInfo.inputLength);
+  if (canFitStructuredAppendChunk(wholeChunk.value, normalized, version)) {
+    return { status: "single", version };
+  }
+
+  const chunks = [];
+  let position = 0;
+
+  while (position < inputInfo.inputLength) {
+    if (chunks.length >= normalized.maxSymbols) {
+      return { status: "too-long", version };
+    }
+
+    const remaining = inputInfo.inputLength - position;
+    const maxPrefixLength = chunks.length === 0 ? remaining - 1 : remaining;
+    if (maxPrefixLength < 1) {
+      return { status: "single", version };
+    }
+
+    const prefixLength = findLargestFittingStructuredAppendPrefix({
+      inputInfo,
+      normalized,
+      version,
+      position,
+      maxPrefixLength
+    });
+    if (prefixLength < 1) {
+      return { status: "too-long", version };
+    }
+
+    chunks.push(inputInfo.makeChunk(position, prefixLength));
+    position += prefixLength;
+  }
+
+  return chunks.length >= 2
+    ? { status: "ok", version, chunks }
+    : { status: "single", version };
+}
+
+function findLargestFittingStructuredAppendPrefix({ inputInfo, normalized, version, position, maxPrefixLength }) {
+  let low = 1;
+  let high = maxPrefixLength;
+  let best = 0;
+
+  while (low <= high) {
+    const length = Math.floor((low + high) / 2);
+    const chunk = inputInfo.makeChunk(position, length);
+    if (canFitStructuredAppendChunk(chunk.value, normalized, version)) {
+      best = length;
+      low = length + 1;
+    } else {
+      high = length - 1;
+    }
+  }
+
+  return best;
+}
+
+function canFitStructuredAppendChunk(input, normalized, version) {
+  try {
+    selectPlanForInput(input, createStructuredAppendSymbolOptions(normalized, version, {
+      index: 1,
+      total: 2,
+      parity: 0
+    }));
+    return true;
+  } catch (error) {
+    if (error instanceof DataTooLongError) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function createStructuredAppendSymbolOptions(normalized, version, structuredAppend) {
+  return {
+    ...normalized,
+    version,
+    minVersion: version,
+    maxVersion: version,
+    structuredAppend
+  };
+}
+
+function createStructuredAppendSummaryDiagnostics({ normalized, selected, inputInfo, symbolDiagnostics }) {
+  const warnings = createStructuredAppendWarnings(normalized, selected.chunks.length);
+  return {
+    version: selected.version,
+    errorCorrectionLevel: normalized.errorCorrectionLevel,
+    versionSelection: selected.versionSelection,
+    versionSelectionReason: selected.versionSelectionReason,
+    total: selected.chunks.length,
+    parity: inputInfo.parity,
+    byteLength: inputInfo.byteLength,
+    inputLength: inputInfo.inputLength,
+    maxSymbols: normalized.maxSymbols,
+    splitStrategy: "greedy-largest-fitting",
+    symbols: symbolDiagnostics,
+    warnings
+  };
+}
+
+function createStructuredAppendWarnings(normalized, total) {
+  const warnings = [];
+  if (total === normalized.maxSymbols) {
+    warnings.push({
+      code: "STRUCTURED_APPEND_MAX_SYMBOLS_NEAR_LIMIT",
+      severity: "info",
+      message: "The generated Structured Append set uses the configured maximum number of symbols.",
+      details: { total, maxSymbols: normalized.maxSymbols }
+    });
+  }
+  if (normalized.diagnostics) {
+    warnings.push({
+      code: "STRUCTURED_APPEND_DECODER_SUPPORT_VARIES",
+      severity: "info",
+      message: "Decoder APIs vary in how they expose Structured Append set metadata.",
+      details: { total }
+    });
+  }
+  return warnings;
+}
+
+function createStructuredAppendSymbolDiagnostics({ chunk, diagnostics }) {
+  const structuredAppend = diagnostics.structuredAppend;
+  return {
+    index: structuredAppend.index,
+    total: structuredAppend.total,
+    parity: structuredAppend.parity,
+    sequenceIndex: structuredAppend.sequenceIndex,
+    sequenceTotal: structuredAppend.sequenceTotal,
+    sequenceIndicator: structuredAppend.sequenceIndicator,
+    inputStart: chunk.inputStart,
+    inputLength: chunk.inputLength,
+    byteStart: chunk.byteStart,
+    byteLength: chunk.byteLength,
+    version: diagnostics.version,
+    errorCorrectionLevel: diagnostics.errorCorrectionLevel,
+    dataBitLength: diagnostics.dataBitLength,
+    capacityBits: diagnostics.capacityBits,
+    remainingBits: diagnostics.remainingBits,
+    maskPattern: diagnostics.maskPattern
+  };
 }
 
 function getGs1ValidationForInput(input, options) {

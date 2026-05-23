@@ -35,6 +35,32 @@ const svg = QRCode.generate("https://example.com", {
 });
 ```
 
+### `QRCode.generateStructuredAppend(input, options)`
+
+string / binary input を最大 16 個の Structured Append symbols に自動分割します。root named export の `generateStructuredAppend(input, options)` も同じ API です。返り値は常に `{ symbols, total, parity, inputLength, byteLength, diagnostics }` の object です。
+
+```js
+import { generateStructuredAppend } from "specqr";
+
+const result = generateStructuredAppend("A".repeat(31), {
+  version: 1,
+  errorCorrectionLevel: "L",
+  mode: "alphanumeric",
+  output: "svg"
+});
+
+console.log(result.total); // 2
+console.log(result.parity); // original payload bytes の XOR
+console.log(result.symbols); // SVG strings
+console.log(result.diagnostics.symbols);
+```
+
+`symbols` の各要素は既存 `generate()` と同じ output shape です。`diagnostics: true` の場合、各要素は `QRCodeDiagnosticResult` になり、通常の per-symbol diagnostics も取得できます。top-level `diagnostics` は常に返り、選択 Version、total、parity、chunk offsets、各 symbol の Structured Append sequence metadata を含みます。
+
+初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版の `generateSegmentsStructuredAppend()`、public parity override、decode / merge helper はまだ提供していません。
+
+`generateStructuredAppend()` は高レベル API が header を管理するため、`eci`、`gs1: true`、`fnc1Second`、`structuredAppend`、`boostErrorCorrection` との併用を reject します。1 symbol に収まる input も Structured Append set としては不正なので、`generate()` または low-level `structuredAppend` option を使うよう `InvalidInputError` で reject します。
+
 ### `QRCode.generateSegments(segments, options)`
 
 呼び出し側が明示した segment から QR Code を生成します。対応する segment mode は `structured-append`, `fnc1`, `fnc1-second`, `eci`, `numeric`, `alphanumeric`, `byte`, `kanji` です。
@@ -140,7 +166,7 @@ QRCode.generateSegments([
 
 ## Structured Append Low-Level Header
 
-Structured Append は、複数の QR symbols を 1 つの logical message として扱うための QR control mode です。SpecQR は低レベル header encoding のみを提供します。payload の自動分割、symbol set の生成、元 payload からの parity 自動計算、decode / merge helper はまだ提供しません。
+Structured Append は、複数の QR symbols を 1 つの logical message として扱うための QR control mode です。自動分割には `generateStructuredAppend()` を使います。利用者が外部システムと合わせて `index` / `total` / `parity` を明示したい場合は、低レベル header encoding も直接指定できます。
 
 ```js
 QRCode.generate("PART 2", {
@@ -164,13 +190,7 @@ QRCode.generateSegments([
 ]);
 ```
 
-`structuredAppend` は `gs1: true` / manual `{ mode: "fnc1" }` / `fnc1Second` / `eci` と併用できません。将来 `generateStructuredAppend()` のような高レベル自動分割 API を追加する場合も、この低レベル header API は互換性を保つ予定です。
-
-### Proposed `generateStructuredAppend()` API
-
-高レベル自動分割 API はまだ実装していません。v2 の提案として、`generateStructuredAppend(input, options)` と `QRCode.generateStructuredAppend(input, options)` を予定しています。返り値は `{ symbols, total, parity, inputLength, byteLength, diagnostics }` の object とし、`symbols` の各要素は既存 `generate()` と同じ output shape にする方針です。
-
-最初の設計では、string / binary input のみを対象にし、manual segments 版の `generateSegmentsStructuredAppend()` は後回しにします。parity は original payload bytes から自動計算し、override は提供しません。ECI / FNC1 first / FNC1 second / `gs1: true` との併用も初期実装では reject する方針です。
+`structuredAppend` は `gs1: true` / manual `{ mode: "fnc1" }` / `fnc1Second` / `eci` と併用できません。高レベル API の `generateStructuredAppend()` も同じ安全側の併用制限を持ちます。
 
 詳細な API shape、分割方針、parity policy、diagnostics、error 設計、release gate は [Structured Append v2 API Design](./structured-append-v2.md) を参照してください。
 

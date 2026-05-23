@@ -59,7 +59,7 @@ console.log(result.diagnostics.symbols);
 
 Node で各 symbol を SVG / PNG として保存する例は [../examples/structured-append.mjs](../examples/structured-append.mjs) にあります。Playground では `Single QR` / `Structured Append` を切り替え、複数 preview、`total`、`parity`、per-symbol index、capacity diagnostics、warnings を確認できます。
 
-初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版の `generateSegmentsStructuredAppend()`、public parity override、decode / merge helper はまだ提供していません。
+初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。public parity override、decode / merge helper は提供していません。
 
 `generateStructuredAppend()` は高レベル API が header を管理するため、`eci`、`gs1: true`、`fnc1Second`、`structuredAppend`、`boostErrorCorrection` との併用を reject します。1 symbol に収まる input も Structured Append set としては不正なので、`generate()` または low-level `structuredAppend` option を使うよう `InvalidInputError` で reject します。
 
@@ -78,11 +78,25 @@ QRCode.generateSegments([
 ]);
 ```
 
-### Proposed: `QRCode.generateSegmentsStructuredAppend(segments, options)`
+### `QRCode.generateSegmentsStructuredAppend(segments, options)`
 
-Manual segments 版の高レベル Structured Append API はまだ runtime 実装していません。v2 proposal では、`generateSegmentsStructuredAppend(segments, options)` と `QRCode.generateSegmentsStructuredAppend(segments, options)` を追加し、返り値を `generateStructuredAppend()` と同じ `{ symbols, total, parity, inputLength, byteLength, diagnostics }` に揃える方針です。
+Manual segments 版の高レベル Structured Append API です。root named export の `generateSegmentsStructuredAppend(segments, options)` も同じ API です。返り値は `generateStructuredAppend()` と同じ `{ symbols, total, parity, inputLength, byteLength, diagnostics }` の object です。
 
-初期案では segment boundary split を基本にし、byte segment だけを byte / Unicode code point boundary で安全に chunking します。numeric / alphanumeric / kanji segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は初期実装では reject します。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
+```js
+import { generateSegmentsStructuredAppend } from "specqr";
+
+const result = generateSegmentsStructuredAppend([
+  { mode: "alphanumeric", data: "ORDER-" },
+  { mode: "numeric", data: "12345678901234567890" },
+  { mode: "byte", data: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }
+], {
+  version: 1,
+  errorCorrectionLevel: "L",
+  output: "svg"
+});
+```
+
+Split policy は segment boundary first です。`byte` segment だけを byte boundary、または string data の Unicode code point boundary で安全に chunking します。`numeric` / `alphanumeric` / `kanji` segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は reject します。`diagnostics.splitStrategy` は `"segment-boundary-byte-chunk"` になり、`diagnostics.splitUnits` と `diagnostics.symbols` に source segment range、split unit range、byte offset、per-symbol Structured Append metadata が入ります。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
 
 ### `QRCode.drawToCanvas(target, input, options)`
 

@@ -1,6 +1,6 @@
 # Structured Append v2 API Design
 
-この文書は、SpecQR v2 系で設計し、現在の runtime に実装した高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。Manual segments 版の高レベル API proposal は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に分けています。
+この文書は、SpecQR v2 系で設計し、現在の runtime に実装した string / binary input 向け高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。Manual segments 版の高レベル API は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に分けています。
 
 ## Goal
 
@@ -130,13 +130,7 @@ Initial implementation scope:
 - `mode: "auto"`, `"numeric"`, `"alphanumeric"`, `"byte"`, `"kanji"`
 - existing mixed-segment optimizer per chunk
 
-Deferred:
-
-- `generateSegmentsStructuredAppend(segments, options)` runtime implementation
-- manual segments input runtime support
-- pre-segmented chunking runtime support
-
-Manual segment splitting was deferred because chunk boundaries, character counts, raw byte parity, and mode optimization become caller-visible semantics. The proposed manual-segment policy is now documented in [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md); runtime implementation is still non-scope for this document.
+Manual segment splitting is handled by the separate `generateSegmentsStructuredAppend(segments, options)` API. Its chunk boundaries, character counts, raw byte parity, and mode preservation rules are documented in [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md).
 
 ## Control Mode Compatibility
 
@@ -146,7 +140,7 @@ The first high-level implementation rejects all other control modes.
 - `gs1: true`: reject with `InvalidGs1Error`.
 - `fnc1Second !== false`: reject with `InvalidModeError`.
 - `structuredAppend`: reject with `InvalidModeError`; the high-level API owns the header.
-- manual `{ mode: "fnc1" }`, `{ mode: "fnc1-second" }`, `{ mode: "eci" }`, `{ mode: "structured-append" }`: not applicable until manual segment splitting is designed.
+- manual `{ mode: "fnc1" }`, `{ mode: "fnc1-second" }`, `{ mode: "eci" }`, `{ mode: "structured-append" }`: rejected by `generateSegmentsStructuredAppend()` as well.
 
 Kanji mode is allowed because it is a data mode, not a control mode. If the runtime lacks Shift_JIS `TextDecoder`, explicit `mode: "kanji"` keeps the existing reject behavior, and `mode: "auto"` may fall back to byte mode just like `generate()`.
 
@@ -273,7 +267,7 @@ Errors from existing `generate()` calls should bubble when they already describe
 ## Rejected Choices
 
 - Expose `parity` override in `generateStructuredAppend()`: rejected for the first high-level API because it can make symbols inconsistent. Use low-level `structuredAppend` when custom parity is required.
-- Add `generateSegmentsStructuredAppend()` immediately: deferred until manual chunk boundary and parity semantics are designed. The docs-only proposal is now captured in `structured-append-segments-v2.md`; runtime implementation remains separate.
+- Fold `generateSegmentsStructuredAppend()` into `generateStructuredAppend()`: rejected because manual segments have caller-visible mode boundaries and split-unit semantics. The separate API is documented in `structured-append-segments-v2.md`.
 - Add `errorCorrection` / `mask` aliases: rejected to keep the API aligned with `generate()` options.
 - Allow ECI / FNC1 / GS1 combinations immediately: rejected for the first implementation. These combinations need separate ordering and scanner-behavior tests.
 - Return normal single-symbol QR when the input fits one symbol: rejected because the function name promises Structured Append semantics.
@@ -323,7 +317,7 @@ Decoder validation should not be the only proof for Structured Append. Some deco
 - Public parity helper.
 - Decode / merge helper.
 - ECI / FNC1 / GS1 combinations.
-- Manual segment splitting runtime implementation. Proposed semantics are documented in [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md).
+- Numeric / alphanumeric / kanji mid-segment splitting for the manual segments API.
 - Micro QR / rMQR.
 - package version change.
 - npm publish / GitHub Release / Pages deploy.

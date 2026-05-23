@@ -1,0 +1,607 @@
+[
+  {
+    "id": "structured-append-segments-boundary-v1-l-mask0",
+    "description": "Manual Structured Append split at caller segment boundaries with fixed version 1-L and mask 0.",
+    "segments": [
+      {
+        "mode": "alphanumeric",
+        "data": "ABCDEFGHIJKLMNOPQRSTU"
+      },
+      {
+        "mode": "numeric",
+        "data": "12345678901234567890"
+      },
+      {
+        "mode": "byte",
+        "data": [
+          0,
+          1,
+          2,
+          255
+        ]
+      }
+    ],
+    "options": {
+      "version": 1,
+      "errorCorrectionLevel": "L",
+      "maskPattern": 0,
+      "output": "matrix"
+    },
+    "expected": {
+      "total": 2,
+      "parity": 189,
+      "inputLength": 3,
+      "byteLength": 45,
+      "splitUnits": [
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "alphanumeric",
+          "unitStart": 0,
+          "unitLength": 21,
+          "byteStart": 0,
+          "byteLength": 21
+        },
+        {
+          "sourceSegmentIndex": 1,
+          "mode": "numeric",
+          "unitStart": 0,
+          "unitLength": 20,
+          "byteStart": 21,
+          "byteLength": 20
+        },
+        {
+          "sourceSegmentIndex": 2,
+          "mode": "byte",
+          "unitStart": 0,
+          "unitLength": 1,
+          "byteStart": 41,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 2,
+          "mode": "byte",
+          "unitStart": 1,
+          "unitLength": 1,
+          "byteStart": 42,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 2,
+          "mode": "byte",
+          "unitStart": 2,
+          "unitLength": 1,
+          "byteStart": 43,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 2,
+          "mode": "byte",
+          "unitStart": 3,
+          "unitLength": 1,
+          "byteStart": 44,
+          "byteLength": 1
+        }
+      ],
+      "chunks": [
+        {
+          "index": 1,
+          "total": 2,
+          "parity": 189,
+          "sequenceIndex": 0,
+          "sequenceTotal": 1,
+          "sequenceIndicator": 1,
+          "sourceSegmentStart": 0,
+          "sourceSegmentEnd": 1,
+          "splitUnitStart": 0,
+          "splitUnitLength": 1,
+          "byteStart": 0,
+          "byteLength": 21,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 149,
+          "capacityBits": 152,
+          "remainingBits": 3,
+          "maskPattern": 0,
+          "matrixSha256": "3ff5fa1a26a012e5f49615295a502813223aa5a958908ba1c518a26992ba96c8",
+          "darkModules": 234
+        },
+        {
+          "index": 2,
+          "total": 2,
+          "parity": 189,
+          "sequenceIndex": 1,
+          "sequenceTotal": 1,
+          "sequenceIndicator": 17,
+          "sourceSegmentStart": 1,
+          "sourceSegmentEnd": 3,
+          "splitUnitStart": 1,
+          "splitUnitLength": 5,
+          "byteStart": 21,
+          "byteLength": 24,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 145,
+          "capacityBits": 152,
+          "remainingBits": 7,
+          "maskPattern": 0,
+          "matrixSha256": "64e4a16efd806eccb0e3f34111690e725ec26c5f113a25baa233e5bb364fa531",
+          "darkModules": 226
+        }
+      ]
+    }
+  },
+  {
+    "id": "structured-append-segments-byte-chunk-v1-l-mask1",
+    "description": "Manual Structured Append byte segment chunking with 0x00 and 0xff using fixed version 1-L and mask 1.",
+    "segments": [
+      {
+        "mode": "byte",
+        "data": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          255
+        ]
+      }
+    ],
+    "options": {
+      "version": 1,
+      "errorCorrectionLevel": "L",
+      "maskPattern": 1,
+      "output": "matrix"
+    },
+    "expected": {
+      "total": 3,
+      "parity": 254,
+      "inputLength": 1,
+      "byteLength": 31,
+      "splitUnits": [
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 0,
+          "unitLength": 1,
+          "byteStart": 0,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 1,
+          "unitLength": 1,
+          "byteStart": 1,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 2,
+          "unitLength": 1,
+          "byteStart": 2,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 3,
+          "unitLength": 1,
+          "byteStart": 3,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 4,
+          "unitLength": 1,
+          "byteStart": 4,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 5,
+          "unitLength": 1,
+          "byteStart": 5,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 6,
+          "unitLength": 1,
+          "byteStart": 6,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 7,
+          "unitLength": 1,
+          "byteStart": 7,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 8,
+          "unitLength": 1,
+          "byteStart": 8,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 9,
+          "unitLength": 1,
+          "byteStart": 9,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 10,
+          "unitLength": 1,
+          "byteStart": 10,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 11,
+          "unitLength": 1,
+          "byteStart": 11,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 12,
+          "unitLength": 1,
+          "byteStart": 12,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 13,
+          "unitLength": 1,
+          "byteStart": 13,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 14,
+          "unitLength": 1,
+          "byteStart": 14,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 15,
+          "unitLength": 1,
+          "byteStart": 15,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 16,
+          "unitLength": 1,
+          "byteStart": 16,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 17,
+          "unitLength": 1,
+          "byteStart": 17,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 18,
+          "unitLength": 1,
+          "byteStart": 18,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 19,
+          "unitLength": 1,
+          "byteStart": 19,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 20,
+          "unitLength": 1,
+          "byteStart": 20,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 21,
+          "unitLength": 1,
+          "byteStart": 21,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 22,
+          "unitLength": 1,
+          "byteStart": 22,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 23,
+          "unitLength": 1,
+          "byteStart": 23,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 24,
+          "unitLength": 1,
+          "byteStart": 24,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 25,
+          "unitLength": 1,
+          "byteStart": 25,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 26,
+          "unitLength": 1,
+          "byteStart": 26,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 27,
+          "unitLength": 1,
+          "byteStart": 27,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 28,
+          "unitLength": 1,
+          "byteStart": 28,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 29,
+          "unitLength": 1,
+          "byteStart": 29,
+          "byteLength": 1
+        },
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "byte",
+          "unitStart": 30,
+          "unitLength": 1,
+          "byteStart": 30,
+          "byteLength": 1
+        }
+      ],
+      "chunks": [
+        {
+          "index": 1,
+          "total": 3,
+          "parity": 254,
+          "sequenceIndex": 0,
+          "sequenceTotal": 2,
+          "sequenceIndicator": 2,
+          "sourceSegmentStart": 0,
+          "sourceSegmentEnd": 1,
+          "splitUnitStart": 0,
+          "splitUnitLength": 15,
+          "byteStart": 0,
+          "byteLength": 15,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 152,
+          "capacityBits": 152,
+          "remainingBits": 0,
+          "maskPattern": 1,
+          "matrixSha256": "f6dfcc71e6e0d29c6a90087eecbab29ee5c7dee1701a3bb752f4f6d012d6d5d7",
+          "darkModules": 232
+        },
+        {
+          "index": 2,
+          "total": 3,
+          "parity": 254,
+          "sequenceIndex": 1,
+          "sequenceTotal": 2,
+          "sequenceIndicator": 18,
+          "sourceSegmentStart": 0,
+          "sourceSegmentEnd": 1,
+          "splitUnitStart": 15,
+          "splitUnitLength": 15,
+          "byteStart": 15,
+          "byteLength": 15,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 152,
+          "capacityBits": 152,
+          "remainingBits": 0,
+          "maskPattern": 1,
+          "matrixSha256": "102db6b47b49e297c2349009c756c6a3db4100e9833e12ac9f39c59df0fa25ad",
+          "darkModules": 240
+        },
+        {
+          "index": 3,
+          "total": 3,
+          "parity": 254,
+          "sequenceIndex": 2,
+          "sequenceTotal": 2,
+          "sequenceIndicator": 34,
+          "sourceSegmentStart": 0,
+          "sourceSegmentEnd": 1,
+          "splitUnitStart": 30,
+          "splitUnitLength": 1,
+          "byteStart": 30,
+          "byteLength": 1,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 40,
+          "capacityBits": 152,
+          "remainingBits": 112,
+          "maskPattern": 1,
+          "matrixSha256": "90137d43a9c423bd5e6d669bc725df5f0d6e7361f1572faebe1a944269889166",
+          "darkModules": 226
+        }
+      ]
+    }
+  },
+  {
+    "id": "structured-append-segments-kanji-atomic-v1-l-mask2",
+    "description": "Manual Structured Append keeps a Kanji segment atomic with fixed version 1-L and mask 2.",
+    "segments": [
+      {
+        "mode": "alphanumeric",
+        "data": "ABCDEFGHIJKLMNOPQRSTU"
+      },
+      {
+        "mode": "kanji",
+        "data": "漢字"
+      },
+      {
+        "mode": "numeric",
+        "data": "12345678901234567890"
+      }
+    ],
+    "options": {
+      "version": 1,
+      "errorCorrectionLevel": "L",
+      "maskPattern": 2,
+      "output": "matrix"
+    },
+    "expected": {
+      "total": 2,
+      "parity": 102,
+      "inputLength": 3,
+      "byteLength": 47,
+      "splitUnits": [
+        {
+          "sourceSegmentIndex": 0,
+          "mode": "alphanumeric",
+          "unitStart": 0,
+          "unitLength": 21,
+          "byteStart": 0,
+          "byteLength": 21
+        },
+        {
+          "sourceSegmentIndex": 1,
+          "mode": "kanji",
+          "unitStart": 0,
+          "unitLength": 2,
+          "byteStart": 21,
+          "byteLength": 6
+        },
+        {
+          "sourceSegmentIndex": 2,
+          "mode": "numeric",
+          "unitStart": 0,
+          "unitLength": 20,
+          "byteStart": 27,
+          "byteLength": 20
+        }
+      ],
+      "chunks": [
+        {
+          "index": 1,
+          "total": 2,
+          "parity": 102,
+          "sequenceIndex": 0,
+          "sequenceTotal": 1,
+          "sequenceIndicator": 1,
+          "sourceSegmentStart": 0,
+          "sourceSegmentEnd": 1,
+          "splitUnitStart": 0,
+          "splitUnitLength": 1,
+          "byteStart": 0,
+          "byteLength": 21,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 149,
+          "capacityBits": 152,
+          "remainingBits": 3,
+          "maskPattern": 2,
+          "matrixSha256": "4a15156b33a6774fc8b20203a84dc6c1beef52a42e2089f8cba3c004f71b032a",
+          "darkModules": 218
+        },
+        {
+          "index": 2,
+          "total": 2,
+          "parity": 102,
+          "sequenceIndex": 1,
+          "sequenceTotal": 1,
+          "sequenceIndicator": 17,
+          "sourceSegmentStart": 1,
+          "sourceSegmentEnd": 3,
+          "splitUnitStart": 1,
+          "splitUnitLength": 2,
+          "byteStart": 21,
+          "byteLength": 26,
+          "version": 1,
+          "errorCorrectionLevel": "L",
+          "dataBitLength": 139,
+          "capacityBits": 152,
+          "remainingBits": 13,
+          "maskPattern": 2,
+          "matrixSha256": "82795c08d044218a34794d9c144baa6038f4f6ace2609e1fc91035357500a3ae",
+          "darkModules": 224
+        }
+      ]
+    }
+  }
+]

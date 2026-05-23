@@ -16,6 +16,7 @@ import {
   toByteArray
 } from "./encoding/modes.js";
 import {
+  CONTROL_SEGMENT_MODES,
   getControlSegmentDiagnostics,
   getFirstEciAssignmentNumber,
   getFirstFnc1Mode,
@@ -90,6 +91,10 @@ export class QRCode {
 
   static generateStructuredAppend(input, options = {}) {
     return generateStructuredAppend(input, options);
+  }
+
+  static generateSegmentsStructuredAppend(segments, options = {}) {
+    return generateSegmentsStructuredAppend(segments, options);
   }
 
   static generateSegments(segments, options = {}) {
@@ -194,6 +199,50 @@ export function generateStructuredAppend(input, options = {}) {
     inputLength: inputInfo.inputLength,
     byteLength: inputInfo.byteLength,
     diagnostics: createStructuredAppendSummaryDiagnostics({
+      normalized,
+      selected,
+      inputInfo,
+      symbolDiagnostics
+    })
+  };
+}
+
+export function generateSegmentsStructuredAppend(segments, options = {}) {
+  const normalized = normalizeSegmentsStructuredAppendGenerateOptions(options);
+  const normalizedSegments = normalizeStructuredAppendManualSegments(segments);
+  const inputInfo = createStructuredAppendSegmentsInputInfo(normalizedSegments);
+  const selected = selectStructuredAppendSegmentsSplit(inputInfo, normalized);
+  const symbols = [];
+  const symbolDiagnostics = [];
+
+  selected.chunks.forEach((chunk, index) => {
+    const symbolOptions = createStructuredAppendSymbolOptions(normalized, selected.version, {
+      index: index + 1,
+      total: selected.chunks.length,
+      parity: inputInfo.parity
+    });
+    const diagnosticResult = generateSegments(chunk.segments, {
+      ...symbolOptions,
+      output: "matrix",
+      diagnostics: true
+    });
+    symbolDiagnostics.push(createStructuredAppendSegmentsSymbolDiagnostics({
+      chunk,
+      diagnostics: diagnosticResult.diagnostics
+    }));
+
+    symbols.push(normalized.diagnostics
+      ? diagnosticResult
+      : generateSegments(chunk.segments, symbolOptions));
+  });
+
+  return {
+    symbols,
+    total: symbols.length,
+    parity: inputInfo.parity,
+    inputLength: inputInfo.inputLength,
+    byteLength: inputInfo.byteLength,
+    diagnostics: createStructuredAppendSegmentsSummaryDiagnostics({
       normalized,
       selected,
       inputInfo,
@@ -367,6 +416,68 @@ function normalizeStructuredAppendGenerateOptions(options = {}) {
   };
 }
 
+function normalizeSegmentsStructuredAppendGenerateOptions(options = {}) {
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    throw new InvalidInputError("generateSegmentsStructuredAppend options must be an object");
+  }
+
+  if (Object.hasOwn(options, "mode")) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend uses caller-provided segment modes; mode is not supported");
+  }
+  if (Object.hasOwn(options, "encoding")) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend uses existing manual byte encoding behavior; encoding is not supported");
+  }
+  if (Object.hasOwn(options, "optimizeSegments")) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend preserves manual segments; optimizeSegments is not supported");
+  }
+  if (Object.hasOwn(options, "errorCorrection")) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend uses errorCorrectionLevel; errorCorrection is not supported");
+  }
+  if (Object.hasOwn(options, "mask")) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend uses maskPattern; mask is not supported");
+  }
+  if (Object.hasOwn(options, "parity")) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend computes parity from the manual segment payload bytes; parity override is not supported");
+  }
+  if (Object.hasOwn(options, "structuredAppend") && options.structuredAppend !== false) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend owns the Structured Append header; structuredAppend option is not supported");
+  }
+
+  const maxSymbols = Object.hasOwn(options, "maxSymbols") ? options.maxSymbols : 16;
+  if (!Number.isInteger(maxSymbols) || maxSymbols < 2 || maxSymbols > 16) {
+    throw new InvalidModeError(`maxSymbols must be an integer from 2 to 16; got ${maxSymbols}`);
+  }
+
+  const normalized = normalizeOptions({
+    ...options,
+    mode: "auto",
+    encoding: "utf-8",
+    optimizeSegments: true
+  });
+  if (normalized.eci !== false) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend cannot be combined with ECI in this implementation");
+  }
+  if (normalized.gs1) {
+    throw new InvalidGs1Error("generateSegmentsStructuredAppend cannot be combined with gs1: true in this implementation");
+  }
+  if (normalized.fnc1Second !== false) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend cannot be combined with FNC1 second position in this implementation");
+  }
+  if (normalized.boostErrorCorrection) {
+    throw new InvalidModeError("generateSegmentsStructuredAppend does not support boostErrorCorrection in this implementation");
+  }
+
+  return {
+    ...normalized,
+    maxSymbols,
+    eci: false,
+    gs1: false,
+    fnc1Second: false,
+    structuredAppend: false,
+    boostErrorCorrection: false
+  };
+}
+
 function createStructuredAppendInputInfo(input) {
   const binary = isBinaryInput(input);
   const units = binary ? toByteArray(input) : Array.from(assertStructuredAppendTextInput(input));
@@ -411,6 +522,181 @@ function assertStructuredAppendTextInput(input) {
     throw new InvalidInputError(`QR input must be a string, Uint8Array, ArrayBuffer, or ArrayBuffer view; got ${typeof input}`);
   }
   return input;
+}
+
+function normalizeStructuredAppendManualSegments(segments) {
+  const normalizedSegments = normalizeManualSegments(segments);
+  if (normalizedSegments.length === 0) {
+    throw new InvalidInputError("generateSegmentsStructuredAppend requires at least two non-empty data split units");
+  }
+
+  for (const segment of normalizedSegments) {
+    if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_FIRST) {
+      throw new InvalidGs1Error("generateSegmentsStructuredAppend cannot be combined with manual FNC1 first position segments");
+    }
+    if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND) {
+      throw new InvalidModeError("generateSegmentsStructuredAppend cannot be combined with manual FNC1 second position segments");
+    }
+    if (segment.mode === CONTROL_SEGMENT_MODES.ECI) {
+      throw new InvalidModeError("generateSegmentsStructuredAppend cannot be combined with manual ECI segments");
+    }
+    if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
+      throw new InvalidModeError("generateSegmentsStructuredAppend owns the Structured Append header; manual structured-append segments are not supported");
+    }
+    if (isControlSegment(segment)) {
+      throw new InvalidModeError(`generateSegmentsStructuredAppend does not support manual ${segment.mode} control segments`);
+    }
+  }
+
+  return normalizedSegments;
+}
+
+function createStructuredAppendSegmentsInputInfo(segments) {
+  const splitUnits = [];
+  const canonicalBytes = [];
+
+  segments.forEach((segment, sourceSegmentIndex) => {
+    const byteStart = canonicalBytes.length;
+    const segmentBytes = getStructuredAppendSegmentCanonicalBytes(segment);
+    canonicalBytes.push(...segmentBytes);
+    const segmentUnits = createStructuredAppendSegmentSplitUnits({
+      segment,
+      sourceSegmentIndex,
+      byteStart
+    });
+    if (segmentUnits.length === 0) {
+      throw new InvalidInputError(`segments[${sourceSegmentIndex}] must include non-empty data for generateSegmentsStructuredAppend`);
+    }
+    splitUnits.push(...segmentUnits);
+  });
+
+  if (splitUnits.length === 0) {
+    throw new InvalidInputError("generateSegmentsStructuredAppend requires input that can be split into at least two non-empty split units");
+  }
+
+  return {
+    segments,
+    splitUnits,
+    inputLength: segments.length,
+    byteLength: canonicalBytes.length,
+    parity: canonicalBytes.reduce((parity, byte) => parity ^ byte, 0),
+    makeChunk: (start, length) => createStructuredAppendSegmentsChunk(splitUnits, start, length)
+  };
+}
+
+function getStructuredAppendSegmentCanonicalBytes(segment) {
+  if (segment.mode === "byte") {
+    return segment.bytes !== undefined ? segment.bytes : encodeUtf8(segment.text);
+  }
+  if (segment.mode === "kanji") {
+    return encodeUtf8(segment.text);
+  }
+  return Array.from(segment.text, (character) => character.charCodeAt(0));
+}
+
+function createStructuredAppendSegmentSplitUnits({ segment, sourceSegmentIndex, byteStart }) {
+  if (segment.mode === "byte") {
+    return segment.bytes !== undefined
+      ? createBinaryByteSegmentSplitUnits({ segment, sourceSegmentIndex, byteStart })
+      : createTextByteSegmentSplitUnits({ segment, sourceSegmentIndex, byteStart });
+  }
+
+  const characterLength = Array.from(segment.text).length;
+  if (characterLength === 0) {
+    return [];
+  }
+  return [{
+    sourceSegmentIndex,
+    mode: segment.mode,
+    unitStart: 0,
+    unitLength: characterLength,
+    byteStart,
+    byteLength: getStructuredAppendSegmentCanonicalBytes(segment).length,
+    segment: { ...segment }
+  }];
+}
+
+function createBinaryByteSegmentSplitUnits({ segment, sourceSegmentIndex, byteStart }) {
+  return segment.bytes.map((byte, index) => ({
+    sourceSegmentIndex,
+    mode: "byte",
+    unitStart: index,
+    unitLength: 1,
+    byteStart: byteStart + index,
+    byteLength: 1,
+    byteKind: "binary",
+    bytes: [byte]
+  }));
+}
+
+function createTextByteSegmentSplitUnits({ segment, sourceSegmentIndex, byteStart }) {
+  let offset = 0;
+  return Array.from(segment.text, (character, index) => {
+    const bytes = encodeUtf8(character);
+    const unit = {
+      sourceSegmentIndex,
+      mode: "byte",
+      unitStart: index,
+      unitLength: 1,
+      byteStart: byteStart + offset,
+      byteLength: bytes.length,
+      byteKind: "text",
+      text: character
+    };
+    offset += bytes.length;
+    return unit;
+  });
+}
+
+function createStructuredAppendSegmentsChunk(splitUnits, start, length) {
+  const units = splitUnits.slice(start, start + length);
+  return {
+    segments: materializeStructuredAppendSegmentsChunk(units),
+    sourceSegmentStart: Math.min(...units.map((unit) => unit.sourceSegmentIndex)),
+    sourceSegmentEnd: Math.max(...units.map((unit) => unit.sourceSegmentIndex)) + 1,
+    splitUnitStart: start,
+    splitUnitLength: length,
+    byteStart: units[0]?.byteStart ?? 0,
+    byteLength: units.reduce((total, unit) => total + unit.byteLength, 0)
+  };
+}
+
+function materializeStructuredAppendSegmentsChunk(units) {
+  const pieces = [];
+
+  for (const unit of units) {
+    const last = pieces.at(-1);
+    if (
+      unit.mode === "byte" &&
+      last?.sourceSegmentIndex === unit.sourceSegmentIndex &&
+      last.byteKind === unit.byteKind
+    ) {
+      if (unit.byteKind === "binary") {
+        last.segment.bytes.push(...unit.bytes);
+      } else {
+        last.segment.text += unit.text;
+      }
+      continue;
+    }
+
+    pieces.push({
+      sourceSegmentIndex: unit.sourceSegmentIndex,
+      byteKind: unit.byteKind,
+      segment: createStructuredAppendChunkSegment(unit)
+    });
+  }
+
+  return pieces.map((piece) => piece.segment);
+}
+
+function createStructuredAppendChunkSegment(unit) {
+  if (unit.mode !== "byte") {
+    return { ...unit.segment };
+  }
+  if (unit.byteKind === "binary") {
+    return { mode: "byte", bytes: [...unit.bytes] };
+  }
+  return { mode: "byte", text: unit.text };
 }
 
 function selectStructuredAppendSplit(inputInfo, normalized) {
@@ -523,9 +809,138 @@ function findLargestFittingStructuredAppendPrefix({ inputInfo, normalized, versi
   return best;
 }
 
+function selectStructuredAppendSegmentsSplit(inputInfo, normalized) {
+  if (normalized.version !== "auto") {
+    const attempt = attemptStructuredAppendSegmentsSplitAtVersion(inputInfo, normalized, normalized.version);
+    if (attempt.status === "single") {
+      throw new InvalidInputError(
+        `Input segments fit in one version ${normalized.version}-${normalized.errorCorrectionLevel} symbol; use generateSegments() or the low-level structuredAppend option instead`
+      );
+    }
+    if (attempt.status === "ok") {
+      return {
+        ...attempt,
+        versionSelection: "fixed",
+        versionSelectionReason: `Version ${attempt.version} was requested explicitly.`
+      };
+    }
+    throw new DataTooLongError(
+      `Input segments cannot be split into ${normalized.maxSymbols} or fewer version ${normalized.version}-${normalized.errorCorrectionLevel} Structured Append symbols`
+    );
+  }
+
+  let sawTooLong = false;
+  let sawSingle = false;
+  for (let version = normalized.minVersion; version <= normalized.maxVersion; version += 1) {
+    const attempt = attemptStructuredAppendSegmentsSplitAtVersion(inputInfo, normalized, version);
+    if (attempt.status === "ok") {
+      return {
+        ...attempt,
+        versionSelection: "auto-minimum",
+        versionSelectionReason: `Version ${version} is the smallest version in ${normalized.minVersion}..${normalized.maxVersion} that can split the manual segments into ${attempt.chunks.length} Structured Append symbols at error correction ${normalized.errorCorrectionLevel}.`
+      };
+    }
+    if (attempt.status === "single") {
+      sawSingle = true;
+    } else {
+      sawTooLong = true;
+    }
+  }
+
+  if (sawTooLong) {
+    throw new DataTooLongError(
+      `Input segments cannot be split into ${normalized.maxSymbols} or fewer Structured Append symbols for versions ${normalized.minVersion}..${normalized.maxVersion} at error correction ${normalized.errorCorrectionLevel}`
+    );
+  }
+  if (sawSingle) {
+    throw new InvalidInputError("Input segments fit in one symbol in the selected version range; use generateSegments() or the low-level structuredAppend option instead");
+  }
+  throw new DataTooLongError(
+    `Input segments cannot be split into Structured Append symbols for versions ${normalized.minVersion}..${normalized.maxVersion}`
+  );
+}
+
+function attemptStructuredAppendSegmentsSplitAtVersion(inputInfo, normalized, version) {
+  const wholeChunk = inputInfo.makeChunk(0, inputInfo.splitUnits.length);
+  if (canFitStructuredAppendSegmentsChunk(wholeChunk, normalized, version)) {
+    return { status: "single", version };
+  }
+  if (inputInfo.splitUnits.length < 2) {
+    return { status: "too-long", version };
+  }
+
+  const chunks = [];
+  let position = 0;
+
+  while (position < inputInfo.splitUnits.length) {
+    if (chunks.length >= normalized.maxSymbols) {
+      return { status: "too-long", version };
+    }
+
+    const remaining = inputInfo.splitUnits.length - position;
+    const maxPrefixLength = chunks.length === 0 ? remaining - 1 : remaining;
+    if (maxPrefixLength < 1) {
+      return { status: "single", version };
+    }
+
+    const prefixLength = findLargestFittingStructuredAppendSegmentsPrefix({
+      inputInfo,
+      normalized,
+      version,
+      position,
+      maxPrefixLength
+    });
+    if (prefixLength < 1) {
+      return { status: "too-long", version };
+    }
+
+    chunks.push(inputInfo.makeChunk(position, prefixLength));
+    position += prefixLength;
+  }
+
+  return chunks.length >= 2
+    ? { status: "ok", version, chunks }
+    : { status: "single", version };
+}
+
+function findLargestFittingStructuredAppendSegmentsPrefix({ inputInfo, normalized, version, position, maxPrefixLength }) {
+  let low = 1;
+  let high = maxPrefixLength;
+  let best = 0;
+
+  while (low <= high) {
+    const length = Math.floor((low + high) / 2);
+    const chunk = inputInfo.makeChunk(position, length);
+    if (canFitStructuredAppendSegmentsChunk(chunk, normalized, version)) {
+      best = length;
+      low = length + 1;
+    } else {
+      high = length - 1;
+    }
+  }
+
+  return best;
+}
+
 function canFitStructuredAppendChunk(input, normalized, version) {
   try {
     selectPlanForInput(input, createStructuredAppendSymbolOptions(normalized, version, {
+      index: 1,
+      total: 2,
+      parity: 0
+    }));
+    return true;
+  } catch (error) {
+    if (error instanceof DataTooLongError) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function canFitStructuredAppendSegmentsChunk(chunk, normalized, version) {
+  try {
+    selectPlanForManualSegments(chunk.segments, createStructuredAppendSymbolOptions(normalized, version, {
       index: 1,
       total: 2,
       parity: 0
@@ -567,6 +982,33 @@ function createStructuredAppendSummaryDiagnostics({ normalized, selected, inputI
   };
 }
 
+function createStructuredAppendSegmentsSummaryDiagnostics({ normalized, selected, inputInfo, symbolDiagnostics }) {
+  const warnings = createStructuredAppendWarnings(normalized, selected.chunks.length);
+  return {
+    version: selected.version,
+    errorCorrectionLevel: normalized.errorCorrectionLevel,
+    versionSelection: selected.versionSelection,
+    versionSelectionReason: selected.versionSelectionReason,
+    total: selected.chunks.length,
+    parity: inputInfo.parity,
+    byteLength: inputInfo.byteLength,
+    inputLength: inputInfo.inputLength,
+    segmentCount: inputInfo.segments.length,
+    maxSymbols: normalized.maxSymbols,
+    splitStrategy: "segment-boundary-byte-chunk",
+    splitUnits: inputInfo.splitUnits.map((unit) => ({
+      sourceSegmentIndex: unit.sourceSegmentIndex,
+      mode: unit.mode,
+      unitStart: unit.unitStart,
+      unitLength: unit.unitLength,
+      byteStart: unit.byteStart,
+      byteLength: unit.byteLength
+    })),
+    symbols: symbolDiagnostics,
+    warnings
+  };
+}
+
 function createStructuredAppendWarnings(normalized, total) {
   const warnings = [];
   if (total === normalized.maxSymbols) {
@@ -586,6 +1028,30 @@ function createStructuredAppendWarnings(normalized, total) {
     });
   }
   return warnings;
+}
+
+function createStructuredAppendSegmentsSymbolDiagnostics({ chunk, diagnostics }) {
+  const structuredAppend = diagnostics.structuredAppend;
+  return {
+    index: structuredAppend.index,
+    total: structuredAppend.total,
+    parity: structuredAppend.parity,
+    sequenceIndex: structuredAppend.sequenceIndex,
+    sequenceTotal: structuredAppend.sequenceTotal,
+    sequenceIndicator: structuredAppend.sequenceIndicator,
+    sourceSegmentStart: chunk.sourceSegmentStart,
+    sourceSegmentEnd: chunk.sourceSegmentEnd,
+    splitUnitStart: chunk.splitUnitStart,
+    splitUnitLength: chunk.splitUnitLength,
+    byteStart: chunk.byteStart,
+    byteLength: chunk.byteLength,
+    version: diagnostics.version,
+    errorCorrectionLevel: diagnostics.errorCorrectionLevel,
+    dataBitLength: diagnostics.dataBitLength,
+    capacityBits: diagnostics.capacityBits,
+    remainingBits: diagnostics.remainingBits,
+    maskPattern: diagnostics.maskPattern
+  };
 }
 
 function createStructuredAppendSymbolDiagnostics({ chunk, diagnostics }) {

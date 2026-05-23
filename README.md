@@ -216,7 +216,19 @@ QRCode.generate("PART 2", {
 ```
 
 高レベル API の分割方針と制限は [Structured Append v2 API Design](docs/structured-append-v2.md) にまとめています。
-Manual segments 版の高レベル API はまだ runtime 実装していませんが、設計方針は [Structured Append Manual Segments v2 API Design](docs/structured-append-segments-v2.md) に固定しています。
+Manual segments 版は `QRCode.generateSegmentsStructuredAppend()` で利用できます。分割方針は [Structured Append Manual Segments v2 API Design](docs/structured-append-segments-v2.md) にまとめています。
+
+```js
+QRCode.generateSegmentsStructuredAppend([
+  { mode: "alphanumeric", data: "ORDER-" },
+  { mode: "numeric", data: "12345678901234567890" },
+  { mode: "byte", data: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }
+], {
+  version: 1,
+  errorCorrectionLevel: "L",
+  output: "svg"
+});
+```
 
 GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。生成した URI は `parseGs1DigitalLink()` で element data に戻せます。
 

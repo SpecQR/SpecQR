@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   DataTooLongError,
   generate,
+  generateSegmentsStructuredAppend,
   generateStructuredAppend,
   generateSegments,
   InvalidGs1Error,
@@ -18,6 +19,9 @@ import { QRCode } from "../src/index.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const highLevelFixtures = JSON.parse(
   readFileSync(path.join(root, "fixtures", "structured-append-high-level.json"), "utf8")
+);
+const manualSegmentsFixtures = JSON.parse(
+  readFileSync(path.join(root, "fixtures", "structured-append-segments.json"), "utf8")
 );
 
 function matrixRows(result) {
@@ -208,6 +212,199 @@ test("QRCode.generateStructuredAppend static API returns normal output shapes", 
   assert.deepEqual(Array.from(png.symbols[0].slice(0, 8)), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 });
 
+test("generateSegmentsStructuredAppend splits manual segments at segment boundaries", () => {
+  const input = [
+    { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+    { mode: "numeric", data: "12345678901234567890" },
+    { mode: "byte", data: Uint8Array.from([0x00, 0x01, 0x02, 0xff]) }
+  ];
+  const result = generateSegmentsStructuredAppend(input, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    maskPattern: 0,
+    output: "matrix",
+    diagnostics: true
+  });
+
+  assert.equal(result.total, 2);
+  assert.equal(result.parity, xorBytes([
+    ...new TextEncoder().encode("ABCDEFGHIJKLMNOPQRSTU12345678901234567890"),
+    0x00,
+    0x01,
+    0x02,
+    0xff
+  ]));
+  assert.equal(result.inputLength, 3);
+  assert.equal(result.byteLength, 45);
+  assert.equal(result.diagnostics.version, 1);
+  assert.equal(result.diagnostics.splitStrategy, "segment-boundary-byte-chunk");
+  assert.deepEqual(
+    result.symbols.map((symbol) => symbol.diagnostics.segments.map((segment) => segment.mode)),
+    [
+      ["structured-append", "alphanumeric"],
+      ["structured-append", "numeric", "byte"]
+    ]
+  );
+  assert.deepEqual(
+    result.diagnostics.symbols.map((symbol) => ({
+      index: symbol.index,
+      total: symbol.total,
+      parity: symbol.parity,
+      sourceSegmentStart: symbol.sourceSegmentStart,
+      sourceSegmentEnd: symbol.sourceSegmentEnd,
+      splitUnitStart: symbol.splitUnitStart,
+      splitUnitLength: symbol.splitUnitLength,
+      byteStart: symbol.byteStart,
+      byteLength: symbol.byteLength
+    })),
+    [
+      {
+        index: 1,
+        total: 2,
+        parity: result.parity,
+        sourceSegmentStart: 0,
+        sourceSegmentEnd: 1,
+        splitUnitStart: 0,
+        splitUnitLength: 1,
+        byteStart: 0,
+        byteLength: 21
+      },
+      {
+        index: 2,
+        total: 2,
+        parity: result.parity,
+        sourceSegmentStart: 1,
+        sourceSegmentEnd: 3,
+        splitUnitStart: 1,
+        splitUnitLength: 5,
+        byteStart: 21,
+        byteLength: 24
+      }
+    ]
+  );
+});
+
+test("QRCode.generateSegmentsStructuredAppend static API returns normal output shapes", () => {
+  const segments = [
+    { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+    { mode: "numeric", data: "12345678901234567890" }
+  ];
+
+  const svg = QRCode.generateSegmentsStructuredAppend(segments, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "svg"
+  });
+  assert.equal(svg.total, 2);
+  assert.equal(typeof svg.symbols[0], "string");
+  assert.match(svg.symbols[0], /^<svg /);
+  assert.equal(svg.diagnostics.symbols[0].version, 1);
+
+  const png = QRCode.generateSegmentsStructuredAppend(segments, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "png"
+  });
+  assert.equal(png.total, 2);
+  assert.ok(png.symbols[0] instanceof Uint8Array);
+  assert.deepEqual(Array.from(png.symbols[0].slice(0, 8)), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+});
+
+test("generateSegmentsStructuredAppend chunks byte binary data with offset-aware parity", () => {
+  const payload = Uint8Array.from(Array.from({ length: 31 }, (_, index) => index === 0 ? 0x00 : index === 30 ? 0xff : index));
+  const backing = Uint8Array.from([0xaa, ...payload, 0xbb]);
+  const view = new Uint8Array(backing.buffer, 1, payload.length);
+  const result = generateSegmentsStructuredAppend([
+    { mode: "byte", data: view }
+  ], {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "matrix",
+    diagnostics: true
+  });
+
+  assert.equal(result.total, 3);
+  assert.equal(result.parity, xorBytes(payload));
+  assert.equal(result.inputLength, 1);
+  assert.equal(result.byteLength, payload.length);
+  assert.deepEqual(
+    result.diagnostics.symbols.map((symbol) => ({
+      splitUnitStart: symbol.splitUnitStart,
+      splitUnitLength: symbol.splitUnitLength,
+      byteStart: symbol.byteStart,
+      byteLength: symbol.byteLength,
+      index: symbol.index,
+      total: symbol.total,
+      parity: symbol.parity
+    })),
+    [
+      { splitUnitStart: 0, splitUnitLength: 15, byteStart: 0, byteLength: 15, index: 1, total: 3, parity: result.parity },
+      { splitUnitStart: 15, splitUnitLength: 15, byteStart: 15, byteLength: 15, index: 2, total: 3, parity: result.parity },
+      { splitUnitStart: 30, splitUnitLength: 1, byteStart: 30, byteLength: 1, index: 3, total: 3, parity: result.parity }
+    ]
+  );
+  assert.deepEqual(
+    result.symbols.map((symbol) => symbol.diagnostics.segments.at(1).byteCount),
+    [15, 15, 1]
+  );
+});
+
+test("generateSegmentsStructuredAppend chunks byte string data on Unicode code point boundaries", () => {
+  const text = "😀".repeat(8);
+  const result = generateSegmentsStructuredAppend([
+    { mode: "byte", data: text }
+  ], {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "matrix",
+    diagnostics: true
+  });
+
+  assert.equal(result.total, 3);
+  assert.equal(result.parity, xorBytes(new TextEncoder().encode(text)));
+  assert.deepEqual(
+    result.symbols.map((symbol) => symbol.diagnostics.segments.at(1).characterCount),
+    [3, 3, 2]
+  );
+  assert.deepEqual(
+    result.symbols.map((symbol) => symbol.diagnostics.segments.at(1).byteCount),
+    [12, 12, 8]
+  );
+});
+
+test("generateSegmentsStructuredAppend auto version chooses the smallest common split version", () => {
+  const result = generateSegmentsStructuredAppend([
+    { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+    { mode: "numeric", data: "12345678901234567890" },
+    { mode: "byte", data: Uint8Array.from([0x00, 0x01, 0x02, 0xff]) }
+  ], {
+    errorCorrectionLevel: "L",
+    output: "matrix"
+  });
+
+  assert.equal(result.total, 2);
+  assert.equal(result.diagnostics.version, 1);
+  assert.equal(result.diagnostics.versionSelection, "auto-minimum");
+});
+
+test("generateSegmentsStructuredAppend keeps numeric, alphanumeric, and Kanji segments atomic", () => {
+  const cases = [
+    { mode: "numeric", data: "1".repeat(60) },
+    { mode: "alphanumeric", data: "A".repeat(60) },
+    { mode: "kanji", data: "漢".repeat(11) }
+  ];
+
+  for (const segment of cases) {
+    assert.throws(
+      () => generateSegmentsStructuredAppend([segment], {
+        version: 1,
+        errorCorrectionLevel: "L"
+      }),
+      (error) => error instanceof DataTooLongError && /cannot be split/.test(error.message)
+    );
+  }
+});
+
 test("generateStructuredAppend splits binary ArrayBufferView input with offset-aware parity", () => {
   const payload = Uint8Array.from(Array.from({ length: 31 }, (_, index) => index === 0 ? 0x00 : index === 30 ? 0xff : index));
   const backing = Uint8Array.from([0xaa, ...payload, 0xbb]);
@@ -336,6 +533,121 @@ test("generateStructuredAppend rejects invalid, single-symbol, too-long, and inc
   );
 });
 
+test("generateSegmentsStructuredAppend rejects invalid, single-symbol, too-long, and incompatible inputs", () => {
+  for (const maxSymbols of [1, 17, 2.5]) {
+    assert.throws(
+      () => generateSegmentsStructuredAppend([{ mode: "byte", data: Uint8Array.from({ length: 31 }, (_, index) => index) }], { maxSymbols }),
+      (error) => error instanceof InvalidModeError && /maxSymbols/.test(error.message)
+    );
+  }
+
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "alphanumeric", data: "HELLO" },
+      { mode: "numeric", data: "12345" }
+    ], { version: 1 }),
+    (error) => error instanceof InvalidInputError && /fit in one/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([], { version: 1 }),
+    (error) => error instanceof InvalidInputError && /at least/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "byte", data: Uint8Array.from({ length: 31 }, (_, index) => index) }
+    ], {
+      version: 1,
+      errorCorrectionLevel: "L",
+      maxSymbols: 2
+    }),
+    (error) => error instanceof DataTooLongError && /2 or fewer/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "alphanumeric", data: "A".repeat(200) }
+    ], {
+      version: 1,
+      errorCorrectionLevel: "L"
+    }),
+    (error) => error instanceof DataTooLongError && /cannot be split/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { eci: true }),
+    (error) => error instanceof InvalidModeError && /ECI/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { gs1: true }),
+    (error) => error instanceof InvalidGs1Error && /gs1/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { fnc1Second: "37" }),
+    (error) => error instanceof InvalidModeError && /FNC1 second/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { structuredAppend: { index: 1, total: 2, parity: 0 } }),
+    (error) => error instanceof InvalidModeError && /structuredAppend option/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { mode: "byte" }),
+    (error) => error instanceof InvalidModeError && /mode is not supported/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { encoding: "utf-8" }),
+    (error) => error instanceof InvalidModeError && /encoding is not supported/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { optimizeSegments: false }),
+    (error) => error instanceof InvalidModeError && /optimizeSegments/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { parity: 0 }),
+    (error) => error instanceof InvalidModeError && /parity override/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { errorCorrection: "L" }),
+    (error) => error instanceof InvalidModeError && /errorCorrectionLevel/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { mask: 0 }),
+    (error) => error instanceof InvalidModeError && /maskPattern/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(31) }], { boostErrorCorrection: true }),
+    (error) => error instanceof InvalidModeError && /boostErrorCorrection/.test(error.message)
+  );
+});
+
+test("generateSegmentsStructuredAppend rejects manual control segments", () => {
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "eci", assignmentNumber: 26 },
+      { mode: "byte", data: "A".repeat(31) }
+    ]),
+    (error) => error instanceof InvalidModeError && /manual ECI/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "fnc1" },
+      { mode: "numeric", data: "0104912345678904" }
+    ]),
+    (error) => error instanceof InvalidGs1Error && /FNC1 first/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "fnc1-second", applicationIndicator: "37" },
+      { mode: "byte", data: "A".repeat(31) }
+    ]),
+    (error) => error instanceof InvalidModeError && /FNC1 second/.test(error.message)
+  );
+  assert.throws(
+    () => generateSegmentsStructuredAppend([
+      { mode: "structured-append", index: 1, total: 2, parity: 0 },
+      { mode: "byte", data: "A".repeat(31) }
+    ]),
+    (error) => error instanceof InvalidModeError && /manual structured-append/.test(error.message)
+  );
+});
+
 for (const fixture of highLevelFixtures) {
   test(`generateStructuredAppend golden fixture: ${fixture.id}`, () => {
     const result = generateStructuredAppend(fixture.input, {
@@ -357,6 +669,52 @@ for (const fixture of highLevelFixtures) {
         sequenceIndicator: symbol.sequenceIndicator,
         inputStart: symbol.inputStart,
         inputLength: symbol.inputLength,
+        byteStart: symbol.byteStart,
+        byteLength: symbol.byteLength,
+        version: symbol.version,
+        errorCorrectionLevel: symbol.errorCorrectionLevel,
+        dataBitLength: symbol.dataBitLength,
+        capacityBits: symbol.capacityBits,
+        remainingBits: symbol.remainingBits,
+        maskPattern: symbol.maskPattern
+      })),
+      fixture.expected.chunks.map(({ matrixSha256, darkModules, ...chunk }) => chunk)
+    );
+    assert.deepEqual(
+      result.symbols.map((symbol) => matrixHash(symbol.matrix)),
+      fixture.expected.chunks.map((chunk) => chunk.matrixSha256)
+    );
+    assert.deepEqual(
+      result.symbols.map((symbol) => countDarkModules(symbol.matrix)),
+      fixture.expected.chunks.map((chunk) => chunk.darkModules)
+    );
+  });
+}
+
+for (const fixture of manualSegmentsFixtures) {
+  test(`generateSegmentsStructuredAppend golden fixture: ${fixture.id}`, () => {
+    const result = generateSegmentsStructuredAppend(fixture.segments, {
+      ...fixture.options,
+      diagnostics: true
+    });
+
+    assert.equal(result.total, fixture.expected.total);
+    assert.equal(result.parity, fixture.expected.parity);
+    assert.equal(result.inputLength, fixture.expected.inputLength);
+    assert.equal(result.byteLength, fixture.expected.byteLength);
+    assert.deepEqual(result.diagnostics.splitUnits, fixture.expected.splitUnits);
+    assert.deepEqual(
+      result.diagnostics.symbols.map((symbol) => ({
+        index: symbol.index,
+        total: symbol.total,
+        parity: symbol.parity,
+        sequenceIndex: symbol.sequenceIndex,
+        sequenceTotal: symbol.sequenceTotal,
+        sequenceIndicator: symbol.sequenceIndicator,
+        sourceSegmentStart: symbol.sourceSegmentStart,
+        sourceSegmentEnd: symbol.sourceSegmentEnd,
+        splitUnitStart: symbol.splitUnitStart,
+        splitUnitLength: symbol.splitUnitLength,
         byteStart: symbol.byteStart,
         byteLength: symbol.byteLength,
         version: symbol.version,

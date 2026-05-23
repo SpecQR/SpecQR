@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための計画です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
 
-v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版の proposal は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に分離して記録します。
+v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に分離して記録します。
 
 ## v2.0.0 の目的
 
@@ -29,7 +29,7 @@ SpecQR v1.0.0 は、通常 QR Code Model 2 generation、Kanji、ECI、FNC1 first
 | GS1 Digital Link | element data と Digital Link URI の変換 helper。現段階は minimal create/parse + role metadata。Full canonicalization、resolver、compression は後続 phase。 |
 | Control segment model | ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering、capacity accounting、diagnostics を整理する内部 model は実装済み。 |
 | FNC1 second position | application indicator validation、encoding、diagnostics、golden / negative tests は実装済み。 |
-| Structured Append | low-level header encoding、manual chunks、高レベル `generateStructuredAppend()`、automatic splitting、最大 16 symbols、parity consistency validation は実装済み。string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版 proposal は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に固定済み。 |
+| Structured Append | low-level header encoding、manual chunks、高レベル `generateStructuredAppend()`、automatic splitting、manual segments 版 `generateSegmentsStructuredAppend()`、最大 16 symbols、parity consistency validation は実装済み。string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に固定済み。 |
 | Validation expansion | v2 feature 向け golden fixtures、bitstream / matrix checks、decoder validation の限界説明、reference comparison の対象外領域の明記。 |
 | Docs / examples / playground | GS1 QR、GS1 Digital Link、FNC1 second、Structured Append を誤用しにくい examples と docs。Structured Append は string / binary example と playground mode まで追加済み。 |
 
@@ -62,7 +62,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 8. **Structured Append high-level design**: automatic splitting API、capacity handling、diagnostics、parity policy、failure modes を docs に固定する。完了済み。
 9. **Structured Append high-level implementation**: `generateStructuredAppend()`、capacity handling、diagnostics、failure modes を追加する。完了済み。
 10. **Structured Append manual segments design**: `generateSegmentsStructuredAppend()` の segment boundary policy、byte segment chunking、parity、diagnostics、negative cases を docs に固定する。完了済み。
-11. **Structured Append manual segments implementation**: docs に固定した proposal に従い、runtime API、tests、packed smoke を追加する。
+11. **Structured Append manual segments implementation**: docs に固定した設計に従い、runtime API、tests、packed smoke を追加する。完了済み。
 12. **v2 validation expansion**: golden、decoder、optional external validation、reference comparison docs を v2 features に合わせて更新する。
 13. **v2 examples / playground / docs**: GS1 strict validation、Digital Link、FNC1 second、Structured Append の利用導線を整える。
 
@@ -82,9 +82,10 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: FNC1 second position implemented. `fnc1Second` option と manual `{ mode: "fnc1-second", applicationIndicator }` を追加し、2 桁数字 / 1 文字 Latin alphabetic Application Indicator validation、8-bit codeword encoding、diagnostics、golden fixture、negative tests を追加しました。ECI との併用は安全側で reject します。
 - 2026-05-23: Structured Append low-level header implemented. `structuredAppend` option と manual `{ mode: "structured-append", index, total, parity }` を追加し、1-based public index、2..16 total、0..255 parity validation、0-based sequence encoding、diagnostics、golden fixture、negative tests を追加しました。ECI / FNC1 first / FNC1 second との併用は安全側で reject します。この時点では自動分割と parity 自動計算は未実装でした。
 - 2026-05-23: Structured Append high-level API design documented. `generateStructuredAppend(input, options)` / `QRCode.generateStructuredAppend(input, options)` の proposal、return shape、string / binary initial scope、greedy split strategy、original payload byte parity、diagnostics、error behavior、release gate を `docs/structured-append-v2.md` に固定しました。この時点では runtime behavior と package exports は変更していません。
-- 2026-05-23: Structured Append high-level API implemented. `generateStructuredAppend(input, options)` と `QRCode.generateStructuredAppend(input, options)` を追加し、string / binary input、greedy largest-fitting split、最大 16 symbols、original payload byte parity、top-level diagnostics、fixed version / ECC / mask golden fixture、packed package smoke を追加しました。ECI / GS1 / FNC1 との併用、manual segments splitting、public parity helper、decode / merge helper は未対応です。
+- 2026-05-23: Structured Append high-level API implemented. `generateStructuredAppend(input, options)` と `QRCode.generateStructuredAppend(input, options)` を追加し、string / binary input、greedy largest-fitting split、最大 16 symbols、original payload byte parity、top-level diagnostics、fixed version / ECC / mask golden fixture、packed package smoke を追加しました。この時点では ECI / GS1 / FNC1 との併用、manual segments splitting、public parity helper、decode / merge helper は未対応でした。
 - 2026-05-23: Structured Append examples and playground support added. `examples/structured-append.mjs` で string / binary input の自動分割、SVG / PNG symbol output、summary diagnostics を smoke し、playground に `Structured Append` mode、maxSymbols / ECC / Version controls、multi-symbol preview、per-symbol downloads、warnings display を追加しました。QR core と splitting logic は変更していません。
 - 2026-05-23: Structured Append manual segments API designed. `generateSegmentsStructuredAppend(segments, options)` / `QRCode.generateSegmentsStructuredAppend(segments, options)` の docs-only proposal を `docs/structured-append-segments-v2.md` に追加しました。初期方針は segment boundary split を基本にし、byte segment のみ safe chunking を許可し、numeric / alphanumeric / kanji の途中分割、ECI / GS1 / FNC1 併用、runtime implementation は未対応です。
+- 2026-05-23: Structured Append manual segments API implemented. `generateSegmentsStructuredAppend(segments, options)` と `QRCode.generateSegmentsStructuredAppend(segments, options)` を追加し、segment boundary first split、byte segment safe chunking、canonical payload byte parity、per-symbol diagnostics、golden fixture、packed package smoke を追加しました。ECI / GS1 / FNC1 併用、numeric / alphanumeric / kanji mid-segment splitting、public parity helper、decode / merge helper は未対応です。
 
 ## Release Gate
 

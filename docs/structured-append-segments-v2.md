@@ -1,35 +1,36 @@
 # Structured Append Manual Segments v2 API Design
 
-この文書は、SpecQR v2 系で追加を検討する manual segments 版 Structured Append API の設計記録です。現時点では docs-only proposal であり、runtime behavior、public exports、TypeScript declarations、package version は変更しません。
+この文書は、SpecQR v2 系で実装した manual segments 版 Structured Append API の設計記録です。`generateSegmentsStructuredAppend()` は runtime、public exports、TypeScript declarations、unit tests、golden fixture、packed package smoke に追加済みです。package version と runtime dependency は変更していません。
 
 関連する実装済み機能:
 
 - 低レベル Structured Append header: `structuredAppend: { index, total, parity }`
 - manual low-level segment: `{ mode: "structured-append", index, total, parity }`
 - string / binary input の高レベル自動分割: `generateStructuredAppend(input, options)`
+- manual data segments の高レベル自動分割: `generateSegmentsStructuredAppend(segments, options)`
 
-この文書で設計する API は、manual data segments を受け取り、最大 16 個の Structured Append symbols に自動分割する `generateSegmentsStructuredAppend(segments, options)` です。
+この API は、manual data segments を受け取り、最大 16 個の Structured Append symbols に自動分割します。
 
-## Proposed Public API
+## Public API
 
 ```ts
 function generateSegmentsStructuredAppend(
   segments: QRSegmentInput[],
-  options?: QRStructuredAppendSegmentsOptions
-): QRStructuredAppendResult;
+  options?: QRStructuredAppendSegmentsGenerateOptions
+): QRStructuredAppendSegmentsResult;
 
 class QRCode {
   static generateSegmentsStructuredAppend(
     segments: QRSegmentInput[],
-    options?: QRStructuredAppendSegmentsOptions
-  ): QRStructuredAppendResult;
+    options?: QRStructuredAppendSegmentsGenerateOptions
+  ): QRStructuredAppendSegmentsResult;
 }
 ```
 
 Return shape は `generateStructuredAppend()` と揃えます。
 
 ```ts
-interface QRStructuredAppendResult<TSymbol = QRGenerateResult> {
+interface QRStructuredAppendSegmentsResult<TSymbol = QRGenerateResult> {
   symbols: TSymbol[];
   total: number;
   parity: number;
@@ -55,7 +56,7 @@ interface QRStructuredAppendResult<TSymbol = QRGenerateResult> {
 `generateSegmentsStructuredAppend()` は、manual segments の mode choice を尊重する API です。そのため、input segmentation に関係する options は受け付けません。
 
 ```ts
-interface QRStructuredAppendSegmentsOptions {
+interface QRStructuredAppendSegmentsGenerateOptions {
   errorCorrectionLevel?: "L" | "M" | "Q" | "H";
   version?: 1..40 | "auto";
   minVersion?: 1..40;
@@ -90,33 +91,33 @@ Rejected options:
 - `errorCorrection`: use `errorCorrectionLevel`.
 - `mask`: use `maskPattern`.
 - `parity`: high-level API computes parity.
-- `eci`: rejected in the first implementation.
-- `gs1`: rejected in the first implementation.
-- `fnc1Second`: rejected in the first implementation.
+- `eci`: rejected in the current implementation.
+- `gs1`: rejected in the current implementation.
+- `fnc1Second`: rejected in the current implementation.
 - `structuredAppend`: high-level API owns the header.
-- `boostErrorCorrection`: rejected in the first implementation to keep all symbols on the requested ECC policy.
+- `boostErrorCorrection`: rejected in the current implementation to keep all symbols on the requested ECC policy.
 
 ## Accepted Segment Scope
 
-Initial implementation scope:
+Implemented initial scope:
 
 - `{ mode: "numeric", data: string }`
 - `{ mode: "alphanumeric", data: string }`
 - `{ mode: "byte", data: string | Uint8Array | ArrayBuffer | ArrayBufferView | number[] }`
 - `{ mode: "kanji", data: string }`
 
-Rejected in the first implementation:
+Rejected in the current implementation:
 
 - `{ mode: "eci", ... }`
 - `{ mode: "fnc1" }`
 - `{ mode: "fnc1-second", ... }`
 - `{ mode: "structured-append", ... }`
 
-Control segments are rejected because their ordering relative to automatically inserted Structured Append headers is caller-visible and scanner-dependent. The first manual high-level API should prove ordinary data-segment behavior before allowing ECI / FNC1 combinations.
+Control segments are rejected because their ordering relative to automatically inserted Structured Append headers is caller-visible and scanner-dependent. This first manual high-level API proves ordinary data-segment behavior before allowing ECI / FNC1 combinations.
 
 ## Split Policy
 
-The initial splitter should be conservative and easy to audit.
+The splitter is conservative and easy to audit.
 
 ### Segment Boundary First
 
@@ -153,9 +154,9 @@ Rationale:
 
 ### Numeric / Alphanumeric / Kanji Internal Splitting
 
-Numeric, alphanumeric, and kanji segments are indivisible in the initial implementation.
+Numeric, alphanumeric, and kanji segments are indivisible in the current implementation.
 
-The API should not split these segments mid-payload at first, even though QR encoding could technically support it. Reasons:
+The API does not split these segments mid-payload, even though QR encoding could technically support it. Reasons:
 
 - Manual segment mode choices are caller-visible intent.
 - Mid-segment splitting changes character count indicators and grouping boundaries.
@@ -203,7 +204,7 @@ If `version` is `"auto"`:
 - fixed mask applies to all symbols
 - `"auto"` chooses the best mask independently per symbol
 
-`boostErrorCorrection` is rejected in the first implementation. A future design can reconsider it if the diagnostics can explain a common boosted level across all symbols.
+`boostErrorCorrection` is rejected in the current implementation. A future design can reconsider it if the diagnostics can explain a common boosted level across all symbols.
 
 ## One-Symbol Inputs
 
@@ -234,7 +235,7 @@ This policy intentionally matches `generateStructuredAppend(string)` for JavaScr
 
 ## Diagnostics
 
-Top-level diagnostics should use the same broad shape as `generateStructuredAppend()`, with segment-specific metadata added.
+Top-level diagnostics use the same broad shape as `generateStructuredAppend()`, with segment-specific metadata added.
 
 ```ts
 interface QRStructuredAppendSegmentsSummaryDiagnostics {
@@ -287,7 +288,7 @@ interface QRStructuredAppendSegmentsSymbolDiagnostics {
 
 `sourceSegmentEnd` is exclusive. `splitUnitStart` and `splitUnitLength` refer to the internal split-unit array, not the caller's original segment array.
 
-When `diagnostics: true`, each returned symbol should still be the normal `QRCodeDiagnosticResult` from `generateSegments()`, including `diagnostics.structuredAppend`.
+When `diagnostics: true`, each returned symbol is still the normal `QRCodeDiagnosticResult` from `generateSegments()`, including `diagnostics.structuredAppend`.
 
 Warnings:
 
@@ -331,7 +332,7 @@ QRCode.generateSegments([
 ]);
 ```
 
-The proposed high-level manual API is for callers who have one logical manual-segment payload:
+The high-level manual API is for callers who have one logical manual-segment payload:
 
 ```js
 const set = QRCode.generateSegmentsStructuredAppend([
@@ -347,9 +348,9 @@ const set = QRCode.generateSegmentsStructuredAppend([
 
 The high-level API computes `index`, `total`, and `parity`. Therefore it rejects an existing low-level Structured Append segment.
 
-## Golden / Conformance Plan
+## Golden / Conformance Coverage
 
-When implemented, tests should include:
+The implementation includes tests for:
 
 - root export and `QRCode.generateSegmentsStructuredAppend()` static method.
 - segment-boundary split with mixed numeric / alphanumeric / byte segments.
@@ -365,18 +366,18 @@ When implemented, tests should include:
 - packed package smoke and TypeScript declaration smoke.
 - deterministic golden fixture with fixed version / ECC / mask for a mixed manual-segment payload.
 
-Golden fixture suggestions:
+Golden fixtures:
 
 - `structured-append-segments-boundary-v1-l-mask0`: multiple small segments split only at segment boundary.
 - `structured-append-segments-byte-chunk-v1-l-mask1`: one binary byte segment split into multiple symbols.
-- `structured-append-segments-kanji-atomic-v2-m-mask2`: kanji segment remains atomic and diagnostics prove segment range.
+- `structured-append-segments-kanji-atomic-v1-l-mask2`: kanji segment remains atomic and diagnostics prove segment range.
 
 Decoder validation should remain secondary. Scanner APIs differ in how they expose Structured Append set metadata, so conformance should rely on header bits, parity, matrix / codeword golden fixtures, and diagnostics.
 
 ## Rejected Choices
 
-- Split numeric / alphanumeric / kanji segments in the first implementation: rejected to keep manual segment semantics stable and diagnostics easy to audit.
-- Accept ECI / FNC1 / GS1 control modes in the first implementation: rejected until ordering and scanner behavior are tested separately.
+- Split numeric / alphanumeric / kanji segments in the current implementation: rejected to keep manual segment semantics stable and diagnostics easy to audit.
+- Accept ECI / FNC1 / GS1 control modes in the current implementation: rejected until ordering and scanner behavior are tested separately.
 - Accept low-level `structuredAppend` segment and rewrite it: rejected because high-level API owns the set metadata.
 - Return a normal single-symbol QR for one-symbol input: rejected because the function name promises Structured Append semantics.
 - Expose public parity override: rejected for the high-level API. Use low-level `structuredAppend` when external parity control is required.
@@ -384,7 +385,7 @@ Decoder validation should remain secondary. Scanner APIs differ in how they expo
 
 ## Release Gate For Implementation
 
-The eventual implementation should pass at least:
+The implementation release gate is:
 
 - `npm test`
 - `npm run examples:smoke`
@@ -400,7 +401,6 @@ The eventual implementation should pass at least:
 
 ## Non-Scope
 
-- Runtime implementation in this docs-only phase.
 - Public parity helper.
 - Decoder merge helper.
 - ECI / GS1 / FNC1 combinations.

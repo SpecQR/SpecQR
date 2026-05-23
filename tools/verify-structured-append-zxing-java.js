@@ -3,7 +3,10 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { generateStructuredAppend } from "../src/index.js";
+import {
+  generateSegmentsStructuredAppend,
+  generateStructuredAppend
+} from "../src/index.js";
 
 const classpath = process.env.ZXING_CLASSPATH?.trim();
 const javaCommand = process.env.JAVA?.trim() || "java";
@@ -78,6 +81,7 @@ try {
     assert.equal(parsed.index, expected.index, `${expected.id} decoded sequence index mismatch`);
     assert.equal(parsed.total, expected.total, `${expected.id} decoded sequence total mismatch`);
     assert.equal(actual.parity, expected.parity, `${expected.id} parity mismatch`);
+    assert.deepEqual(expected.structuredAppend, expected.summaryStructuredAppend, `${expected.id} diagnostics structuredAppend mismatch`);
   }
 
   if (missingMetadata > 0) {
@@ -102,9 +106,69 @@ try {
 }
 
 async function createFixtures(outputDirectory) {
-  const cases = [
-    {
-      id: "structured-append-2-symbol",
+  const fixtures = [];
+
+  for (const testCase of createCaseDefinitions()) {
+    const diagnosticsSet = testCase.generate({
+      output: "matrix",
+      diagnostics: true
+    });
+    const pngSet = testCase.generate({
+      output: "png"
+    });
+    const expectedPayloads = testCase.expectedPayloads(diagnosticsSet);
+
+    assert.equal(diagnosticsSet.total, pngSet.total);
+    assert.equal(expectedPayloads.length, diagnosticsSet.total, `${testCase.id} expected payload count mismatch`);
+
+    for (const [index, png] of pngSet.symbols.entries()) {
+      const symbol = diagnosticsSet.symbols[index].diagnostics.structuredAppend;
+      const summary = diagnosticsSet.diagnostics.symbols[index];
+      const imagePath = path.join(outputDirectory, `${testCase.id}-${index + 1}.png`);
+      await writeFile(imagePath, Buffer.from(png));
+
+      fixtures.push({
+        id: `${testCase.id}-${index + 1}`,
+        caseId: testCase.id,
+        path: imagePath,
+        expectedPayload: expectedPayloads[index],
+        index: symbol.index,
+        total: symbol.total,
+        parity: symbol.parity,
+        sequenceIndicator: symbol.sequenceIndicator,
+        structuredAppend: symbol,
+        summaryStructuredAppend: {
+          enabled: true,
+          index: summary.index,
+          total: summary.total,
+          parity: summary.parity,
+          sequenceIndex: summary.sequenceIndex,
+          sequenceTotal: summary.sequenceTotal,
+          sequenceIndicator: summary.sequenceIndicator
+        }
+      });
+    }
+  }
+
+  return fixtures;
+}
+
+function createCaseDefinitions() {
+  const asciiBinaryText = "BINARY-INPUT-STRUCTURED-APPEND-123";
+  const asciiBinaryInput = new TextEncoder().encode(asciiBinaryText);
+  const boundarySegments = [
+    { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+    { mode: "numeric", data: "12345678901234567890" },
+    { mode: "byte", data: "XYZ" }
+  ];
+  const byteChunkText = "C".repeat(31);
+  const byteChunkSegments = [
+    { mode: "byte", data: byteChunkText }
+  ];
+
+  return [
+    structuredAppendInputCase({
+      id: "generate-structured-append-string-2-symbol",
       input: "A".repeat(31),
       options: {
         version: 1,
@@ -113,10 +177,11 @@ async function createFixtures(outputDirectory) {
         maxSymbols: 2,
         scale: 12,
         margin: 4
-      }
-    },
-    {
-      id: "structured-append-3-symbol",
+      },
+      expectedPayloads: stringPayloads("A".repeat(31))
+    }),
+    structuredAppendInputCase({
+      id: "generate-structured-append-string-3-symbol",
       input: "B".repeat(43),
       options: {
         version: 1,
@@ -125,46 +190,105 @@ async function createFixtures(outputDirectory) {
         maxSymbols: 3,
         scale: 12,
         margin: 4
-      }
-    }
+      },
+      expectedPayloads: stringPayloads("B".repeat(43))
+    }),
+    structuredAppendInputCase({
+      id: "generate-structured-append-binary-input",
+      input: asciiBinaryInput,
+      options: {
+        version: 1,
+        errorCorrectionLevel: "L",
+        mode: "byte",
+        maxSymbols: 3,
+        scale: 12,
+        margin: 4
+      },
+      expectedPayloads: binaryPayloads(asciiBinaryInput)
+    }),
+    structuredAppendSegmentsCase({
+      id: "generate-segments-structured-append-segment-boundary",
+      segments: boundarySegments,
+      options: {
+        version: 1,
+        errorCorrectionLevel: "L",
+        scale: 12,
+        margin: 4
+      },
+      expectedPayloads: () => [
+        "ABCDEFGHIJKLMNOPQRSTU",
+        "12345678901234567890XYZ"
+      ]
+    }),
+    structuredAppendSegmentsCase({
+      id: "generate-segments-structured-append-byte-chunk",
+      segments: byteChunkSegments,
+      options: {
+        version: 1,
+        errorCorrectionLevel: "L",
+        scale: 12,
+        margin: 4
+      },
+      expectedPayloads: () => [
+        byteChunkText.slice(0, 15),
+        byteChunkText.slice(15, 30),
+        byteChunkText.slice(30)
+      ]
+    }),
+    structuredAppendInputCase({
+      id: "generate-structured-append-fixed-version-ecc-mask",
+      input: "D".repeat(52),
+      options: {
+        version: 2,
+        errorCorrectionLevel: "Q",
+        maskPattern: 3,
+        mode: "alphanumeric",
+        maxSymbols: 2,
+        scale: 12,
+        margin: 4
+      },
+      expectedPayloads: stringPayloads("D".repeat(52))
+    })
   ];
+}
 
-  const fixtures = [];
-
-  for (const testCase of cases) {
-    const diagnosticsSet = generateStructuredAppend(testCase.input, {
-      ...testCase.options,
-      output: "matrix",
-      diagnostics: true
-    });
-    const pngSet = generateStructuredAppend(testCase.input, {
-      ...testCase.options,
-      output: "png"
-    });
-
-    assert.equal(diagnosticsSet.total, pngSet.total);
-
-    for (const [index, png] of pngSet.symbols.entries()) {
-      const symbol = diagnosticsSet.symbols[index].diagnostics.structuredAppend;
-      const chunk = diagnosticsSet.diagnostics.symbols[index];
-      const expectedPayload = testCase.input.slice(chunk.inputStart, chunk.inputStart + chunk.inputLength);
-      const imagePath = path.join(outputDirectory, `${testCase.id}-${index + 1}.png`);
-      await writeFile(imagePath, Buffer.from(png));
-
-      fixtures.push({
-        id: `${testCase.id}-${index + 1}`,
-        caseId: testCase.id,
-        path: imagePath,
-        expectedPayload,
-        index: symbol.index,
-        total: symbol.total,
-        parity: symbol.parity,
-        sequenceIndicator: symbol.sequenceIndicator
+function structuredAppendInputCase({ id, input, options, expectedPayloads }) {
+  return {
+    id,
+    generate(renderOptions) {
+      return generateStructuredAppend(input, {
+        ...options,
+        ...renderOptions
       });
-    }
-  }
+    },
+    expectedPayloads
+  };
+}
 
-  return fixtures;
+function structuredAppendSegmentsCase({ id, segments, options, expectedPayloads }) {
+  return {
+    id,
+    generate(renderOptions) {
+      return generateSegmentsStructuredAppend(segments, {
+        ...options,
+        ...renderOptions
+      });
+    },
+    expectedPayloads
+  };
+}
+
+function stringPayloads(input) {
+  return (diagnosticsSet) => diagnosticsSet.diagnostics.symbols.map((symbol) =>
+    input.slice(symbol.inputStart, symbol.inputStart + symbol.inputLength)
+  );
+}
+
+function binaryPayloads(bytes) {
+  const decoder = new TextDecoder();
+  return (diagnosticsSet) => diagnosticsSet.diagnostics.symbols.map((symbol) =>
+    decoder.decode(bytes.subarray(symbol.byteStart, symbol.byteStart + symbol.byteLength))
+  );
 }
 
 function commandWorks(command, args) {

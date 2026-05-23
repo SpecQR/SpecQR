@@ -114,17 +114,30 @@ Mismatch 条件:
 
 現在の fixture:
 
-- 2-symbol ASCII text split: `"A".repeat(31)`、Version 1-L、alphanumeric。
-- 3-symbol ASCII text split: `"B".repeat(43)`、Version 1-L、alphanumeric。
+- `generateStructuredAppend()` の 2-symbol string case: `"A".repeat(31)`、Version 1-L、alphanumeric。
+- `generateStructuredAppend()` の 3-symbol string case: `"B".repeat(43)`、Version 1-L、alphanumeric。
+- `generateStructuredAppend()` の binary input case: ASCII byte payload、Version 1-L、byte mode。
+- `generateSegmentsStructuredAppend()` の segment boundary split case: alphanumeric / numeric / byte segments を symbol boundary で分割。
+- `generateSegmentsStructuredAppend()` の byte segment chunking case: 1 つの byte segment を複数 symbols に chunking。
+- fixed Version / ECC / mask deterministic case: Version 2-Q、mask 3、alphanumeric。
 
 script は SpecQR で PNG artifacts を一時生成し、同じ入力から取った diagnostics と ZXing Java の Result metadata を照合します。Java helper は実行時に一時 directory へ生成・compile され、Maven / Gradle project は作りません。ImageIO と ZXing core classes だけを使い、ZXing javase jar は必須にしません。
+
+実 decode が通った場合に確認できること:
+
+- ZXing Java が各 symbol を per-symbol payload として返し、SpecQR の expected payload chunk と一致すること。
+- ZXing Java の sequence indicator が SpecQR diagnostics の `structuredAppend.sequenceIndicator` と一致すること。
+- sequence indicator の上位 4 bit / 下位 4 bit から復元した `index` / `total` が SpecQR diagnostics と一致すること。
+- ZXing Java の parity metadata が SpecQR diagnostics の `structuredAppend.parity` と一致すること。
+- `diagnostics.symbols[]` の summary metadata と、各 symbol result の `diagnostics.structuredAppend` が一致していること。
+
+この check は decoder が metadata を返すことの prototype であり、missing / duplicate / parity mismatch / total mismatch の negative merge validation までは保証しません。
 
 ### Future metadata expansion
 
 次に広げる場合の候補:
 
 - ZXing-C++ CLI がローカルで使える環境では、`sequenceIndex()` / `sequenceSize()` / `sequenceId()` 相当の CLI output も optional に検証する。
-- manual segments split と byte segment chunking の metadata fixture を追加する。
 - missing / duplicate / parity mismatch / total mismatch の negative fixture を追加する。
 
 この lane は、metadata が安定して取れることを確認するまで required CI gate にしません。

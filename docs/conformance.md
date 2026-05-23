@@ -70,7 +70,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | --- | --- | --- |
 | Unit tests | Tested | core encoding、matrix、renderer、helpers、errors、GS1 を `npm test` で確認します。 |
 | Golden fixtures | Tested | fixed version / ECC / mask の matrix、codewords、diagnostics、format/version bits、remainder bits を固定します。 |
-| Decoder validation | Tested | macOS Vision script、jsQR release-gate、optional zbar / ZXing CLI discovery を用意しています。Structured Append metadata は ZXing Java 向けの optional prototype `npm run verify:structured-append:zxing-java` を追加済みですが、ZXing Java classpath / Java runtime / javac がある環境だけで実行し、required CI gate にはしていません。 |
+| Decoder validation | Tested | macOS Vision script、jsQR release-gate、optional zbar / ZXing CLI discovery を用意しています。Structured Append metadata は ZXing Java 向けの optional prototype `npm run verify:structured-append:zxing-java` を追加済みで、string / binary / manual segment split / byte chunking / fixed deterministic cases を対象にします。ただし ZXing Java classpath / Java runtime / javac がある環境だけで実行し、required CI gate にはしていません。 |
 | External reference comparison | Partial | Nayuki QR Code generator と fixed-condition matrix を比較します。auto segmentation、Kanji、GS1 semantics、renderer output は比較対象外です。 |
 
 ## ISO/IEC 18004:2024 Notes

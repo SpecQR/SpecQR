@@ -78,6 +78,12 @@ QRCode.generateSegments([
 ]);
 ```
 
+### Proposed: `QRCode.generateSegmentsStructuredAppend(segments, options)`
+
+Manual segments 版の高レベル Structured Append API はまだ runtime 実装していません。v2 proposal では、`generateSegmentsStructuredAppend(segments, options)` と `QRCode.generateSegmentsStructuredAppend(segments, options)` を追加し、返り値を `generateStructuredAppend()` と同じ `{ symbols, total, parity, inputLength, byteLength, diagnostics }` に揃える方針です。
+
+初期案では segment boundary split を基本にし、byte segment だけを byte / Unicode code point boundary で安全に chunking します。numeric / alphanumeric / kanji segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は初期実装では reject します。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
+
 ### `QRCode.drawToCanvas(target, input, options)`
 
 ブラウザの canvas element、または 2D rendering context に直接描画します。

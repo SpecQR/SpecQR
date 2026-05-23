@@ -216,6 +216,7 @@ QRCode.generate("PART 2", {
 ```
 
 高レベル API の分割方針と制限は [Structured Append v2 API Design](docs/structured-append-v2.md) にまとめています。
+Manual segments 版の高レベル API はまだ runtime 実装していませんが、設計方針は [Structured Append Manual Segments v2 API Design](docs/structured-append-segments-v2.md) に固定しています。
 
 GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。生成した URI は `parseGs1DigitalLink()` で element data に戻せます。
 

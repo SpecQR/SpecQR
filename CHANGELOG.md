@@ -8,10 +8,12 @@
 - Added Structured Append diagnostics, validation, unit coverage, golden fixture coverage, and packed package smoke coverage.
 - Added high-level Structured Append generation via `generateStructuredAppend(input, options)` and `QRCode.generateStructuredAppend(input, options)`.
 - Added automatic string / binary splitting, original payload byte XOR parity, top-level set diagnostics, fixed version / ECC / mask golden fixture coverage, TypeScript declarations, and packed package smoke coverage for high-level Structured Append.
+- Added Structured Append decoded parts merge support via `mergeStructuredAppendParts(parts, options?)` and `QRCode.mergeStructuredAppendParts(parts, options?)`.
+- Added merge validation for missing symbols, duplicate indexes, total/parity mismatch, mixed string/binary parts, and merged payload byte parity.
 
 ### Notes
 
-- Public parity helpers, manual segment splitting, decode / merge helpers, and npm publish are not part of this change.
+- Public parity helpers, QR decoder implementation, scanner integration, and npm publish are not part of this change.
 
 ## 1.0.0 - 2026-05-22
 

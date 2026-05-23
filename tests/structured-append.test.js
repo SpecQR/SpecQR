@@ -12,7 +12,8 @@ import {
   generateSegments,
   InvalidGs1Error,
   InvalidInputError,
-  InvalidModeError
+  InvalidModeError,
+  mergeStructuredAppendParts
 } from "../src/index.js";
 import { QRCode } from "../src/index.js";
 
@@ -38,6 +39,25 @@ function countDarkModules(matrix) {
 
 function xorBytes(bytes) {
   return Array.from(bytes).reduce((parity, byte) => parity ^ byte, 0);
+}
+
+function stringPartsFromStructuredAppend(result, input) {
+  const characters = Array.from(input);
+  return result.diagnostics.symbols.map((symbol) => ({
+    index: symbol.index,
+    total: symbol.total,
+    parity: symbol.parity,
+    data: characters.slice(symbol.inputStart, symbol.inputStart + symbol.inputLength).join("")
+  }));
+}
+
+function binaryPartsFromStructuredAppend(result, bytes) {
+  return result.diagnostics.symbols.map((symbol) => ({
+    index: symbol.index,
+    total: symbol.total,
+    parity: symbol.parity,
+    data: bytes.subarray(symbol.byteStart, symbol.byteStart + symbol.byteLength)
+  }));
 }
 
 test("structuredAppend option encodes low-level Structured Append diagnostics", () => {
@@ -447,6 +467,158 @@ test("generateStructuredAppend splits binary ArrayBufferView input with offset-a
   assert.equal(arrayBufferResult.total, 3);
   assert.equal(arrayBufferResult.parity, xorBytes(payload));
   assert.equal(arrayBufferResult.byteLength, payload.length);
+});
+
+test("mergeStructuredAppendParts merges generated string parts and normalizes metadata", () => {
+  const input = "A".repeat(31);
+  const generated = generateStructuredAppend(input, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    mode: "alphanumeric",
+    output: "matrix",
+    diagnostics: true
+  });
+  const parts = stringPartsFromStructuredAppend(generated, input);
+  const merged = mergeStructuredAppendParts([parts[1], parts[0]]);
+
+  assert.equal(merged.data, input);
+  assert.equal(merged.total, 2);
+  assert.equal(merged.parity, generated.parity);
+  assert.deepEqual(merged.parts, [
+    { index: 1, total: 2, parity: generated.parity, dataType: "string", byteLength: 21 },
+    { index: 2, total: 2, parity: generated.parity, dataType: "string", byteLength: 10 }
+  ]);
+  assert.deepEqual(merged.diagnostics, {
+    partCount: 2,
+    total: 2,
+    parity: generated.parity,
+    dataType: "string",
+    byteLength: 31,
+    missing: [],
+    duplicate: [],
+    parityCheck: {
+      expected: generated.parity,
+      actual: generated.parity,
+      matches: true
+    }
+  });
+});
+
+test("QRCode.mergeStructuredAppendParts static API merges manual segment parts", () => {
+  const generated = generateSegmentsStructuredAppend([
+    { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+    { mode: "numeric", data: "12345678901234567890" },
+    { mode: "byte", data: "XYZ" }
+  ], {
+    version: 1,
+    errorCorrectionLevel: "L",
+    maskPattern: 0,
+    output: "matrix",
+    diagnostics: true
+  });
+  const parts = [
+    {
+      index: generated.diagnostics.symbols[0].index,
+      total: generated.total,
+      parity: generated.parity,
+      data: "ABCDEFGHIJKLMNOPQRSTU"
+    },
+    {
+      index: generated.diagnostics.symbols[1].index,
+      total: generated.total,
+      parity: generated.parity,
+      data: "12345678901234567890XYZ"
+    }
+  ];
+
+  const merged = QRCode.mergeStructuredAppendParts(parts);
+  assert.equal(merged.data, "ABCDEFGHIJKLMNOPQRSTU12345678901234567890XYZ");
+  assert.equal(merged.total, generated.total);
+  assert.equal(merged.parity, generated.parity);
+  assert.equal(merged.diagnostics.byteLength, generated.byteLength);
+});
+
+test("mergeStructuredAppendParts merges binary parts as Uint8Array", () => {
+  const payload = Uint8Array.from(Array.from({ length: 31 }, (_, index) => index === 0 ? 0x00 : index === 30 ? 0xff : index));
+  const backing = Uint8Array.from([0xaa, ...payload, 0xbb]);
+  const view = new Uint8Array(backing.buffer, 1, payload.length);
+  const generated = generateStructuredAppend(view, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    mode: "byte",
+    output: "matrix",
+    diagnostics: true
+  });
+  const parts = binaryPartsFromStructuredAppend(generated, payload);
+  const merged = mergeStructuredAppendParts([parts[2], parts[0], parts[1]]);
+
+  assert.ok(merged.data instanceof Uint8Array);
+  assert.deepEqual(Array.from(merged.data), Array.from(payload));
+  assert.equal(merged.total, 3);
+  assert.equal(merged.parity, generated.parity);
+  assert.equal(merged.diagnostics.dataType, "binary");
+  assert.equal(merged.diagnostics.byteLength, payload.length);
+  assert.deepEqual(
+    merged.parts.map((part) => part.byteLength),
+    [15, 15, 1]
+  );
+});
+
+test("mergeStructuredAppendParts rejects unsafe or incomplete parts", () => {
+  const input = "A".repeat(31);
+  const generated = generateStructuredAppend(input, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    mode: "alphanumeric",
+    output: "matrix",
+    diagnostics: true
+  });
+  const parts = stringPartsFromStructuredAppend(generated, input);
+
+  assert.throws(
+    () => mergeStructuredAppendParts("not parts"),
+    (error) => error instanceof InvalidInputError && /must be an array/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([]),
+    (error) => error instanceof InvalidInputError && /must not be empty/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([parts[0]]),
+    (error) => error instanceof InvalidInputError && /missing index/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([parts[0], parts[0]]),
+    (error) => error instanceof InvalidInputError && /duplicate index 1/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([parts[0], { ...parts[1], total: 3 }]),
+    (error) => error instanceof InvalidInputError && /total mismatch/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([parts[0], { ...parts[1], parity: parts[1].parity ^ 1 }]),
+    (error) => error instanceof InvalidInputError && /parity mismatch/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([parts[0], { ...parts[1], data: "B".repeat(parts[1].data.length - 1) }]),
+    (error) => error instanceof InvalidInputError && /parity check failed/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([parts[0], { ...parts[1], data: Uint8Array.from([0x41]) }]),
+    (error) => error instanceof InvalidInputError && /mix string and binary/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([{ index: 0, total: 2, parity: 0, data: "A" }, parts[1]]),
+    (error) => error instanceof InvalidInputError && /index must be an integer/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts([{ index: 1, total: 2, parity: 0, data: [0x41] }, { index: 2, total: 2, parity: 0, data: "A" }]),
+    (error) => error instanceof InvalidInputError && /must be a string/.test(error.message)
+  );
+  assert.throws(
+    () => mergeStructuredAppendParts(parts, { dataType: "string" }),
+    (error) => error instanceof InvalidModeError && /Unsupported/.test(error.message)
+  );
 });
 
 test("generateStructuredAppend auto version chooses the smallest common split version", () => {

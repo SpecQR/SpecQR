@@ -36,7 +36,7 @@ npm install specqr@next
 - 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@1.0.0` に対して green。
 - GitHub Actions `CI` が green。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
-- v1 で未対応の Micro QR、rMQR、Structured Append public parity helper / decode・merge helper、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に明記されている。
+- v1 で未対応の Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に明記されている。
 
 ## Pre-Publish Commands
 
@@ -119,10 +119,10 @@ Release draft に含める内容:
   ```sh
   npm install specqr
   ```
-- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting、SVG/PNG/canvas/Node/browser helpers。
+- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
 - 検証: golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison。
-- 非対応: Micro QR、rMQR、Structured Append public parity helper / decode・merge helper、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
-- Structured Append の読み取り後 merge helper は未実装。metadata-returning decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
+- 非対応: Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
+- Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
 - Links: README、playground、conformance matrix、reference comparison、test plan。
 
 ## npm Publish

@@ -1,8 +1,8 @@
 # Structured Append Decoder Metadata Validation v2
 
-この文書は、Structured Append の生成 API が揃った後に、読み取り側で `index` / `total` / `parity` metadata を継続検証するための decoder 候補と validation lane を整理する docs-only research note です。
+この文書は、Structured Append の生成 API と `mergeStructuredAppendParts()` が揃った後に、読み取り側で `index` / `total` / `parity` metadata を継続検証するための decoder 候補と validation lane を整理する research note です。
 
-この文書は runtime behavior、public API、package version、package exports、runtime dependency を変更しません。`mergeStructuredAppendParts()` や QR decoder もまだ実装しません。
+この文書自体は runtime behavior、public API、package version、package exports、runtime dependency を変更しません。SpecQR は QR decoder を実装しません。`mergeStructuredAppendParts()` は metadata-returning decoder が返した parts を検証・結合する helper として実装済みです。
 
 ## Goal
 
@@ -14,7 +14,7 @@ SpecQR は Structured Append symbols を生成できますが、読み取り後�
 - `index` / `total` / `parity` を露出するか。
 - CI や optional validation に載せやすいか。
 - 既存の jsQR / Vision / zbar / ZXing-style optional validation の役割。
-- `mergeStructuredAppendParts()` 実装前に必要な fixture と decoder output の条件。
+- `mergeStructuredAppendParts()` を外部 decoder metadata と組み合わせて検証するために必要な fixture と decoder output の条件。
 
 ## Summary
 
@@ -142,9 +142,9 @@ script は SpecQR で PNG artifacts を一時生成し、同じ入力から取�
 
 この lane は、metadata が安定して取れることを確認するまで required CI gate にしません。
 
-## Merge Helper Preconditions
+## External Decoder Preconditions
 
-`mergeStructuredAppendParts()` を public API として実装する前に、少なくとも次を満たす fixture が必要です。
+`mergeStructuredAppendParts()` は public API として実装済みですが、外部 decoder を使って release gate 化するには、少なくとも次を満たす fixture が必要です。
 
 - decoder が merged payload ではなく per-symbol data を返すこと。
 - 各 symbol について `index` が取得できること。
@@ -158,7 +158,7 @@ script は SpecQR で PNG artifacts を一時生成し、同じ入力から取�
 - decoder が自動 merge した結果と per-symbol data を混同しないこと。
 - CI / local release machine に載せる install 手順と license 方針が明確であること。
 
-この条件が揃うまでは、SpecQR の conformance は生成側の header / parity / matrix / diagnostics / golden fixtures を主根拠にし、読み取り後 merge helper は docs-only proposal に留めます。
+この条件が安定するまでは、SpecQR の conformance は生成側の header / parity / matrix / diagnostics / golden fixtures と `mergeStructuredAppendParts()` の unit / packed smoke を主根拠にします。外部 decoder metadata validation は optional lane として扱います。
 
 ## Fixture Plan
 

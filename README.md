@@ -207,7 +207,18 @@ console.log(set.symbols);
 
 各 symbol を SVG / PNG として保存する例は [examples/structured-append.mjs](examples/structured-append.mjs) にあります。Playground でも `Structured Append` mode を選ぶと、複数 symbol の preview、parity、per-symbol diagnostics を確認できます。
 
-Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。読み取り側 workflow と将来の merge helper 案は [Structured Append Scanning Workflow](docs/structured-append-scanning-v2.md) に、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](docs/structured-append-decoder-validation-v2.md) にまとめています。
+Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。読み取り側 workflow と `mergeStructuredAppendParts()` の位置づけは [Structured Append Scanning Workflow](docs/structured-append-scanning-v2.md) に、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](docs/structured-append-decoder-validation-v2.md) にまとめています。
+
+decoder が `{ index, total, parity, data }` を返せる場合は、`mergeStructuredAppendParts()` で欠落、重複、metadata mismatch、payload parity を検証してから結合できます。
+
+```js
+const merged = QRCode.mergeStructuredAppendParts([
+  { index: 2, total: 2, parity: 65, data: "AAAAAAAAAA" },
+  { index: 1, total: 2, parity: 65, data: "A".repeat(21) }
+]);
+
+console.log(merged.data);
+```
 
 利用者が各 symbol の `index`、`total`、`parity` を明示したい場合は、低レベル header API も使えます。
 

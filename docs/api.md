@@ -59,7 +59,7 @@ console.log(result.diagnostics.symbols);
 
 Node で各 symbol を SVG / PNG として保存する例は [../examples/structured-append.mjs](../examples/structured-append.mjs) にあります。Playground では `Single QR` / `Structured Append` を切り替え、複数 preview、`total`、`parity`、per-symbol index、capacity diagnostics、warnings を確認できます。
 
-初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。public parity override、decode / merge helper は提供していません。
+初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。public parity helper と QR decoder は提供していません。読み取り後に decoder metadata が取れている場合の結合は `mergeStructuredAppendParts()` で扱います。
 
 `generateStructuredAppend()` は高レベル API が header を管理するため、`eci`、`gs1: true`、`fnc1Second`、`structuredAppend`、`boostErrorCorrection` との併用を reject します。1 symbol に収まる input も Structured Append set としては不正なので、`generate()` または low-level `structuredAppend` option を使うよう `InvalidInputError` で reject します。
 
@@ -98,11 +98,29 @@ const result = generateSegmentsStructuredAppend([
 
 Split policy は segment boundary first です。`byte` segment だけを byte boundary、または string data の Unicode code point boundary で安全に chunking します。`numeric` / `alphanumeric` / `kanji` segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は reject します。`diagnostics.splitStrategy` は `"segment-boundary-byte-chunk"` になり、`diagnostics.splitUnits` と `diagnostics.symbols` に source segment range、split unit range、byte offset、per-symbol Structured Append metadata が入ります。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
 
-### Structured Append scanning and future merge helper
+### `QRCode.mergeStructuredAppendParts(parts, options?)`
 
-SpecQR は generator であり、QR decoder や scanner integration は提供しません。Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の `index` / `total` / `parity` を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
+metadata-returning decoder が返した Structured Append parts を検証し、`index` 順に結合します。root named export の `mergeStructuredAppendParts(parts, options?)` も同じ API です。SpecQR は QR decoder や scanner integration は提供しません。この helper は decoder が `{ index, total, parity, data }` を返せた場合だけ使います。
 
-将来候補として、metadata-returning decoder 向けに `mergeStructuredAppendParts(parts, options?)` と `QRCode.mergeStructuredAppendParts(parts, options?)` を検討しています。候補 part shape は `{ index, total, parity, data }`、return shape は `{ data, total, parity, parts, diagnostics }` です。現時点では docs-only proposal であり、public API、TypeScript declarations、runtime behavior は存在しません。
+```js
+import { mergeStructuredAppendParts } from "specqr";
+
+const merged = mergeStructuredAppendParts([
+  { index: 2, total: 2, parity: 65, data: "AAAAAAAAAA" },
+  { index: 1, total: 2, parity: 65, data: "A".repeat(21) }
+]);
+
+console.log(merged.data); // "A".repeat(31)
+console.log(merged.diagnostics.parityCheck.matches); // true
+```
+
+`parts` は配列で、各要素は `{ index, total, parity, data }` です。`index` は 1-based、`total` は `2..16`、`parity` は `0..255` integer です。`data` は string、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` を受け取ります。string parts と binary parts の混在、metadata のない raw payload 配列、推測による順序復元は扱いません。
+
+返り値は `{ data, total, parity, parts, diagnostics }` です。string input の場合、`data` は string 連結結果です。binary input の場合、`data` は `Uint8Array` です。`parts` は `index` 昇順の normalized metadata で、`diagnostics` には `partCount`、`dataType`、`byteLength`、`missing`、`duplicate`、`parityCheck` が入ります。
+
+Validation は安全側です。空配列、範囲外の `index` / `total` / `parity`、duplicate index、missing symbol、total mismatch、parity mismatch、part 数不一致、string/binary 混在、invalid data type、merged payload bytes の XOR parity mismatch は `InvalidInputError` で reject します。`options` は将来拡張用に残していますが、現在は空 object のみ受け付けます。
+
+Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の metadata を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
 
 ### `QRCode.drawToCanvas(target, input, options)`
 

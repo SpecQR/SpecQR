@@ -1,6 +1,6 @@
 # Structured Append v2 API Design
 
-この文書は、SpecQR v2 系で設計し、現在の runtime に実装した string / binary input 向け高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。Manual segments 版の高レベル API は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と将来の merge helper 案は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に分けています。
+この文書は、SpecQR v2 系で設計し、現在の runtime に実装した string / binary input 向け高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。Manual segments 版の高レベル API は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に分けています。
 
 ## Goal
 
@@ -317,7 +317,7 @@ Decoder validation should not be the only proof for Structured Append. Some deco
 ## Non-Scope
 
 - Public parity helper.
-- Decode / merge helper.
+- QR decoder / scanner integration.
 - ECI / FNC1 / GS1 combinations.
 - Numeric / alphanumeric / kanji mid-segment splitting for the manual segments API.
 - Micro QR / rMQR.

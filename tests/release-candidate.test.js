@@ -13,6 +13,7 @@ import {
   InvalidModeError,
   InvalidOutputError,
   InvalidVersionError,
+  mergeStructuredAppendParts,
   parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
@@ -76,6 +77,13 @@ test("release candidate public API examples execute", () => {
     ],
     hasSeparators: false
   });
+  assert.equal(
+    mergeStructuredAppendParts([
+      { index: 2, total: 2, parity: 65, data: "AAAAAAAAAA" },
+      { index: 1, total: 2, parity: 65, data: "A".repeat(21) }
+    ]).data,
+    "A".repeat(31)
+  );
 
   const binary = QRCode.generate(new Uint8Array([0x00, 0x01, 0x02, 0xFF]), {
     output: "matrix",

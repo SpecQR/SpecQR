@@ -1,22 +1,22 @@
 # Structured Append Scanning Workflow v2
 
-この文書は、SpecQR が生成した Structured Append symbols を読み取るときの workflow、decoder 依存の限界、将来の optional merge helper API 案を整理する docs-only design note です。
+この文書は、SpecQR が生成した Structured Append symbols を読み取るときの workflow、decoder 依存の限界、public merge helper API の位置づけを整理する design note です。
 
-この文書は runtime behavior、public API、package version、package exports を変更しません。SpecQR は現時点では QR generator であり、decoder や scanner integration は提供しません。
+SpecQR は QR generator であり、decoder や scanner integration は提供しません。`mergeStructuredAppendParts()` は decoder が `index` / `total` / `parity` / unmerged data を返した場合だけ、読み取り後の parts を検証・結合する dependency-free helper です。
 
 ## Goal
 
 `generateStructuredAppend()` と `generateSegmentsStructuredAppend()` は、複数 QR symbols を 1 つの logical message として扱うための Structured Append header を encode します。一方で、読み取り側の decoder がどの情報を返すかは実装ごとに大きく異なります。
 
-metadata-returning decoder 候補と optional validation lane の調査は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離しています。この文書では scanner workflow と将来の merge helper API 案に集中します。
+metadata-returning decoder 候補と optional validation lane の調査は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離しています。この文書では scanner workflow と merge helper API の境界に集中します。
 
 この文書では次を固定します。
 
 - SpecQR generator が保証する範囲
 - SpecQR が保証しない scanner / decoder behavior
 - scanner workflow の推奨手順
-- 将来候補の `mergeStructuredAppendParts(parts, options?)` API
-- merge helper を core に入れるべきか、docs-only guidance に留めるべきかの判断材料
+- `mergeStructuredAppendParts(parts, options?)` API
+- merge helper が扱う範囲と扱わない範囲
 
 ## What SpecQR Guarantees
 
@@ -29,6 +29,7 @@ SpecQR が保証するのは生成側の QR Code Model 2 construction です。
 - `parity` は `0..255` integer として encode すること。
 - high-level API では original payload bytes から deterministic XOR parity を計算すること。
 - high-level API では各 symbol の diagnostics に index、total、parity、sequence values、chunk offsets を出すこと。
+- `mergeStructuredAppendParts()` では、decoder が返した parts の missing、duplicate、total mismatch、parity mismatch、data type mismatch、merged payload byte parity を検証すること。
 - fixed Version / ECC / mask の golden fixtures で matrix、codewords、diagnostics を固定すること。
 - release gate で unit tests、golden tests、packed package smoke、reference comparison、decoder validation を組み合わせること。
 
@@ -41,9 +42,9 @@ Structured Append の読み取り後 behavior は scanner / decoder に依存し
 - decoder API が `index` / `total` / `parity` を返すこと。
 - decoder API が各 symbol の raw unmerged payload を返すこと。
 - decoder API が merged payload と per-symbol metadata を同時に返すこと。
-- 読み取り後の payload 復元、欠落検出、重複検出、parity 検証を SpecQR runtime が実行すること。
+- metadata のない decoded payload から、順序、欠落、重複、parity を推測すること。
 
-そのため、SpecQR の conformance は decoder merge 成功だけに依存しません。Structured Append header encoding、matrix / codeword golden fixtures、diagnostics consistency を主な根拠にします。
+そのため、SpecQR の conformance は decoder merge 成功だけに依存しません。Structured Append header encoding、matrix / codeword golden fixtures、diagnostics consistency、metadata が取れた後の `mergeStructuredAppendParts()` validation を分けて検証します。
 
 ## Scanner Workflow
 
@@ -101,34 +102,34 @@ metadata がない場合の限界:
 - Invalid index / total / parity: 範囲外または integer ではない。
 - Mixed data type: string data と binary data が混在している。
 
-High-level generator の parity は original payload bytes の XOR です。ただし、merge helper が decoded string だけを受け取る場合、その string をどの encoding で bytes に戻すかは decoder behavior に依存します。そのため、将来の helper はまず metadata consistency を検証し、payload bytes に対する parity 再計算は binary data が渡された場合に限定する方が安全です。
+High-level generator の parity は original payload bytes の XOR です。`mergeStructuredAppendParts()` は string parts では UTF-8 bytes、binary parts では渡された bytes から XOR parity を再計算します。decoder が string payload を返す場合、decoder 側の文字列化が元 payload と同じ意味であることは caller 側で確認してください。binary payload が必要な用途では、decoder から unmerged binary data を取得できる経路を優先します。
 
-## Future API Proposal
+## Public Merge Helper
 
-この API はまだ実装しません。decoder が Structured Append metadata を返せる環境でだけ使える optional helper として検討します。実装前の decoder fixture 条件は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) の `Merge Helper Preconditions` を満たす必要があります。
+`mergeStructuredAppendParts(parts, options?)` は、decoder が Structured Append metadata と unmerged per-symbol data を返せる環境でだけ使う helper です。root named export と `QRCode.mergeStructuredAppendParts(parts, options?)` static method を提供します。
 
 ```ts
 function mergeStructuredAppendParts(
-  parts: StructuredAppendPart[],
-  options?: StructuredAppendMergeOptions
-): StructuredAppendMergeResult;
+  parts: QRStructuredAppendDecodedPart[],
+  options?: QRStructuredAppendMergeOptions
+): QRStructuredAppendMergeResult;
 
 class QRCode {
   static mergeStructuredAppendParts(
-    parts: StructuredAppendPart[],
-    options?: StructuredAppendMergeOptions
-  ): StructuredAppendMergeResult;
+    parts: QRStructuredAppendDecodedPart[],
+    options?: QRStructuredAppendMergeOptions
+  ): QRStructuredAppendMergeResult;
 }
 ```
 
-### Proposed Part Shape
+### Part Shape
 
 ```ts
-type StructuredAppendPart = {
+type QRStructuredAppendDecodedPart = {
   index: number;
   total: number;
   parity: number;
-  data: string | Uint8Array | ArrayBuffer | ArrayBufferView | number[];
+  data: string | Uint8Array | ArrayBuffer | ArrayBufferView;
 };
 ```
 
@@ -141,43 +142,40 @@ Rules:
 - all parts in one call must use the same data type family: string or binary.
 - metadata-less decoder output is outside this API.
 
-Binary input should be normalized the same way as existing binary input: `ArrayBufferView.byteOffset` and `byteLength` must be respected. String input should be concatenated as strings without guessing an intermediate byte encoding.
+Binary input is normalized with `ArrayBufferView.byteOffset` and `byteLength` respected. String input is concatenated as strings and parity is verified from UTF-8 bytes.
 
-### Proposed Options
+### Options
 
-The first implementation may not need options. If options become useful, keep them narrow.
+`options` is reserved for future narrow extensions. The current implementation accepts only an empty object.
 
 ```ts
-type StructuredAppendMergeOptions = {
-  dataType?: "auto" | "string" | "binary";
-  verifyBinaryParity?: boolean;
-};
+interface QRStructuredAppendMergeOptions {}
 ```
 
-Potential behavior:
-
-- `dataType: "auto"`: infer string vs binary from `data`.
-- `dataType: "string"`: reject binary parts.
-- `dataType: "binary"`: reject string parts.
-- `verifyBinaryParity: true`: recompute XOR parity from merged binary bytes and compare to metadata parity. This should not be enabled for string data unless the caller specifies an encoding policy in a later design.
-
-### Proposed Return Shape
+### Return Shape
 
 ```ts
-type StructuredAppendMergeResult = {
+type QRStructuredAppendMergeResult = {
   data: string | Uint8Array;
   total: number;
   parity: number;
   parts: Array<{
     index: number;
-    byteLength: number | null;
-    length: number;
+    total: number;
+    parity: number;
+    dataType: "string" | "binary";
+    byteLength: number;
   }>;
   diagnostics: {
-    hasAllParts: true;
     dataType: "string" | "binary";
-    verifiedParity: boolean;
-    warnings: QRWarning[];
+    byteLength: number;
+    missing: number[];
+    duplicate: number[];
+    parityCheck: {
+      expected: number;
+      actual: number;
+      matches: true;
+    };
   };
 };
 ```
@@ -186,7 +184,7 @@ The helper should return normalized merged data, not regenerated QR symbols. It 
 
 ## Error Policy
 
-If this helper is implemented, it should use existing stable error classes unless a strong reason appears to add a new one.
+This helper uses existing stable error classes.
 
 - `InvalidInputError`
   - empty `parts`.
@@ -194,38 +192,34 @@ If this helper is implemented, it should use existing stable error classes unles
   - duplicate index.
   - total mismatch.
   - parity mismatch across parts.
+  - merged payload byte parity mismatch.
   - mixed string / binary data.
   - metadata-less part.
 - `InvalidModeError`
   - invalid helper option.
-- `InvalidInputError` or `DataTooLongError`
-  - only if a future implementation adds output-size or memory limits.
 
 Invalid `index`, `total`, or `parity` should use `InvalidInputError` with clear messages that identify the failing part.
 
-## Core Helper vs Docs-Only Guidance
+## Core Helper Boundary
 
 The merge helper is useful only when a decoder exposes Structured Append metadata and unmerged per-symbol data. Many common decoder APIs do not expose that combination. This makes the helper valuable, but not universally useful.
 
-Reasons to include it in core later:
+Reasons it belongs in core:
 
 - It has no QR image decoding dependency.
 - It can be dependency-free and small.
 - It prevents application code from repeatedly reimplementing missing / duplicate / mismatch checks.
 - It gives SpecQR a clear story for generation plus metadata-based merge without becoming a decoder.
 
-Reasons to keep it docs-only:
+Boundary:
 
 - Scanner APIs differ widely and may not provide the required metadata.
 - Merged payload semantics for string data can be encoding-dependent.
 - The helper can create false confidence if users expect it to work with any QR scanner.
-- Real-world demand may be small compared with GS1 Digital Link and GS1 syntax work.
-
-Recommended decision: keep the workflow docs-only until at least one real scanner integration can provide `{ index, total, parity, data }` reliably. Once that exists, add `mergeStructuredAppendParts()` as a dependency-free helper with strict metadata validation and no image decoding responsibility.
+- The helper does not scan images, decode QR symbols, or infer metadata.
 
 ## Non-Scope
 
-- Implementing `mergeStructuredAppendParts()`.
 - QR decoder implementation.
 - Scanner integration.
 - Public parity helper.
@@ -243,9 +237,9 @@ Structured Append generation remains validated by:
 
 - unit tests for low-level header and high-level splitting.
 - golden fixtures for matrix / codewords / diagnostics.
-- packed package smoke for public exports and TypeScript declarations.
+- packed package smoke for public exports, `mergeStructuredAppendParts()`, and TypeScript declarations.
 - decoder validation as a secondary signal only.
 
-Structured Append metadata validation remains planned, not required. Candidate decoder research and the future optional lane are tracked in [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md).
+Structured Append metadata validation remains optional because it depends on external decoder capabilities. Candidate decoder research and the optional lane are tracked in [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md).
 
-Decoder merge validation is intentionally not a release gate until the project has a stable metadata-returning decoder fixture. When such a fixture exists, add tests for missing symbol, duplicate index, total mismatch, parity mismatch, mixed data type, and valid ordered merge.
+`mergeStructuredAppendParts()` itself is release-gated by unit tests and packed package smoke. External decoder metadata validation remains optional until a stable metadata-returning decoder fixture can run reliably in CI.

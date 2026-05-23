@@ -54,6 +54,7 @@ import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
 import { renderPng, renderPngDataUrl } from "./render/png.js";
 import { renderSvg, renderSvgDataUrl } from "./render/svg.js";
+import { mergeStructuredAppendParts } from "./structured-append.js";
 
 export {
   appendGtinCheckDigit,
@@ -70,6 +71,8 @@ export {
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "./gs1.js";
+
+export { mergeStructuredAppendParts } from "./structured-append.js";
 
 export {
   DataTooLongError,
@@ -95,6 +98,10 @@ export class QRCode {
 
   static generateSegmentsStructuredAppend(segments, options = {}) {
     return generateSegmentsStructuredAppend(segments, options);
+  }
+
+  static mergeStructuredAppendParts(parts, options = {}) {
+    return mergeStructuredAppendParts(parts, options);
   }
 
   static generateSegments(segments, options = {}) {

@@ -34,6 +34,7 @@ npm install specqr@next
 - Test Plan: [docs/test-plan.md](docs/test-plan.md)
 - Release Checklist: [docs/release.md](docs/release.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
+- Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
 - GS1 Digital Link v2 Design: [docs/gs1-digital-link-v2.md](docs/gs1-digital-link-v2.md)
 
 ## v1 の対応範囲
@@ -194,6 +195,8 @@ QRCode.generate("PART 2", {
   output: "svg"
 });
 ```
+
+高レベル自動分割 API の設計は [Structured Append v2 API Design](docs/structured-append-v2.md) にまとめています。
 
 GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。生成した URI は `parseGs1DigitalLink()` で element data に戻せます。
 

@@ -90,7 +90,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめ�
 - Control segment ordering: ECI、FNC1 first、FNC1 second、Structured Append low-level header の内部 model は実装済み。新しい control mode を追加するときは、併用可否、ordering、capacity accounting、diagnostics を同じ model に載せ、既存 output が変わらないことを golden / regression tests で確認する。
 - FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases は unit / golden tests で確認済み。今後は decoder ごとの symbology identifier 表示差を optional validation として整理する。
 - Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks は unit / golden fixtures で固定済み。
-- Structured Append high-level: automatic splitting、最大 16 symbols、split failure、symbol diagnostics、payload parity consistency、parity helper を確認する。
+- Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` proposal に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency を確認する。public parity helper は初期実装では非スコープ。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
 - Reference comparison limits: Nayuki comparison は fixed-condition matrix regression に使い、GS1 semantics、Digital Link conversion、Structured Append API shape の検証は unit / golden tests に分ける。

@@ -166,6 +166,14 @@ QRCode.generateSegments([
 
 `structuredAppend` は `gs1: true` / manual `{ mode: "fnc1" }` / `fnc1Second` / `eci` と併用できません。将来 `generateStructuredAppend()` のような高レベル自動分割 API を追加する場合も、この低レベル header API は互換性を保つ予定です。
 
+### Proposed `generateStructuredAppend()` API
+
+高レベル自動分割 API はまだ実装していません。v2 の提案として、`generateStructuredAppend(input, options)` と `QRCode.generateStructuredAppend(input, options)` を予定しています。返り値は `{ symbols, total, parity, inputLength, byteLength, diagnostics }` の object とし、`symbols` の各要素は既存 `generate()` と同じ output shape にする方針です。
+
+最初の設計では、string / binary input のみを対象にし、manual segments 版の `generateSegmentsStructuredAppend()` は後回しにします。parity は original payload bytes から自動計算し、override は提供しません。ECI / FNC1 first / FNC1 second / `gs1: true` との併用も初期実装では reject する方針です。
+
+詳細な API shape、分割方針、parity policy、diagnostics、error 設計、release gate は [Structured Append v2 API Design](./structured-append-v2.md) を参照してください。
+
 ### GS1 Helpers
 
 - `parseGs1HumanReadable(input)`: `(01)04912345678904(10)ABC123(17)251231` のような parentheses-based input を `{ ai, value }[]` に変換します。

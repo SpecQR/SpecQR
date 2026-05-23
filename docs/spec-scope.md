@@ -6,7 +6,7 @@ SpecQR `1.0.0` は、実務で使う通常の QR Code Model 2 generation を対�
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position と Structured Append low-level header encoding は実装済みで、Structured Append high-level splitting と周辺検証が次の中心です。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position と Structured Append low-level header encoding は実装済みで、Structured Append high-level splitting の API 設計は [Structured Append v2 API Design](./structured-append-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
 ## 実装済み範囲
 
@@ -90,7 +90,7 @@ v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定�
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
-- Structured Append: low-level header encoding は実装済み。次は high-level automatic splitting API と parity helper。
+- Structured Append: low-level header encoding は実装済み。High-level automatic splitting API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に固定済みで、次は runtime implementation。
 - v2 validation expansion: golden / bitstream / matrix / decoder / reference comparison の範囲整理。
 
 通常 QR Code Model 2 以外の symbol family や visual customization は、v2.0.0 には混ぜず、将来の別 module として扱う方針です。

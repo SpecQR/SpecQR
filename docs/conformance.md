@@ -86,7 +86,7 @@ v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax laye
 | GS1 Digital Link helper | Partial / tested | `createGs1DigitalLink()` と `parseGs1DigitalLink()` は minimal create/parse + role metadata として実装済みです。resolver、compression、full canonicalizer は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に deferred として残しています。 |
 | Control segment model | Partial / tested | ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済みです。 |
 | FNC1 second position | Tested | 通常 QR Code Model 2 の optional FNC1 coverage として実装済みです。Decoder による symbology identifier の露出差は unit / golden diagnostics で補います。 |
-| Structured Append high-level | Planned | Model 2 の multi-symbol generation を自動分割、parity calculation、symbol diagnostics まで扱うため。 |
+| Structured Append high-level | Planned | Model 2 の multi-symbol generation を自動分割、parity calculation、symbol diagnostics まで扱うため。API shape と release gate は [Structured Append v2 API Design](./structured-append-v2.md) に固定済みです。 |
 | v2 validation expansion | Planned | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics を組み合わせて確認するため。 |
 
 ## v2.0.0 Outside Scope

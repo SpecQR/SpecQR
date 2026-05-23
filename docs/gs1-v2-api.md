@@ -1,6 +1,6 @@
 # GS1 v2 API
 
-この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。Digital Link URI helper の `createGs1DigitalLink()` / `parseGs1DigitalLink()` も公開済みです。`validateGs1ElementString()` と Structured Append はまだ公開していません。FNC1 second position は GS1 raw element string parser API ではなく、独立した QR control mode として `fnc1Second` option / manual segment で実装済みです。
+この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。Digital Link URI helper の `createGs1DigitalLink()` / `parseGs1DigitalLink()` も公開済みです。`validateGs1ElementString()` はまだ公開していません。FNC1 second position と Structured Append low-level header は GS1 raw element string parser API ではなく、独立した QR control mode として実装済みです。
 
 v1 の public API は次の役割を持ちます。
 
@@ -150,7 +150,7 @@ parseGs1ElementString("010491234567890410ABC12317251231");
 - full GS1 AI catalog
 - GS1 Digital Link resolver / compression / full canonicalizer
 - FNC1 second position の GS1 parser 統合。FNC1 second 自体は `fnc1Second` QR control option として実装済みです。
-- Structured Append
+- Structured Append の GS1 parser 統合。Structured Append low-level header 自体は `structuredAppend` QR control option として実装済みです。
 - Micro QR / rMQR
 - logo overlay / styled modules
 - npm publish / GitHub Release

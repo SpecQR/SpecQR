@@ -81,6 +81,35 @@ const manualFnc1Second = specqr.QRCode.generateSegments([
 });
 assert.equal(manualFnc1Second.diagnostics.fnc1Second.applicationIndicatorCodeword, 165);
 
+const structuredAppend = specqr.generate("HELLO", {
+  structuredAppend: { index: 2, total: 5, parity: 167 },
+  mode: "alphanumeric",
+  version: 1,
+  errorCorrectionLevel: "M",
+  output: "matrix",
+  diagnostics: true
+});
+assert.deepEqual(structuredAppend.diagnostics.structuredAppend, {
+  enabled: true,
+  index: 2,
+  total: 5,
+  parity: 167,
+  sequenceIndex: 1,
+  sequenceTotal: 4,
+  sequenceIndicator: 20
+});
+
+const manualStructuredAppend = specqr.QRCode.generateSegments([
+  { mode: "structured-append", index: 2, total: 5, parity: 167 },
+  { mode: "alphanumeric", data: "HELLO" }
+], {
+  version: 1,
+  errorCorrectionLevel: "M",
+  output: "matrix",
+  diagnostics: true
+});
+assert.deepEqual(manualStructuredAppend.diagnostics.structuredAppend, structuredAppend.diagnostics.structuredAppend);
+
 const rawWithSeparator = "010491234567890410ABC123\\x1D17251231";
 assert.deepEqual(specqr.parseGs1ElementString(rawWithSeparator), {
   elements: [
@@ -171,8 +200,11 @@ async function assertTypeDeclarations(directory) {
     /export function parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
   assert.match(declarations, /fnc1Second\?: false \| string;/);
+  assert.match(declarations, /structuredAppend\?: false \| QRStructuredAppendOptions;/);
   assert.match(declarations, /\| { mode: "fnc1-second"; applicationIndicator: string }/);
+  assert.match(declarations, /\| \({ mode: "structured-append" } & QRStructuredAppendOptions\)/);
   assert.match(declarations, /export interface QRFnc1SecondDiagnostics\s*{/);
+  assert.match(declarations, /export interface QRStructuredAppendDiagnostics\s*{/);
   assert.match(
     declarations,
     /export function createGs1DigitalLink\(\s*input: GS1Element\[] \| GS1ElementStringParseResult,\s*options: GS1DigitalLinkOptions\s*\): string;/

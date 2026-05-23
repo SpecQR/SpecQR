@@ -7,6 +7,8 @@ import {
   getFirstFnc1Mode,
   getFirstFnc1SecondApplicationIndicator,
   getFirstFnc1SecondApplicationIndicatorCodeword,
+  getFirstStructuredAppend,
+  getFirstStructuredAppendEncodedValues,
   isControlSegment
 } from "../src/encoding/control-segments.js";
 import { getSegmentsBitLength, normalizeManualSegments } from "../src/encoding/modes.js";
@@ -148,5 +150,76 @@ test("internal control segment model rejects FNC1 second conflicts", () => {
     () => applyControlSegments([{ mode: "byte", text: "ABC" }], { eciAssignmentNumber: 26, fnc1Second: "37" }),
     (error) => error instanceof InvalidModeError &&
       /FNC1 second position cannot be combined with ECI/.test(error.message)
+  );
+});
+
+test("internal control segment model supports Structured Append accounting", () => {
+  const dataSegments = normalizeManualSegments([
+    { mode: "alphanumeric", data: "HELLO" }
+  ]);
+  const structuredAppend = { index: 2, total: 5, parity: 0xa7 };
+  const plannedSegments = applyControlSegments(dataSegments, { structuredAppend });
+  const withOption = generate("HELLO", {
+    structuredAppend,
+    mode: "alphanumeric",
+    version: 1,
+    errorCorrectionLevel: "M",
+    maskPattern: 3,
+    output: "matrix",
+    diagnostics: true
+  });
+  const withPlannedSegments = generateSegments(plannedSegments, {
+    version: 1,
+    errorCorrectionLevel: "M",
+    maskPattern: 3,
+    output: "matrix",
+    diagnostics: true
+  });
+
+  assert.deepEqual(plannedSegments.map((segment) => segment.mode), ["structured-append", "alphanumeric"]);
+  assert.equal(isControlSegment(plannedSegments[0]), true);
+  assert.deepEqual(getFirstStructuredAppend(plannedSegments), structuredAppend);
+  assert.deepEqual(getFirstStructuredAppendEncodedValues(plannedSegments), {
+    sequenceIndex: 1,
+    sequenceTotal: 4,
+    sequenceIndicator: 0x14,
+    parity: 0xa7
+  });
+  assert.equal(getFirstFnc1Mode(plannedSegments), null);
+  assert.equal(getFirstEciAssignmentNumber(plannedSegments), null);
+  assert.equal(getControlSegmentBitLength(plannedSegments[0]), 20);
+  assert.equal(getSegmentsBitLength(plannedSegments, 1), withOption.diagnostics.dataBitLength);
+  assert.equal(withPlannedSegments.diagnostics.dataBitLength, withOption.diagnostics.dataBitLength);
+  assert.deepEqual(withPlannedSegments.diagnostics.segments, withOption.diagnostics.segments);
+  assert.deepEqual(matrixRows(withPlannedSegments), matrixRows(withOption));
+});
+
+test("internal control segment model rejects Structured Append conflicts", () => {
+  const structuredAppend = { index: 1, total: 2, parity: 0 };
+
+  assert.throws(
+    () => applyControlSegments([{ mode: "fnc1" }, { mode: "numeric", text: "01" }], { structuredAppend }),
+    (error) => error instanceof InvalidGs1Error &&
+      /Structured Append cannot be combined with FNC1 first position/.test(error.message)
+  );
+  assert.throws(
+    () => applyControlSegments([{ mode: "fnc1-second", applicationIndicator: "37" }, { mode: "byte", text: "ABC" }], { structuredAppend }),
+    (error) => error instanceof InvalidModeError &&
+      /Structured Append cannot be combined with FNC1 second position/.test(error.message)
+  );
+  assert.throws(
+    () => applyControlSegments([{ mode: "eci", assignmentNumber: 26 }, { mode: "byte", text: "ABC" }], { structuredAppend }),
+    (error) => error instanceof InvalidModeError &&
+      /Structured Append cannot be combined with ECI/.test(error.message)
+  );
+  assert.throws(
+    () => applyControlSegments([{ mode: "byte", text: "ABC" }], { eciAssignmentNumber: 26, structuredAppend }),
+    (error) => error instanceof InvalidModeError &&
+      /Structured Append cannot be combined with ECI/.test(error.message)
+  );
+  assert.throws(
+    () => applyControlSegments([{ mode: "structured-append", ...structuredAppend }, { mode: "byte", text: "ABC" }], { structuredAppend }),
+    (error) => error instanceof InvalidModeError &&
+      /structuredAppend option cannot be combined with a manual structured-append segment/.test(error.message)
   );
 });

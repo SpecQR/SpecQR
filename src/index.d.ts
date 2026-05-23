@@ -10,7 +10,14 @@ export type QRBinaryInput = Uint8Array | ArrayBuffer | ArrayBufferView | readonl
 export type QRInput = string | QRBinaryInput;
 
 export type QRTextSegmentMode = "numeric" | "alphanumeric" | "kanji";
+export interface QRStructuredAppendOptions {
+  index: number;
+  total: number;
+  parity: number;
+}
+
 export type QRSegmentInput =
+  | ({ mode: "structured-append" } & QRStructuredAppendOptions)
   | { mode: "fnc1" }
   | { mode: "fnc1-second"; applicationIndicator: string }
   | { mode: "eci"; assignmentNumber: number }
@@ -52,31 +59,54 @@ export interface QRCodeOptions {
   eci?: boolean | number;
   gs1?: boolean;
   fnc1Second?: false | string;
+  structuredAppend?: false | QRStructuredAppendOptions;
   diagnostics?: boolean;
   printDpi?: number | null;
 }
 
 export interface QRSegmentDiagnostics {
-  mode: "fnc1" | "fnc1-second" | "eci" | "numeric" | "alphanumeric" | "byte" | "kanji";
+  mode: "structured-append" | "fnc1" | "fnc1-second" | "eci" | "numeric" | "alphanumeric" | "byte" | "kanji";
   assignmentNumber?: number;
   applicationIndicator?: string;
   applicationIndicatorCodeword?: number;
+  index?: number;
+  total?: number;
+  parity?: number;
+  sequenceIndex?: number;
+  sequenceTotal?: number;
+  sequenceIndicator?: number;
   characterCount: number;
   byteCount: number;
   bitLength: number;
 }
 
 export interface QRControlSegmentDiagnostics {
-  mode: "fnc1" | "fnc1-second" | "eci";
+  mode: "structured-append" | "fnc1" | "fnc1-second" | "eci";
   assignmentNumber?: number;
   applicationIndicator?: string;
   applicationIndicatorCodeword?: number;
+  index?: number;
+  total?: number;
+  parity?: number;
+  sequenceIndex?: number;
+  sequenceTotal?: number;
+  sequenceIndicator?: number;
 }
 
 export interface QRFnc1SecondDiagnostics {
   enabled: boolean;
   applicationIndicator: string | null;
   applicationIndicatorCodeword: number | null;
+}
+
+export interface QRStructuredAppendDiagnostics {
+  enabled: boolean;
+  index: number | null;
+  total: number | null;
+  parity: number | null;
+  sequenceIndex: number | null;
+  sequenceTotal: number | null;
+  sequenceIndicator: number | null;
 }
 
 export interface QRWarning {
@@ -143,6 +173,7 @@ export interface QRDiagnostics {
   eciAssignmentNumber: number | null;
   fnc1: "first-position" | "second-position" | null;
   fnc1Second: QRFnc1SecondDiagnostics;
+  structuredAppend: QRStructuredAppendDiagnostics;
   gs1: boolean;
   gs1Validation: QRGs1ValidationDiagnostics;
   segments: QRSegmentDiagnostics[];

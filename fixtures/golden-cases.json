@@ -38,6 +38,15 @@
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": false,
         "dataBitLength": 41,
         "capacityBits": 152,
@@ -178,6 +187,15 @@
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": false,
         "dataBitLength": 74,
         "capacityBits": 128,
@@ -315,6 +333,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 164,
@@ -481,6 +508,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 132,
@@ -653,6 +689,15 @@
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": false,
         "dataBitLength": 38,
         "capacityBits": 128,
@@ -809,6 +854,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 184,
@@ -1043,6 +1097,15 @@
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": false,
         "dataBitLength": 144,
         "capacityBits": 176,
@@ -1224,6 +1287,15 @@
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": false,
         "dataBitLength": 104,
         "capacityBits": 104,
@@ -1384,6 +1456,15 @@
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": true,
         "dataBitLength": 72,
         "capacityBits": 72,
@@ -1538,6 +1619,15 @@
           "applicationIndicator": "37",
           "applicationIndicatorCodeword": 37
         },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
+        },
         "gs1": false,
         "dataBitLength": 175,
         "capacityBits": 176,
@@ -1679,6 +1769,229 @@
     }
   },
   {
+    "id": "structured-append-v2-m-mask7",
+    "description": "Structured Append low-level header with fixed sequence and parity metadata.",
+    "coverage": [
+      "structured-append",
+      "manual-segments",
+      "alphanumeric",
+      "alignment"
+    ],
+    "segments": [
+      {
+        "mode": "alphanumeric",
+        "text": "STRUCTURED"
+      },
+      {
+        "mode": "numeric",
+        "text": "12345"
+      }
+    ],
+    "options": {
+      "version": 2,
+      "errorCorrectionLevel": "M",
+      "maskPattern": 7,
+      "structuredAppend": {
+        "index": 2,
+        "total": 5,
+        "parity": 167
+      }
+    },
+    "expected": {
+      "diagnostics": {
+        "version": 2,
+        "size": 25,
+        "errorCorrectionLevel": "M",
+        "requestedErrorCorrectionLevel": "M",
+        "boostedErrorCorrection": false,
+        "versionSelection": "fixed",
+        "maskPattern": 7,
+        "maskPenalty": 661,
+        "maskPenalties": [
+          {
+            "maskPattern": 7,
+            "penalty": 661
+          }
+        ],
+        "mode": "mixed",
+        "controlSegments": [
+          {
+            "mode": "structured-append",
+            "index": 2,
+            "total": 5,
+            "parity": 167,
+            "sequenceIndex": 1,
+            "sequenceTotal": 4,
+            "sequenceIndicator": 20
+          }
+        ],
+        "eciAssignmentNumber": null,
+        "fnc1": null,
+        "fnc1Second": {
+          "enabled": false,
+          "applicationIndicator": null,
+          "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": true,
+          "index": 2,
+          "total": 5,
+          "parity": 167,
+          "sequenceIndex": 1,
+          "sequenceTotal": 4,
+          "sequenceIndicator": 20
+        },
+        "gs1": false,
+        "dataBitLength": 119,
+        "capacityBits": 224,
+        "remainingBits": 105,
+        "inputBytes": 15,
+        "dataCodewords": 28,
+        "errorCorrectionCodewords": 16,
+        "totalCodewords": 44
+      },
+      "segments": [
+        {
+          "mode": "structured-append",
+          "characterCount": 0,
+          "byteCount": 0,
+          "bitLength": 20,
+          "index": 2,
+          "total": 5,
+          "parity": 167,
+          "sequenceIndex": 1,
+          "sequenceTotal": 4,
+          "sequenceIndicator": 20
+        },
+        {
+          "mode": "alphanumeric",
+          "characterCount": 10,
+          "byteCount": 10,
+          "bitLength": 68
+        },
+        {
+          "mode": "numeric",
+          "characterCount": 5,
+          "byteCount": 5,
+          "bitLength": 31
+        }
+      ],
+      "dataCodewords": [
+        49,
+        74,
+        114,
+        5,
+        80,
+        153,
+        186,
+        142,
+        107,
+        10,
+        131,
+        16,
+        20,
+        123,
+        90,
+        0,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17
+      ],
+      "interleavedCodewords": [
+        49,
+        74,
+        114,
+        5,
+        80,
+        153,
+        186,
+        142,
+        107,
+        10,
+        131,
+        16,
+        20,
+        123,
+        90,
+        0,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        236,
+        17,
+        199,
+        210,
+        172,
+        69,
+        229,
+        252,
+        24,
+        78,
+        60,
+        82,
+        212,
+        39,
+        152,
+        197,
+        122,
+        63
+      ],
+      "matrixRows": [
+        "1111111000100010001111111",
+        "1000001001000000101000001",
+        "1011101000101011001011101",
+        "1011101001100100101011101",
+        "1011101001111000001011101",
+        "1000001010101001101000001",
+        "1111111010101010101111111",
+        "0000000001111101100000000",
+        "1001011010000010110100000",
+        "0111010110101101101100000",
+        "0101101101101111001111011",
+        "1000000100101100110101000",
+        "0111011110010011101000101",
+        "0100000101110111110011011",
+        "1000111010110110111001111",
+        "0100100110110001000101101",
+        "1100001110001100111111011",
+        "0000000011001111100011101",
+        "1111111000011011101011000",
+        "1000001010101011100011010",
+        "1011101001000001111110001",
+        "1011101011010010000011100",
+        "1011101001000001001100001",
+        "1000001000100010110100111",
+        "1111111010001000010110001"
+      ],
+      "matrixSha256": "6fc1fd049cf63e9aae070d9fb3c3bfa1306691a3f6da79f8514e76b03a8b5d1e",
+      "darkModules": 312,
+      "formatBits": {
+        "value": 19104,
+        "bits": "100101010100000"
+      },
+      "versionBits": null,
+      "functionModuleCount": 266,
+      "dataModuleCount": 359,
+      "remainderBits": 7
+    }
+  },
+  {
     "id": "binary-v1-q-mask7",
     "description": "Binary byte payload including 0x00 and 0xff.",
     "coverage": [
@@ -1723,6 +2036,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 52,
@@ -1858,6 +2180,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 180,
@@ -2244,6 +2575,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 976,
@@ -2849,6 +3189,15 @@
           "enabled": false,
           "applicationIndicator": null,
           "applicationIndicatorCodeword": null
+        },
+        "structuredAppend": {
+          "enabled": false,
+          "index": null,
+          "total": null,
+          "parity": null,
+          "sequenceIndex": null,
+          "sequenceTotal": null,
+          "sequenceIndicator": null
         },
         "gs1": false,
         "dataBitLength": 6464,

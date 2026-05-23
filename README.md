@@ -47,17 +47,18 @@ npm install specqr@next
 - binary input と manual segment input
 - GS1 QR Code / FNC1 first position
 - FNC1 second position
+- Structured Append low-level header
 - 対応 AI に限定した GS1 human-readable parser / element string / Digital Link helper
 - GTIN / SSCC check digit helper
 - `matrix`, `svg`, Data URL, PNG, canvas output
 - Node PNG helper と browser Blob/ImageData/Object URL helper
 - capacity、mask/version selection、contrast、quiet zone、print warning を含む diagnostics
 
-Micro QR、rMQR、logo overlay、styled modules、Structured Append は v1 の対象外です。
+Micro QR、rMQR、logo overlay、styled modules、Structured Append の自動分割 API は v1 の対象外です。
 
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
 
-v2.0.0 では、GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model、検証体系の強化を中心に計画しています。Micro QR、rMQR、logo overlay、styled modules は v2.0.0 の対象外です。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
+v2.0.0 では、GS1 syntax layer、GS1 Digital Link、Structured Append の高レベル自動分割、control segment model、検証体系の強化を中心に計画しています。Micro QR、rMQR、logo overlay、styled modules は v2.0.0 の対象外です。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
 
 ## 基本的な使い方
 
@@ -179,6 +180,17 @@ FNC1 second position は GS1 QR Code ではなく、AIM International と合意�
 QRCode.generate("AA1234BBB112", {
   fnc1Second: "37",
   mode: "alphanumeric",
+  output: "svg"
+});
+```
+
+## Structured Append low-level header
+
+Structured Append は、利用者が各 symbol の `index`、`total`、`parity` を明示する低レベル header API として扱えます。SpecQR はまだ payload の自動分割や parity 自動計算は行いません。
+
+```js
+QRCode.generate("PART 2", {
+  structuredAppend: { index: 2, total: 4, parity: 0x5a },
   output: "svg"
 });
 ```

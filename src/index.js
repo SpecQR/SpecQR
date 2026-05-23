@@ -12,6 +12,7 @@ import {
   prependEciSegment,
   prependFnc1Segment,
   prependFnc1SecondSegment,
+  prependStructuredAppendSegment,
   toByteArray
 } from "./encoding/modes.js";
 import {
@@ -21,6 +22,9 @@ import {
   getFirstFnc1SecondApplicationIndicator,
   getFirstFnc1SecondApplicationIndicatorCodeword,
   getFnc1SecondApplicationIndicatorCodeword,
+  getFirstStructuredAppend,
+  getFirstStructuredAppendEncodedValues,
+  getStructuredAppendDiagnostics,
   isControlSegment
 } from "./encoding/control-segments.js";
 import { ERROR_CORRECTION_LEVEL_ORDER, getDataCodewordCount, getSize } from "./core/tables.js";
@@ -213,6 +217,8 @@ function renderResult(plan, normalized, inputBytes) {
         getFirstFnc1Mode,
         getFirstFnc1SecondApplicationIndicator,
         getFirstFnc1SecondApplicationIndicatorCodeword,
+        getFirstStructuredAppend,
+        getFirstStructuredAppendEncodedValues,
         gs1Validation: plan.gs1Validation,
         getSegmentDiagnostics: (segment) => getSegmentDiagnostics(segment, plan.version)
       })
@@ -238,12 +244,15 @@ function renderResult(plan, normalized, inputBytes) {
 function selectPlanForInput(input, options) {
   const gs1Validation = getGs1ValidationForInput(input, options);
   const plan = selectPlan(
-    (version) => prependFnc1SecondSegment(
-      prependFnc1Segment(
-        createSegments(input, options.mode, version, options.optimizeSegments, options.eci),
-        options.gs1
+    (version) => prependStructuredAppendSegment(
+      prependFnc1SecondSegment(
+        prependFnc1Segment(
+          createSegments(input, options.mode, version, options.optimizeSegments, options.eci),
+          options.gs1
+        ),
+        options.fnc1Second
       ),
-      options.fnc1Second
+      options.structuredAppend
     ),
     options
   );
@@ -252,9 +261,12 @@ function selectPlanForInput(input, options) {
 
 function selectPlanForManualSegments(segments, options) {
   return selectPlan(
-    () => prependFnc1SecondSegment(
-      prependFnc1Segment(prependEciSegment(segments, options.eci), options.gs1),
-      options.fnc1Second
+    () => prependStructuredAppendSegment(
+      prependFnc1SecondSegment(
+        prependFnc1Segment(prependEciSegment(segments, options.eci), options.gs1),
+        options.fnc1Second
+      ),
+      options.structuredAppend
     ),
     options
   );
@@ -359,6 +371,9 @@ function getSegmentDiagnostics(segment, version) {
   if (segment.applicationIndicator !== undefined) {
     diagnostics.applicationIndicator = segment.applicationIndicator;
     diagnostics.applicationIndicatorCodeword = getFnc1SecondApplicationIndicatorCodeword(segment.applicationIndicator);
+  }
+  if (segment.mode === "structured-append") {
+    Object.assign(diagnostics, getStructuredAppendDiagnostics(segment));
   }
   return diagnostics;
 }

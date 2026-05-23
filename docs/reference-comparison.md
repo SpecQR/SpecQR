@@ -75,11 +75,11 @@ Reference comparison は「固定条件で構築された matrix が独立実装
 
 ## v2.0.0 Planning Notes
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 で強化する GS1 strict validation、GS1 Digital Link、FNC1 second position、Structured Append は、Nayuki matrix comparison だけでは十分に検証できません。FNC1 second position の基本実装は golden / unit tests で固定済みです。
+v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 で強化する GS1 strict validation、GS1 Digital Link、FNC1 second position、Structured Append は、Nayuki matrix comparison だけでは十分に検証できません。FNC1 second position と Structured Append low-level header の基本実装は golden / unit tests で固定済みです。
 
 - GS1 semantics: FNC1、AI validation、separator handling、Digital Link conversion は domain-level behavior なので、unit / golden tests と docs で確認します。`createGs1DigitalLink()` と `parseGs1DigitalLink()` は unit / packed package smoke で確認します。
 - FNC1 second position: decoder や参照実装によって application indicator の露出方法が異なるため、bit length、control segment placement、diagnostics、negative tests を優先します。
-- Structured Append: sequence、total count、parity、chunking policy は SpecQR API と diagnostics の一部として golden fixtures で固定します。
+- Structured Append: low-level sequence、total count、parity、diagnostics は SpecQR API と golden fixtures で固定します。High-level chunking policy は未実装のため今後の専用 tests で扱います。
 - Digital Link: URL QR として生成できる一方、GS1 element string とは別表現なので、reference matrix comparison ではなく conversion tests を中心にします。
 
 参照実装比較は今後も fixed-condition QR construction regression のために使い、v2 feature の semantics は専用 tests と conformance docs で補完します。

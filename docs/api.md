@@ -29,6 +29,7 @@ const svg = QRCode.generate("https://example.com", {
   eci: false,
   gs1: false,
   fnc1Second: false,
+  structuredAppend: false,
   diagnostics: false,
   printDpi: null
 });
@@ -36,7 +37,7 @@ const svg = QRCode.generate("https://example.com", {
 
 ### `QRCode.generateSegments(segments, options)`
 
-呼び出し側が明示した segment から QR Code を生成します。対応する segment mode は `fnc1`, `fnc1-second`, `eci`, `numeric`, `alphanumeric`, `byte`, `kanji` です。
+呼び出し側が明示した segment から QR Code を生成します。対応する segment mode は `structured-append`, `fnc1`, `fnc1-second`, `eci`, `numeric`, `alphanumeric`, `byte`, `kanji` です。
 
 ```js
 QRCode.generateSegments([
@@ -79,6 +80,7 @@ QRCode.drawToCanvas(canvas, "https://example.com", {
 - `eci`: `false | true | number`。default は `false`。`true` は UTF-8 ECI assignment number `26` を挿入し、auto-selected non-ASCII text を byte mode に保ちます。
 - `gs1`: boolean。default は `false`。`true` の場合、input を raw GS1 element string として内部 validator で検証し、GS1 QR Code 用に QR FNC1 first position (`0101`) を先頭に挿入します。この実装では ECI と併用できません。
 - `fnc1Second`: `false | string`。default は `false`。2 桁数字または 1 文字 Latin alphabetic の Application Indicator を指定すると、QR FNC1 second position (`1001`) と 8-bit Application Indicator codeword を先頭に挿入します。この実装では GS1/FNC1 first position と ECI との併用を reject します。
+- `structuredAppend`: `false | { index, total, parity }`。default は `false`。Structured Append mode indicator (`0011`) と 8-bit Symbol Sequence Indicator、8-bit parity data を先頭に挿入します。public API の `index` は 1-based、`total` は `2..16`、`index` は `1..total`、`parity` は `0..255` integer です。この実装では ECI / FNC1 first / FNC1 second / `gs1: true` との併用を安全側で reject します。
 - `diagnostics`: `true` の場合、生成詳細と warnings を返します。
 - `printDpi`: print-size diagnostics のための optional DPI。生成結果そのものには影響しません。
 
@@ -134,7 +136,35 @@ QRCode.generateSegments([
 ]);
 ```
 
-`fnc1Second` は `gs1: true` / manual `{ mode: "fnc1" }` と併用できません。SpecQR では現在、ECI と FNC1 second も安全側で reject します。Structured Append は未実装です。
+`fnc1Second` は `gs1: true` / manual `{ mode: "fnc1" }` と併用できません。SpecQR では現在、ECI と FNC1 second も安全側で reject します。Structured Append とも併用できません。
+
+## Structured Append Low-Level Header
+
+Structured Append は、複数の QR symbols を 1 つの logical message として扱うための QR control mode です。SpecQR は低レベル header encoding のみを提供します。payload の自動分割、symbol set の生成、元 payload からの parity 自動計算、decode / merge helper はまだ提供しません。
+
+```js
+QRCode.generate("PART 2", {
+  structuredAppend: {
+    index: 2,
+    total: 4,
+    parity: 0x5a
+  },
+  output: "svg"
+});
+```
+
+SpecQR の public API では `index` を 1-based として受け付けます。実際の bit stream では、mode indicator `0011` の後に `(index - 1)` を 4 bits、`(total - 1)` を 4 bits、`parity` を 8 bits で encode します。
+
+manual segment でも同じ header を明示できます。
+
+```js
+QRCode.generateSegments([
+  { mode: "structured-append", index: 2, total: 4, parity: 0x5a },
+  { mode: "byte", data: "PART 2" }
+]);
+```
+
+`structuredAppend` は `gs1: true` / manual `{ mode: "fnc1" }` / `fnc1Second` / `eci` と併用できません。将来 `generateStructuredAppend()` のような高レベル自動分割 API を追加する場合も、この低レベル header API は互換性を保つ予定です。
 
 ### GS1 Helpers
 
@@ -284,6 +314,7 @@ PNG と ImageData output は `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `"black"`,
     eciAssignmentNumber,
     fnc1,
     fnc1Second,
+    structuredAppend,
     gs1,
     gs1Validation,
     segments,
@@ -303,7 +334,7 @@ PNG と ImageData output は `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `"black"`,
 }
 ```
 
-`diagnostics.controlSegments` は ECI / FNC1 first / FNC1 second の control segment ordering を表します。`diagnostics.fnc1` は `null`、`"first-position"`、`"second-position"` のいずれかです。`diagnostics.fnc1Second` は `{ enabled, applicationIndicator, applicationIndicatorCodeword }` です。
+`diagnostics.controlSegments` は Structured Append / ECI / FNC1 first / FNC1 second の control segment ordering を表します。`diagnostics.fnc1` は `null`、`"first-position"`、`"second-position"` のいずれかです。`diagnostics.fnc1Second` は `{ enabled, applicationIndicator, applicationIndicatorCodeword }` です。`diagnostics.structuredAppend` は `{ enabled, index, total, parity, sequenceIndex, sequenceTotal, sequenceIndicator }` です。`sequenceIndex` と `sequenceTotal` は bit stream に入る 0-based values です。
 
 `diagnostics.gs1` は v1 互換の boolean です。`diagnostics.gs1Validation` は追加 metadata で、shape は `{ enabled, elementCount, ais, hasSeparators }` です。`generate(input, { gs1: true })` の raw string path では `elementCount` と `ais` が入ります。manual `{ mode: "fnc1" }` path では raw element string validation を行わないため、`elementCount` は `null` になります。
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added low-level Structured Append header support via `structuredAppend: { index, total, parity }` and manual `{ mode: "structured-append", index, total, parity }` segments.
+- Added Structured Append diagnostics, validation, unit coverage, golden fixture coverage, and packed package smoke coverage.
+
+### Notes
+
+- Automatic Structured Append splitting, parity calculation helpers, decode / merge helpers, and npm publish are not part of this change.
+
 ## 1.0.0 - 2026-05-22
 
 ### Added

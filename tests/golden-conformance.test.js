@@ -11,7 +11,8 @@ import {
   createSegments,
   prependEciSegment,
   prependFnc1Segment,
-  prependFnc1SecondSegment
+  prependFnc1SecondSegment,
+  prependStructuredAppendSegment
 } from "../src/encoding/modes.js";
 import { generate, generateSegments } from "../src/index.js";
 
@@ -36,7 +37,8 @@ test("golden fixtures cover representative QR Model 2 modes and metadata", () =>
     "eci-mixed",
     "gs1",
     "fnc1",
-    "fnc1-second"
+    "fnc1-second",
+    "structured-append"
   ]) {
     assert.equal(coverage.has(item), true, `missing golden coverage: ${item}`);
   }
@@ -96,27 +98,34 @@ function getCodewords(fixture, version, errorCorrectionLevel) {
 function getSegments(fixture, version) {
   const eciAssignmentNumber = normalizeEciOption(fixture.options.eci ?? false);
   const fnc1Second = fixture.options.fnc1Second ?? false;
+  const structuredAppend = fixture.options.structuredAppend ?? false;
   if (fixture.segments) {
-    return prependFnc1SecondSegment(
+    return prependStructuredAppendSegment(
+      prependFnc1SecondSegment(
+        prependFnc1Segment(
+          prependEciSegment(normalizeManualSegments(fixture.segments), eciAssignmentNumber),
+          fixture.options.gs1 ?? false
+        ),
+        fnc1Second
+      ),
+      structuredAppend
+    );
+  }
+  return prependStructuredAppendSegment(
+    prependFnc1SecondSegment(
       prependFnc1Segment(
-        prependEciSegment(normalizeManualSegments(fixture.segments), eciAssignmentNumber),
+        createSegments(
+          getInput(fixture),
+          fixture.options.mode ?? "auto",
+          version,
+          fixture.options.optimizeSegments ?? true,
+          eciAssignmentNumber
+        ),
         fixture.options.gs1 ?? false
       ),
       fnc1Second
-    );
-  }
-  return prependFnc1SecondSegment(
-    prependFnc1Segment(
-      createSegments(
-        getInput(fixture),
-        fixture.options.mode ?? "auto",
-        version,
-        fixture.options.optimizeSegments ?? true,
-        eciAssignmentNumber
-      ),
-      fixture.options.gs1 ?? false
     ),
-    fnc1Second
+    structuredAppend
   );
 }
 
@@ -144,6 +153,7 @@ function pickDiagnostics(diagnostics) {
     eciAssignmentNumber: diagnostics.eciAssignmentNumber,
     fnc1: diagnostics.fnc1,
     fnc1Second: diagnostics.fnc1Second,
+    structuredAppend: diagnostics.structuredAppend,
     gs1: diagnostics.gs1,
     dataBitLength: diagnostics.dataBitLength,
     capacityBits: diagnostics.capacityBits,

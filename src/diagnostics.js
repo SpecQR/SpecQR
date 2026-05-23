@@ -18,6 +18,8 @@ export function createDiagnostics({
   getFirstFnc1Mode,
   getFirstFnc1SecondApplicationIndicator,
   getFirstFnc1SecondApplicationIndicatorCodeword,
+  getFirstStructuredAppend,
+  getFirstStructuredAppendEncodedValues,
   gs1Validation,
   getSegmentDiagnostics
 }) {
@@ -27,6 +29,8 @@ export function createDiagnostics({
   const fnc1 = getFirstFnc1Mode(plan.segments);
   const gs1 = fnc1 === "first-position";
   const fnc1SecondApplicationIndicator = getFirstFnc1SecondApplicationIndicator(plan.segments);
+  const structuredAppend = getFirstStructuredAppend(plan.segments);
+  const structuredAppendEncoded = getFirstStructuredAppendEncodedValues(plan.segments);
   const warnings = createWarnings({
     options,
     remainingBits,
@@ -55,6 +59,15 @@ export function createDiagnostics({
       enabled: fnc1 === "second-position",
       applicationIndicator: fnc1SecondApplicationIndicator,
       applicationIndicatorCodeword: getFirstFnc1SecondApplicationIndicatorCodeword(plan.segments)
+    },
+    structuredAppend: {
+      enabled: structuredAppend !== null,
+      index: structuredAppend?.index ?? null,
+      total: structuredAppend?.total ?? null,
+      parity: structuredAppend?.parity ?? null,
+      sequenceIndex: structuredAppendEncoded?.sequenceIndex ?? null,
+      sequenceTotal: structuredAppendEncoded?.sequenceTotal ?? null,
+      sequenceIndicator: structuredAppendEncoded?.sequenceIndicator ?? null
     },
     gs1,
     gs1Validation: gs1Validation ?? createDefaultGs1ValidationDiagnostics(gs1),

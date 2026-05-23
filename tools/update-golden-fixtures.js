@@ -9,7 +9,8 @@ import {
   createSegments,
   prependEciSegment,
   prependFnc1Segment,
-  prependFnc1SecondSegment
+  prependFnc1SecondSegment,
+  prependStructuredAppendSegment
 } from "../src/encoding/modes.js";
 import { generate, generateSegments } from "../src/index.js";
 
@@ -94,6 +95,21 @@ const CASES = [
       { mode: "byte", text: "text text" }
     ],
     options: { version: 2, errorCorrectionLevel: "Q", maskPattern: 6, fnc1Second: "37" }
+  },
+  {
+    id: "structured-append-v2-m-mask7",
+    description: "Structured Append low-level header with fixed sequence and parity metadata.",
+    coverage: ["structured-append", "manual-segments", "alphanumeric", "alignment"],
+    segments: [
+      { mode: "alphanumeric", text: "STRUCTURED" },
+      { mode: "numeric", text: "12345" }
+    ],
+    options: {
+      version: 2,
+      errorCorrectionLevel: "M",
+      maskPattern: 7,
+      structuredAppend: { index: 2, total: 5, parity: 0xa7 }
+    }
   },
   {
     id: "binary-v1-q-mask7",
@@ -198,27 +214,34 @@ function getCodewords(testCase, version, errorCorrectionLevel) {
 function getSegments(testCase, version) {
   const eciAssignmentNumber = normalizeEciOption(testCase.options.eci ?? false);
   const fnc1Second = testCase.options.fnc1Second ?? false;
+  const structuredAppend = testCase.options.structuredAppend ?? false;
   if (testCase.segments) {
-    return prependFnc1SecondSegment(
+    return prependStructuredAppendSegment(
+      prependFnc1SecondSegment(
+        prependFnc1Segment(
+          prependEciSegment(normalizeManualSegments(testCase.segments), eciAssignmentNumber),
+          testCase.options.gs1 ?? false
+        ),
+        fnc1Second
+      ),
+      structuredAppend
+    );
+  }
+  return prependStructuredAppendSegment(
+    prependFnc1SecondSegment(
       prependFnc1Segment(
-        prependEciSegment(normalizeManualSegments(testCase.segments), eciAssignmentNumber),
+        createSegments(
+          getInput(testCase),
+          testCase.options.mode ?? "auto",
+          version,
+          testCase.options.optimizeSegments ?? true,
+          eciAssignmentNumber
+        ),
         testCase.options.gs1 ?? false
       ),
       fnc1Second
-    );
-  }
-  return prependFnc1SecondSegment(
-    prependFnc1Segment(
-      createSegments(
-        getInput(testCase),
-        testCase.options.mode ?? "auto",
-        version,
-        testCase.options.optimizeSegments ?? true,
-        eciAssignmentNumber
-      ),
-      testCase.options.gs1 ?? false
     ),
-    fnc1Second
+    structuredAppend
   );
 }
 
@@ -246,6 +269,7 @@ function pickDiagnostics(diagnostics) {
     eciAssignmentNumber: diagnostics.eciAssignmentNumber,
     fnc1: diagnostics.fnc1,
     fnc1Second: diagnostics.fnc1Second,
+    structuredAppend: diagnostics.structuredAppend,
     gs1: diagnostics.gs1,
     dataBitLength: diagnostics.dataBitLength,
     capacityBits: diagnostics.capacityBits,

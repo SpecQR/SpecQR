@@ -7,7 +7,10 @@ import {
   InvalidOutputError,
   InvalidVersionError
 } from "./errors.js";
-import { validateFnc1SecondApplicationIndicator } from "./encoding/control-segments.js";
+import {
+  normalizeStructuredAppend,
+  validateFnc1SecondApplicationIndicator
+} from "./encoding/control-segments.js";
 
 const DEFAULT_OPTIONS = {
   errorCorrectionLevel: "M",
@@ -27,6 +30,7 @@ const DEFAULT_OPTIONS = {
   eci: false,
   gs1: false,
   fnc1Second: false,
+  structuredAppend: false,
   diagnostics: false,
   printDpi: null
 };
@@ -74,6 +78,19 @@ export function normalizeOptions(options = {}) {
   }
   if (normalized.fnc1Second !== false && normalized.eci !== false) {
     throw new InvalidModeError("fnc1Second and eci cannot be combined in this implementation");
+  }
+
+  if (normalized.structuredAppend !== false) {
+    normalized.structuredAppend = normalizeStructuredAppend(normalized.structuredAppend, "structuredAppend");
+  }
+  if (normalized.structuredAppend !== false && normalized.gs1) {
+    throw new InvalidGs1Error("structuredAppend and gs1 cannot be combined in this implementation");
+  }
+  if (normalized.structuredAppend !== false && normalized.eci !== false) {
+    throw new InvalidModeError("structuredAppend and eci cannot be combined in this implementation");
+  }
+  if (normalized.structuredAppend !== false && normalized.fnc1Second !== false) {
+    throw new InvalidModeError("structuredAppend and fnc1Second cannot be combined in this implementation");
   }
 
   validateVersionBound("minVersion", normalized.minVersion);

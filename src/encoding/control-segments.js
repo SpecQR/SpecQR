@@ -10,21 +10,38 @@ export const CONTROL_SEGMENT_MODES = Object.freeze({
 const CONTROL_MODE_INDICATORS = {
   [CONTROL_SEGMENT_MODES.ECI]: 0b0111,
   [CONTROL_SEGMENT_MODES.FNC1_FIRST]: 0b0101,
-  [CONTROL_SEGMENT_MODES.FNC1_SECOND]: 0b1001
+  [CONTROL_SEGMENT_MODES.FNC1_SECOND]: 0b1001,
+  [CONTROL_SEGMENT_MODES.STRUCTURED_APPEND]: 0b0011
 };
 
 export function applyControlSegments(
   segments,
-  { eciAssignmentNumber = false, fnc1First = false, fnc1Second = false } = {}
+  {
+    eciAssignmentNumber = false,
+    fnc1First = false,
+    fnc1Second = false,
+    structuredAppend = false
+  } = {}
 ) {
-  if (eciAssignmentNumber === false && !fnc1First && fnc1Second === false) {
+  if (eciAssignmentNumber === false && !fnc1First && fnc1Second === false && structuredAppend === false) {
     return segments;
   }
 
   const existing = inspectControlSegments(segments);
   const controls = [];
 
+  if (structuredAppend !== false) {
+    if (existing.structuredAppend.length > 0) {
+      throw new InvalidModeError("structuredAppend option cannot be combined with a manual structured-append segment");
+    }
+    assertStructuredAppendCanStandAlone(existing, eciAssignmentNumber, fnc1First, fnc1Second);
+    controls.push(createStructuredAppendSegment(structuredAppend));
+  }
+
   if (fnc1First) {
+    if (existing.structuredAppend.length > 0 || structuredAppend !== false) {
+      throw new InvalidGs1Error("FNC1 first position cannot be combined with Structured Append in this implementation");
+    }
     if (existing.fnc1First.length > 0) {
       throw new InvalidGs1Error("gs1 option cannot be combined with a manual fnc1 segment");
     }
@@ -38,6 +55,9 @@ export function applyControlSegments(
   }
 
   if (fnc1Second !== false) {
+    if (existing.structuredAppend.length > 0 || structuredAppend !== false) {
+      throw new InvalidModeError("FNC1 second position cannot be combined with Structured Append in this implementation");
+    }
     if (existing.fnc1Second.length > 0) {
       throw new InvalidModeError("fnc1Second option cannot be combined with a manual fnc1-second segment");
     }
@@ -51,6 +71,9 @@ export function applyControlSegments(
   }
 
   if (eciAssignmentNumber !== false) {
+    if (existing.structuredAppend.length > 0 || structuredAppend !== false) {
+      throw new InvalidModeError("ECI cannot be combined with Structured Append in this implementation");
+    }
     if (existing.fnc1First.length > 0) {
       throw new InvalidGs1Error("eci cannot be combined with FNC1 first position in this implementation");
     }
@@ -76,8 +99,12 @@ export function prependFnc1SecondSegment(segments, applicationIndicator = false)
   return applyControlSegments(segments, { fnc1Second: applicationIndicator });
 }
 
+export function prependStructuredAppendSegment(segments, structuredAppend = false) {
+  return applyControlSegments(segments, { structuredAppend });
+}
+
 export function validateManualControlSegments(segments) {
-  const { fnc1First, fnc1Second, eci } = inspectControlSegments(segments);
+  const { fnc1First, fnc1Second, structuredAppend, eci } = inspectControlSegments(segments);
 
   if (fnc1First.length > 1) {
     throw new InvalidGs1Error("manual segments can include at most one fnc1 segment");
@@ -85,20 +112,35 @@ export function validateManualControlSegments(segments) {
   if (fnc1Second.length > 1) {
     throw new InvalidModeError("manual segments can include at most one fnc1-second segment");
   }
+  if (structuredAppend.length > 1) {
+    throw new InvalidModeError("manual segments can include at most one structured-append segment");
+  }
   if (fnc1First.length === 1 && fnc1First[0] !== 0) {
     throw new InvalidGs1Error("manual fnc1 segment must be the first segment");
   }
   if (fnc1Second.length === 1 && fnc1Second[0] !== 0) {
     throw new InvalidModeError("manual fnc1-second segment must be the first segment");
   }
+  if (structuredAppend.length === 1 && structuredAppend[0] !== 0) {
+    throw new InvalidModeError("manual structured-append segment must be the first segment");
+  }
   if (fnc1First.length === 1 && fnc1Second.length === 1) {
     throw new InvalidGs1Error("FNC1 first position cannot be combined with FNC1 second position");
+  }
+  if (structuredAppend.length === 1 && fnc1First.length === 1) {
+    throw new InvalidGs1Error("Structured Append cannot be combined with FNC1 first position in this implementation");
+  }
+  if (structuredAppend.length === 1 && fnc1Second.length === 1) {
+    throw new InvalidModeError("Structured Append cannot be combined with FNC1 second position in this implementation");
   }
   if (fnc1First.length === 1 && eci.length > 0) {
     throw new InvalidGs1Error("FNC1 first position cannot be combined with ECI in this implementation");
   }
   if (fnc1Second.length === 1 && eci.length > 0) {
     throw new InvalidModeError("FNC1 second position cannot be combined with ECI in this implementation");
+  }
+  if (structuredAppend.length === 1 && eci.length > 0) {
+    throw new InvalidModeError("Structured Append cannot be combined with ECI in this implementation");
   }
 
   return segments;
@@ -107,7 +149,8 @@ export function validateManualControlSegments(segments) {
 export function isControlSegment(segment) {
   return segment?.mode === CONTROL_SEGMENT_MODES.ECI ||
     segment?.mode === CONTROL_SEGMENT_MODES.FNC1_FIRST ||
-    segment?.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND;
+    segment?.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND ||
+    segment?.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND;
 }
 
 export function validateControlSegment(segment, label = "control segment") {
@@ -123,6 +166,10 @@ export function validateControlSegment(segment, label = "control segment") {
     validateFnc1SecondSegment(segment, label);
     return;
   }
+  if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
+    validateStructuredAppendSegment(segment, label);
+    return;
+  }
   throw new InvalidModeError(`Unsupported control segment mode: ${segment.mode}`);
 }
 
@@ -134,6 +181,9 @@ export function getControlSegmentBitLength(segment) {
   if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND) {
     return 12;
   }
+  if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
+    return 20;
+  }
   return 4 + getEciDesignatorBitLength(segment.assignmentNumber);
 }
 
@@ -144,6 +194,11 @@ export function appendControlSegmentBits(buffer, segment) {
     appendEciDesignatorBits(buffer, segment.assignmentNumber);
   } else if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND) {
     buffer.append(getFnc1SecondApplicationIndicatorCodeword(segment.applicationIndicator), 8);
+  } else if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
+    const encoded = getStructuredAppendEncodedValues(segment);
+    buffer.append(encoded.sequenceIndex, 4);
+    buffer.append(encoded.sequenceTotal, 4);
+    buffer.append(encoded.parity, 8);
   }
 }
 
@@ -170,6 +225,16 @@ export function getFirstFnc1SecondApplicationIndicatorCodeword(segments) {
   return applicationIndicator === null ? null : getFnc1SecondApplicationIndicatorCodeword(applicationIndicator);
 }
 
+export function getFirstStructuredAppend(segments) {
+  const segment = segments.find((item) => item.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND);
+  return segment ? normalizeStructuredAppend(segment) : null;
+}
+
+export function getFirstStructuredAppendEncodedValues(segments) {
+  const structuredAppend = getFirstStructuredAppend(segments);
+  return structuredAppend === null ? null : getStructuredAppendEncodedValues(structuredAppend);
+}
+
 export function getControlSegmentDiagnostics(segments) {
   return segments.filter(isControlSegment).map((segment) => {
     const diagnostics = { mode: segment.mode };
@@ -178,6 +243,8 @@ export function getControlSegmentDiagnostics(segments) {
     } else if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND) {
       diagnostics.applicationIndicator = segment.applicationIndicator;
       diagnostics.applicationIndicatorCodeword = getFnc1SecondApplicationIndicatorCodeword(segment.applicationIndicator);
+    } else if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
+      Object.assign(diagnostics, getStructuredAppendDiagnostics(segment));
     }
     return diagnostics;
   });
@@ -196,6 +263,13 @@ export function createFnc1SecondSegment(applicationIndicator) {
   return {
     mode: CONTROL_SEGMENT_MODES.FNC1_SECOND,
     applicationIndicator: validateFnc1SecondApplicationIndicator(applicationIndicator)
+  };
+}
+
+export function createStructuredAppendSegment(value) {
+  return {
+    mode: CONTROL_SEGMENT_MODES.STRUCTURED_APPEND,
+    ...normalizeStructuredAppend(value)
   };
 }
 
@@ -223,9 +297,44 @@ export function getFnc1SecondApplicationIndicatorCodeword(value) {
   return applicationIndicator.charCodeAt(0) + 100;
 }
 
+export function normalizeStructuredAppend(value, label = "structuredAppend") {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new InvalidModeError(`${label} must be an object with index, total, and parity`);
+  }
+
+  const index = validateStructuredAppendInteger(value.index, `${label}.index`, 1, 16);
+  const total = validateStructuredAppendInteger(value.total, `${label}.total`, 2, 16);
+  const parity = validateStructuredAppendInteger(value.parity, `${label}.parity`, 0, 255);
+
+  if (index > total) {
+    throw new InvalidModeError(`${label}.index must be between 1 and total (${total}); got ${index}`);
+  }
+
+  return { index, total, parity };
+}
+
+export function getStructuredAppendEncodedValues(value) {
+  const { index, total, parity } = normalizeStructuredAppend(value, "structuredAppend");
+  return {
+    sequenceIndex: index - 1,
+    sequenceTotal: total - 1,
+    sequenceIndicator: ((index - 1) << 4) | (total - 1),
+    parity
+  };
+}
+
+export function getStructuredAppendDiagnostics(value) {
+  const structuredAppend = normalizeStructuredAppend(value, "structuredAppend");
+  return {
+    ...structuredAppend,
+    ...getStructuredAppendEncodedValues(structuredAppend)
+  };
+}
+
 function inspectControlSegments(segments) {
   const fnc1First = [];
   const fnc1Second = [];
+  const structuredAppend = [];
   const eci = [];
 
   segments.forEach((segment, index) => {
@@ -233,12 +342,14 @@ function inspectControlSegments(segments) {
       fnc1First.push(index);
     } else if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND) {
       fnc1Second.push(index);
+    } else if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
+      structuredAppend.push(index);
     } else if (segment.mode === CONTROL_SEGMENT_MODES.ECI) {
       eci.push(index);
     }
   });
 
-  return { fnc1First, fnc1Second, eci };
+  return { fnc1First, fnc1Second, structuredAppend, eci };
 }
 
 function validateFnc1FirstSegment(segment, label = "fnc1 segment") {
@@ -262,6 +373,38 @@ function validateFnc1SecondSegment(segment, label = "fnc1-second segment") {
     throw new InvalidModeError(`${label} must not include data, text, bytes, or assignmentNumber`);
   }
   validateFnc1SecondApplicationIndicator(segment.applicationIndicator, `${label}.applicationIndicator`);
+}
+
+function validateStructuredAppendSegment(segment, label = "structured-append segment") {
+  if (
+    Object.hasOwn(segment, "data") ||
+    Object.hasOwn(segment, "text") ||
+    Object.hasOwn(segment, "bytes") ||
+    Object.hasOwn(segment, "assignmentNumber") ||
+    Object.hasOwn(segment, "applicationIndicator")
+  ) {
+    throw new InvalidModeError(`${label} must not include data, text, bytes, assignmentNumber, or applicationIndicator`);
+  }
+  normalizeStructuredAppend(segment, label);
+}
+
+function validateStructuredAppendInteger(value, label, min, max) {
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new InvalidModeError(`${label} must be an integer from ${min} to ${max}; got ${value}`);
+  }
+  return value;
+}
+
+function assertStructuredAppendCanStandAlone(existing, eciAssignmentNumber, fnc1First, fnc1Second) {
+  if (fnc1First || existing.fnc1First.length > 0) {
+    throw new InvalidGs1Error("Structured Append cannot be combined with FNC1 first position in this implementation");
+  }
+  if (fnc1Second !== false || existing.fnc1Second.length > 0) {
+    throw new InvalidModeError("Structured Append cannot be combined with FNC1 second position in this implementation");
+  }
+  if (eciAssignmentNumber !== false || existing.eci.length > 0) {
+    throw new InvalidModeError("Structured Append cannot be combined with ECI in this implementation");
+  }
 }
 
 function getEciDesignatorBitLength(value) {

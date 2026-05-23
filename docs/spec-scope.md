@@ -2,7 +2,7 @@
 
 ## Target
 
-SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。v2.0.0 release finalization 前のため package version はまだ `1.0.0` のままですが、現在の main branch は GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2.0.0 candidate scope です。別系統の QR family や装飾機能は core に混ぜません。
+SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。SpecQR `2.0.0-rc.1` は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2.0.0 candidate scope です。別系統の QR family や装飾機能は core に混ぜません。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 

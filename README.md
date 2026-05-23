@@ -15,13 +15,13 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 npm install specqr
 ```
 
-RC / prerelease channel を明示して試す場合:
+v2.0.0-rc.1 / prerelease channel を明示して試す場合:
 
 ```sh
 npm install specqr@next
 ```
 
-正式版では `specqr` を stable channel、`specqr@next` を prerelease channel として扱います。
+`specqr` は stable channel、`specqr@next` は prerelease channel として扱います。v2.0.0-rc.1 は正式版 publish 前の release candidate です。
 
 ## Links
 
@@ -62,7 +62,7 @@ Micro QR、rMQR、logo overlay、styled modules は現在の core package の対
 
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
 
-v2.0.0 では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を release scope として扱います。package version は release finalization まで `1.0.0` のまま維持しています。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
+v2.0.0-rc.1 では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を release scope として扱います。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
 
 ## 基本的な使い方
 

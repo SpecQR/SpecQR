@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+No changes yet.
+
+## 2.0.0-rc.1 - 2026-05-23
+
+SpecQR 2.0.0-rc.1 is a prerelease for the v2 line. It keeps the runtime dependency-free while adding GS1 syntax, GS1 Digital Link helpers, FNC1 second position, Structured Append support, and stronger release-gate validation.
+
 ### Added
 
 - Added public GS1 raw element string parsing via `parseGs1ElementString(input)` and `QRCode.parseGs1ElementString(input)`, backed by strict supported-AI validation.
@@ -21,10 +27,10 @@
 ### Changed
 
 - Strengthened release-gate documentation for v2.0.0 API surface, conformance status, package contents, examples, playground, and validation lanes.
+- Updated package metadata to `2.0.0-rc.1` for prerelease publication on the npm `next` tag.
 
 ### Notes
 
-- Package version is intentionally still `1.0.0` until v2.0.0 release finalization.
 - Public parity helpers, QR decoder implementation, scanner integration, full GS1 AI catalog, GS1 Digital Link resolver/compression/full canonicalization, Micro QR, rMQR, logo overlay, styled modules, npm publish, and GitHub Release are not part of this change.
 
 ## 1.0.0 - 2026-05-22

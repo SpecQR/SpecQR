@@ -1,6 +1,6 @@
 # Conformance Matrix
 
-この文書は現在の SpecQR main branch の対応範囲を、外から確認しやすい形で整理したものです。v2.0.0 release finalization 前のため package version はまだ `1.0.0` のままですが、matrix は現在実装済みの GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append API まで含めます。SpecQR は通常 QR Code Model 2 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠をここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・外部比較で確認している範囲を明記します。
+この文書は現在の SpecQR main branch の対応範囲を、外から確認しやすい形で整理したものです。SpecQR `2.0.0-rc.1` の matrix は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append API まで含めます。SpecQR は通常 QR Code Model 2 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠をここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・外部比較で確認している範囲を明記します。
 
 Status は次の意味で使います。
 

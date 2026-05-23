@@ -1,6 +1,6 @@
 # API
 
-この文書は現在の SpecQR public API を説明します。v2.0.0 release finalization 前のため package version はまだ `1.0.0` のままですが、ここに載せている GS1 Digital Link、FNC1 second position、Structured Append API は現在の main branch に実装済みです。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
+この文書は現在の SpecQR public API を説明します。SpecQR `2.0.0-rc.1` では、ここに載せている GS1 Digital Link、FNC1 second position、Structured Append API を release candidate scope として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
 
 ## Core
 

@@ -240,6 +240,16 @@ test("generateStructuredAppend splits binary ArrayBufferView input with offset-a
       { inputStart: 30, inputLength: 1, byteStart: 30, byteLength: 1, index: 3, total: 3, parity: result.parity }
     ]
   );
+
+  const arrayBufferResult = generateStructuredAppend(payload.buffer, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    mode: "byte",
+    output: "matrix"
+  });
+  assert.equal(arrayBufferResult.total, 3);
+  assert.equal(arrayBufferResult.parity, xorBytes(payload));
+  assert.equal(arrayBufferResult.byteLength, payload.length);
 });
 
 test("generateStructuredAppend auto version chooses the smallest common split version", () => {

@@ -1,6 +1,6 @@
 # Structured Append v2 API Design
 
-この文書は、SpecQR v2 系で設計し、現在の runtime に実装した string / binary input 向け高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。Manual segments 版の高レベル API は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に分けています。
+この文書は、SpecQR v2 系で設計し、現在の runtime に実装した string / binary input 向け高レベル Structured Append API の設計記録です。低レベル header API の `structuredAppend: { index, total, parity }` と manual `{ mode: "structured-append", index, total, parity }` に加えて、`generateStructuredAppend()` が public export として利用できます。Manual segments 版の高レベル API は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と将来の merge helper 案は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に分けています。
 
 ## Goal
 
@@ -311,6 +311,8 @@ Implementation should pass:
 - GitHub Actions green
 
 Decoder validation should not be the only proof for Structured Append. Some decoders expose individual symbols as independent payloads and do not surface the Structured Append set metadata. The release gate must rely on unit tests, golden matrix/codeword fixtures, bit length accounting, and diagnostics consistency.
+
+読み取り側では、decoder が `index` / `total` / `parity` と unmerged per-symbol data を返す場合だけ安全な merge workflow を組めます。metadata を返さない decoder では missing symbol、duplicate symbol、parity mismatch を SpecQR 側で検証できません。詳細は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を参照してください。
 
 ## Non-Scope
 

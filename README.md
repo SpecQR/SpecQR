@@ -35,6 +35,7 @@ npm install specqr@next
 - Release Checklist: [docs/release.md](docs/release.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
 - Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
+- Structured Append Scanning Workflow: [docs/structured-append-scanning-v2.md](docs/structured-append-scanning-v2.md)
 - GS1 Digital Link v2 Design: [docs/gs1-digital-link-v2.md](docs/gs1-digital-link-v2.md)
 
 ## v1 の対応範囲
@@ -204,7 +205,7 @@ console.log(set.symbols);
 
 各 symbol を SVG / PNG として保存する例は [examples/structured-append.mjs](examples/structured-append.mjs) にあります。Playground でも `Structured Append` mode を選ぶと、複数 symbol の preview、parity、per-symbol diagnostics を確認できます。
 
-Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。
+Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。読み取り側 workflow と将来の merge helper 案は [Structured Append Scanning Workflow](docs/structured-append-scanning-v2.md) にまとめています。
 
 利用者が各 symbol の `index`、`total`、`parity` を明示したい場合は、低レベル header API も使えます。
 

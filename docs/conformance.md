@@ -49,6 +49,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | Structured Append low-level header | Tested | mode indicator `0011`、1-based public index / total / parity validation、0-based sequence encoding、option / manual segment、diagnostics、golden fixture、invalid combination rejection を確認しています。 |
 | Structured Append high-level splitting | Tested | `generateStructuredAppend()` / `QRCode.generateStructuredAppend()`、string / binary input、original payload byte parity、deterministic greedy split、fixed / auto Version selection、maxSymbols、symbol diagnostics、packed package smoke、examples smoke、playground source、fixed version / ECC / mask golden fixture を確認しています。 |
 | Structured Append manual segment splitting | Tested | `generateSegmentsStructuredAppend()` / `QRCode.generateSegmentsStructuredAppend()`、segment-boundary split、byte segment safe chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、packed package smoke、fixed version / ECC / mask golden fixture を確認しています。Public parity helper、decode / merge helper は未対応です。 |
+| Structured Append scanning / merge | Not supported | SpecQR は decoder や scanner integration を提供しません。decoder が自動 merge すること、または `index` / `total` / `parity` metadata を露出することは保証しません。読み取り workflow と将来の `mergeStructuredAppendParts(parts, options?)` 案は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に docs-only で固定しています。 |
 
 ## Rendering / Runtime Helpers
 
@@ -90,6 +91,7 @@ v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax laye
 | FNC1 second position | Tested | 通常 QR Code Model 2 の optional FNC1 coverage として実装済みです。Decoder による symbology identifier の露出差は unit / golden diagnostics で補います。 |
 | Structured Append high-level | Tested | Model 2 の multi-symbol generation を自動分割、parity calculation、symbol diagnostics まで扱います。API shape と release gate は [Structured Append v2 API Design](./structured-append-v2.md) に固定済みです。 |
 | Structured Append manual segments | Tested | `generateSegmentsStructuredAppend()` は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、segment boundary split と byte segment safe chunking で実装済みです。 |
+| Structured Append scanner workflow | Documented / not implemented | scanner metadata の有無による workflow、missing / duplicate / parity mismatch handling、将来の merge helper API 案を [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に整理しました。runtime helper は未実装です。 |
 | v2 validation expansion | Planned | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics を組み合わせて確認するため。 |
 
 ## v2.0.0 Outside Scope

@@ -372,7 +372,7 @@ Golden fixtures:
 - `structured-append-segments-byte-chunk-v1-l-mask1`: one binary byte segment split into multiple symbols.
 - `structured-append-segments-kanji-atomic-v1-l-mask2`: kanji segment remains atomic and diagnostics prove segment range.
 
-Decoder validation should remain secondary. Scanner APIs differ in how they expose Structured Append set metadata, so conformance should rely on header bits, parity, matrix / codeword golden fixtures, and diagnostics.
+Decoder validation should remain secondary. Scanner APIs differ in how they expose Structured Append set metadata, so conformance should rely on header bits, parity, matrix / codeword golden fixtures, and diagnostics. 読み取り側 workflow と将来の merge helper 案は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に分けています。
 
 ## Rejected Choices
 

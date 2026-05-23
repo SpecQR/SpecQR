@@ -142,7 +142,15 @@ npm run verify:decode:optional
 
 Optional script は local release checks や decoder environment を制御できる CI job に向いています。portable baseline としては `npm test` と `npm run verify:decode:jsqr` を保ちます。
 
-Structured Append の `index` / `total` / `parity` metadata を検証する lane はまだ実装していません。候補 decoder と fixture 条件は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) にまとめています。この lane は metadata が安定して取れることを確認するまで required CI gate にしません。
+Structured Append の `index` / `total` / `parity` metadata を検証する prototype は、ZXing Java 向けの任意 script として追加しています。
+
+```sh
+npm run verify:structured-append:zxing-java
+```
+
+この check は `ZXING_CLASSPATH` に ZXing Java core jar/classes が指定され、`java` と `javac` が利用できる環境だけで実 decode を行います。2-symbol / 3-symbol の Structured Append PNG を一時生成し、ZXing Java の `STRUCTURED_APPEND_SEQUENCE` / `STRUCTURED_APPEND_PARITY` metadata から復元した `index` / `total` / `parity` を SpecQR diagnostics と照合します。ZXing Java がない環境や metadata が露出しない環境では skip として成功終了します。詳細は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
+
+この lane はまだ required CI gate にしません。既存の `verify:decode:optional` は payload readability 向けに保ち、metadata semantics を見る ZXing Java prototype は独立 script として扱います。
 
 ## CI
 

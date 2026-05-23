@@ -53,6 +53,7 @@
     "verify:decode:optional": "node tools/verify-decode-optional.js",
     "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",
     "verify:decode:independent": "npm run verify:decode:jsqr",
+    "verify:structured-append:zxing-java": "node tools/verify-structured-append-zxing-java.js",
     "verify:pack": "node tools/verify-packed-package.js",
     "verify:published": "node tools/verify-published-package.js",
     "verify:reference:nayuki": "node tools/verify-reference-nayuki.js"

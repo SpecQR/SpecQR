@@ -18,7 +18,7 @@ SpecQR は Structured Append symbols を生成できますが、読み取り後�
 
 ## Summary
 
-現時点の結論は、metadata-returning fixture の第一候補は **ZXing Java**、第二候補は **ZXing-C++ library / CLI** です。
+現時点の結論は、metadata-returning fixture の第一候補は **ZXing Java**、第二候補は **ZXing-C++ library / CLI** です。ZXing Java については optional prototype として `npm run verify:structured-append:zxing-java` を追加済みです。
 
 `jsQR`、`zbarimg`、macOS Vision は引き続き decode readability の確認には有用ですが、Structured Append merge helper の release gate には不足します。Scandit は Structured Append metadata を明確に扱う商用 SDK として参考になりますが、SpecQR の OSS CI dependency にはしません。
 
@@ -26,7 +26,7 @@ SpecQR は Structured Append symbols を生成できますが、読み取り後�
 
 | 候補 | Structured Append metadata | index / total / parity | CI / optional validation の向き | 判断 |
 | --- | --- | --- | --- | --- |
-| ZXing Java | 公式 Javadoc に `STRUCTURED_APPEND_SEQUENCE` と `STRUCTURED_APPEND_PARITY` があり、`Result.getResultMetadata()` で metadata map を取得できる。 | sequence と parity は取得候補。QR の total は metadata key としては明示されないため、実 fixture で sequence value の意味と total の扱いを確認する。 | JVM が必要。test-only fixture helper としては現実的。runtime dependency にはしない。 | metadata fixture の第一候補。 |
+| ZXing Java | 公式 Javadoc に `STRUCTURED_APPEND_SEQUENCE` と `STRUCTURED_APPEND_PARITY` があり、`Result.getResultMetadata()` で metadata map を取得できる。 | 8-bit sequence indicator と parity を取得する。SpecQR 側では sequence indicator の上位 4 bit から `index`、下位 4 bit から `total` を復元して diagnostics と照合する。 | JVM と ZXing core jar/classes が必要。任意 script として提供し、runtime dependency や必須 CI gate にはしない。 | optional metadata prototype を実装済み。 |
 | ZXing-C++ | `Barcode` API に `sequenceSize()`, `sequenceIndex()`, `sequenceId()` があり、QR Code の `sequenceId()` は parity integer string とされる。example CLI は `Structured Append: symbol X of N (parity/id: ...)` を出力できる。 | index と total は API / CLI で取得候補。parity は QR では `sequenceId()` として取得候補。 | C++ binary / package install が必要。ローカル optional lane に向く。必須 CI にする前に install path と CLI output を固定する。 | 第二候補。CLI 実測後に optional metadata lane に追加する。 |
 | zbar / zbarimg | manpage 上は decoded data、raw output、XML output が中心。Structured Append sequence metadata は確認できない。 | 標準 CLI からは未確認。 | OS package 依存。既存 optional decoder として payload readability には有用。 | metadata fixture には使わない。 |
 | jsQR | `binaryData`, `data`, `chunks`, `version`, `location` を返す pure JS decoder。Structured Append index / total / parity は documented return shape にない。 | 未確認。 | devDependency 済みで CI 安定。 | required independent decoder として維持。metadata merge validation には使わない。 |
@@ -74,27 +74,58 @@ npm run verify:decode:optional
 - 存在しない decoder は skip にする。
 - FNC1 や Structured Append の semantics をこの lane だけで保証しない。
 
-### Future optional metadata lane
+### Optional ZXing Java metadata lane
 
-将来追加する場合の候補名:
-
-```sh
-npm run verify:decode:structured-append
-```
-
-または metadata 目的をより明確にする場合:
+ZXing Java prototype は独立 script として提供します。
 
 ```sh
-npm run verify:decode:structured-append:metadata
+npm run verify:structured-append:zxing-java
 ```
 
-初期実装の推奨:
+この script は `verify:decode:optional` には統合しません。理由は、既存 optional decoder script が payload readability を横断的に見る lane である一方、ZXing Java prototype は Structured Append の metadata semantics を検証する lane だからです。classpath、Java compiler、ZXing API version の前提も違うため、独立 script の方が skip / unsupported の意味を明確にできます。
 
-1. ZXing Java の小さな test-only helper を prototype する。
-2. SpecQR が生成した 2-symbol / 3-symbol Structured Append PNG fixtures を読む。
-3. decoded per-symbol payload と `STRUCTURED_APPEND_SEQUENCE` / `STRUCTURED_APPEND_PARITY` を JSON に落とす。
-4. total count が取得できない場合は、その decoder を `mergeStructuredAppendParts()` の完全 fixture には使わず、metadata partial lane として扱う。
-5. ZXing-C++ CLI がローカルで使える環境では、`sequenceIndex()` / `sequenceSize()` / `sequenceId()` 相当の CLI output も optional に検証する。
+検出方法:
+
+- `ZXING_CLASSPATH`: 必須。ZXing Java core jar または classes directory を指定する。複数 entry は platform の classpath delimiter で区切る。
+- `JAVA`: 任意。未指定なら `java` を使う。
+- `JAVAC`: 任意。未指定なら `javac` を使う。
+
+例:
+
+```sh
+ZXING_CLASSPATH=/path/to/core-3.5.3.jar npm run verify:structured-append:zxing-java
+```
+
+Skip 条件:
+
+- `ZXING_CLASSPATH` が未設定。
+- `JAVA` / `java` が実行できない。
+- `JAVAC` / `javac` が実行できない。
+- classpath に ZXing core classes がない。
+- ZXing Java が `STRUCTURED_APPEND_SEQUENCE` / `STRUCTURED_APPEND_PARITY` を持たない。
+- decode は成功したが Result metadata に Structured Append sequence / parity がない。
+
+Mismatch 条件:
+
+- decoded payload が SpecQR の per-symbol payload chunk と一致しない。
+- decoded sequence indicator が SpecQR diagnostics の `sequenceIndicator` と一致しない。
+- sequence indicator から復元した `index` / `total` が SpecQR diagnostics と一致しない。
+- decoded parity が SpecQR diagnostics の `parity` と一致しない。
+
+現在の fixture:
+
+- 2-symbol ASCII text split: `"A".repeat(31)`、Version 1-L、alphanumeric。
+- 3-symbol ASCII text split: `"B".repeat(43)`、Version 1-L、alphanumeric。
+
+script は SpecQR で PNG artifacts を一時生成し、同じ入力から取った diagnostics と ZXing Java の Result metadata を照合します。Java helper は実行時に一時 directory へ生成・compile され、Maven / Gradle project は作りません。ImageIO と ZXing core classes だけを使い、ZXing javase jar は必須にしません。
+
+### Future metadata expansion
+
+次に広げる場合の候補:
+
+- ZXing-C++ CLI がローカルで使える環境では、`sequenceIndex()` / `sequenceSize()` / `sequenceId()` 相当の CLI output も optional に検証する。
+- manual segments split と byte segment chunking の metadata fixture を追加する。
+- missing / duplicate / parity mismatch / total mismatch の negative fixture を追加する。
 
 この lane は、metadata が安定して取れることを確認するまで required CI gate にしません。
 

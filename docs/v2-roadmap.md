@@ -92,6 +92,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: Structured Append scanner workflow documented. decoder が Structured Append metadata を返す場合と返さない場合の読み取り workflow、missing / duplicate / total mismatch / parity mismatch handling、将来候補の `mergeStructuredAppendParts(parts, options?)` API、core helper に入れる判断材料を `docs/structured-append-scanning-v2.md` に docs-only で固定しました。runtime behavior と package exports は変更していません。
 - 2026-05-23: Structured Append decoder metadata validation researched. ZXing Java、ZXing-C++、zbar、jsQR、macOS Vision、Scandit の Structured Append metadata 露出を整理し、metadata-returning fixture の第一候補、optional validation lane、`mergeStructuredAppendParts()` 実装前の preconditions を `docs/structured-append-decoder-validation-v2.md` に docs-only で固定しました。runtime behavior と package exports は変更していません。
 - 2026-05-23: Project language policy documented. v2 以降の README / docs / CHANGELOG / GitHub Release notes / commit messages / PR-style summaries / Codex final reports を日本語メインにし、package metadata や API names など最低限の英語導線を残す方針を `docs/project-language.md` に固定しました。
+- 2026-05-23: Structured Append ZXing Java metadata prototype added. `npm run verify:structured-append:zxing-java` を追加し、`ZXING_CLASSPATH`、`JAVA`、`JAVAC` が揃う環境だけで 2-symbol / 3-symbol PNG を ZXing Java で読み、sequence indicator から復元した `index` / `total` と parity を SpecQR diagnostics と照合できるようにしました。runtime dependency と required CI gate は増やしていません。
 
 ## Release Gate
 
@@ -108,7 +109,7 @@ v2.0.0 の正式 release では、少なくとも次を通すことを release g
 - published package smoke
 - GitHub Actions green
 
-Structured Append や FNC1 second は decoder によって露出方法が異なる可能性があるため、decoder validation だけを唯一の根拠にしません。control segment bit length、matrix / codeword golden fixtures、diagnostics、negative tests を組み合わせて release gate とします。Structured Append の読み取り後 merge validation は、[Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に固定した metadata-returning decoder fixture 条件が安定するまで release gate にしません。FNC1 second と Structured Append low-level header の基本 coverage は実装済みです。
+Structured Append や FNC1 second は decoder によって露出方法が異なる可能性があるため、decoder validation だけを唯一の根拠にしません。control segment bit length、matrix / codeword golden fixtures、diagnostics、negative tests を組み合わせて release gate とします。Structured Append の読み取り後 merge validation は、[Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に固定した metadata-returning decoder fixture 条件が安定するまで release gate にしません。ZXing Java metadata prototype は任意 local check として扱い、required CI gate にはまだ含めません。FNC1 second と Structured Append low-level header の基本 coverage は実装済みです。
 
 ## v1 Compatibility Requirements
 

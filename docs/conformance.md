@@ -70,7 +70,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けて�
 | --- | --- | --- |
 | Unit tests | Tested | core encoding、matrix、renderer、helpers、errors、GS1 を `npm test` で確認します。 |
 | Golden fixtures | Tested | fixed version / ECC / mask の matrix、codewords、diagnostics、format/version bits、remainder bits を固定します。 |
-| Decoder validation | Tested | macOS Vision script、jsQR release-gate、optional zbar / ZXing CLI discovery を用意しています。Structured Append metadata lane はまだ未実装で、候補と preconditions は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に整理しています。 |
+| Decoder validation | Tested | macOS Vision script、jsQR release-gate、optional zbar / ZXing CLI discovery を用意しています。Structured Append metadata は ZXing Java 向けの optional prototype `npm run verify:structured-append:zxing-java` を追加済みですが、ZXing Java classpath / Java runtime / javac がある環境だけで実行し、required CI gate にはしていません。 |
 | External reference comparison | Partial | Nayuki QR Code generator と fixed-condition matrix を比較します。auto segmentation、Kanji、GS1 semantics、renderer output は比較対象外です。 |
 
 ## ISO/IEC 18004:2024 Notes
@@ -91,7 +91,7 @@ v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax laye
 | FNC1 second position | Tested | 通常 QR Code Model 2 の optional FNC1 coverage として実装済みです。Decoder による symbology identifier の露出差は unit / golden diagnostics で補います。 |
 | Structured Append high-level | Tested | Model 2 の multi-symbol generation を自動分割、parity calculation、symbol diagnostics まで扱います。API shape と release gate は [Structured Append v2 API Design](./structured-append-v2.md) に固定済みです。 |
 | Structured Append manual segments | Tested | `generateSegmentsStructuredAppend()` は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、segment boundary split と byte segment safe chunking で実装済みです。 |
-| Structured Append scanner workflow | Documented / not implemented | scanner metadata の有無による workflow、missing / duplicate / parity mismatch handling、将来の merge helper API 案を [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に整理しました。metadata-returning decoder fixture の候補と optional validation lane は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に整理しています。runtime helper は未実装です。 |
+| Structured Append scanner workflow | Documented / not implemented | scanner metadata の有無による workflow、missing / duplicate / parity mismatch handling、将来の merge helper API 案を [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に整理しました。metadata-returning decoder fixture の候補と ZXing Java optional validation prototype は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に整理しています。runtime helper は未実装です。 |
 | v2 validation expansion | Planned | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics を組み合わせて確認するため。 |
 
 ## v2.0.0 Outside Scope

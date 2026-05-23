@@ -10,6 +10,7 @@
 - Added automatic string / binary splitting, original payload byte XOR parity, top-level set diagnostics, fixed version / ECC / mask golden fixture coverage, TypeScript declarations, and packed package smoke coverage for high-level Structured Append.
 - Added Structured Append decoded parts merge support via `mergeStructuredAppendParts(parts, options?)` and `QRCode.mergeStructuredAppendParts(parts, options?)`.
 - Added merge validation for missing symbols, duplicate indexes, total/parity mismatch, mixed string/binary parts, and merged payload byte parity.
+- Added Structured Append scanner adapter examples showing ZXing Java style metadata mapping, string/binary merge, shuffled scan order, and expected merge errors.
 
 ### Notes
 

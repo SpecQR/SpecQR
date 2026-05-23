@@ -46,6 +46,7 @@
     "examples:gs1": "node examples/gs1-qr.mjs",
     "examples:gs1-digital-link": "node examples/gs1-digital-link.mjs",
     "examples:structured-append": "node examples/structured-append.mjs",
+    "examples:structured-append-merge": "node examples/structured-append-merge.mjs",
     "examples:smoke": "node tools/verify-examples.js",
     "pages:build": "node tools/build-pages.js",
     "playground": "node tools/serve-playground.js",

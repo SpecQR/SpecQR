@@ -38,6 +38,14 @@ npm run examples:structured-append
 
 This writes string and binary Structured Append sets as SVG/PNG symbols, plus a summary JSON file with total, parity, per-symbol chunk offsets, and diagnostics.
 
+## Structured Append merge
+
+```sh
+npm run examples:structured-append-merge
+```
+
+This shows how to adapt decoder output with Structured Append metadata into `{ index, total, parity, data }` parts for `mergeStructuredAppendParts()`. The example covers string parts, binary parts, shuffled scan order, expected missing/duplicate/parity errors, and a ZXing Java style metadata mapping.
+
 ## Browser Blob / Object URL
 
 Serve the repository and open `examples/browser-blob-object-url.html`.

@@ -35,6 +35,21 @@ try {
   const structuredPng = await readFile(join(structuredAppendDir, "binary-1.png"));
   assert.deepEqual(Array.from(structuredPng.subarray(0, 8)), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
+  const structuredMergePath = join(directory, "structured-append-merge.json");
+  await run("node", ["examples/structured-append-merge.mjs", structuredMergePath]);
+  const structuredMerge = JSON.parse(await readFile(structuredMergePath, "utf8"));
+  assert.equal(structuredMerge.string.data, "A".repeat(31));
+  assert.deepEqual(structuredMerge.string.inputOrder, [2, 1]);
+  assert.deepEqual(structuredMerge.string.mergedOrder, [1, 2]);
+  assert.equal(structuredMerge.binary.dataType, "binary");
+  assert.deepEqual(structuredMerge.binary.inputOrder, [3, 1, 2]);
+  assert.deepEqual(structuredMerge.binary.mergedOrder, [1, 2, 3]);
+  assert.equal(structuredMerge.adapter.metadataRequired, true);
+  assert.equal(structuredMerge.negative.missing.code, "INVALID_INPUT");
+  assert.equal(structuredMerge.negative.duplicate.code, "INVALID_INPUT");
+  assert.equal(structuredMerge.negative.parityMismatch.code, "INVALID_INPUT");
+  assert.equal(structuredMerge.negative.metadataMissing.code, "INVALID_INPUT");
+
   await assertReadable("examples/typescript-usage.ts");
   await assertReadable("examples/browser-blob-object-url.html");
   await assertReadable("playground/index.html");

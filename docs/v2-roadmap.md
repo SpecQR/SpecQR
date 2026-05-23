@@ -31,7 +31,7 @@ SpecQR v1.0.0 は、通常 QR Code Model 2 generation、Kanji、ECI、FNC1 first
 | FNC1 second position | application indicator validation、encoding、diagnostics、golden / negative tests は実装済み。 |
 | Structured Append | low-level header encoding、manual chunks、高レベル `generateStructuredAppend()`、automatic splitting、manual segments 版 `generateSegmentsStructuredAppend()`、最大 16 symbols、parity consistency validation、読み取り後 parts 向け `mergeStructuredAppendParts()` は実装済み。string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、scanner workflow と merge helper 境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に固定済み。 |
 | Validation expansion | v2 feature 向け golden fixtures、bitstream / matrix checks、decoder validation の限界説明、reference comparison の対象外領域の明記。 |
-| Docs / examples / playground | GS1 QR、GS1 Digital Link、FNC1 second、Structured Append を誤用しにくい examples と docs。Structured Append は string / binary example と playground mode まで追加済み。 |
+| Docs / examples / playground | GS1 QR、GS1 Digital Link、FNC1 second、Structured Append を誤用しにくい examples と docs。Structured Append は string / binary generation example、scanner adapter / merge helper example、playground mode まで追加済み。 |
 
 ## v2.0.0 に含めないもの
 
@@ -94,6 +94,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: Project language policy documented. v2 以降の README / docs / CHANGELOG / GitHub Release notes / commit messages / PR-style summaries / Codex final reports を日本語メインにし、package metadata や API names など最低限の英語導線を残す方針を `docs/project-language.md` に固定しました。
 - 2026-05-23: Structured Append ZXing Java metadata prototype added and expanded. `npm run verify:structured-append:zxing-java` を追加し、`ZXING_CLASSPATH`、`JAVA`、`JAVAC` が揃う環境だけで string / binary / manual segment split / byte chunking / fixed deterministic PNG を ZXing Java で読み、sequence indicator から復元した `index` / `total` と parity を SpecQR diagnostics と照合できるようにしました。runtime dependency と required CI gate は増やしていません。
 - 2026-05-23: Structured Append merge helper implemented. `mergeStructuredAppendParts(parts, options?)` と `QRCode.mergeStructuredAppendParts(parts, options?)` を追加し、decoder が返した `{ index, total, parity, data }` parts に対して missing、duplicate、total mismatch、parity mismatch、string/binary 混在、merged payload byte parity を検証して結合できるようにしました。QR decoder、scanner integration、public parity helper、runtime dependency は追加していません。
+- 2026-05-23: Structured Append scanner adapter examples documented. `examples/structured-append-merge.mjs` を追加し、ZXing Java style metadata から `{ index, total, parity, data }` parts を作る adapter pattern、string / binary merge、shuffled scan order、missing / duplicate / parity mismatch、metadata-less decoder の制限を examples smoke で確認するようにしました。Core API と runtime dependency は変更していません。
 
 ## Release Gate
 

@@ -120,6 +120,27 @@ console.log(merged.diagnostics.parityCheck.matches); // true
 
 Validation は安全側です。空配列、範囲外の `index` / `total` / `parity`、duplicate index、missing symbol、total mismatch、parity mismatch、part 数不一致、string/binary 混在、invalid data type、merged payload bytes の XOR parity mismatch は `InvalidInputError` で reject します。`options` は将来拡張用に残していますが、現在は空 object のみ受け付けます。
 
+scanner adapter は decoder 固有の output を SpecQR の part shape に寄せる薄い層です。例えば ZXing Java style の metadata を受け取る場合は、`STRUCTURED_APPEND_SEQUENCE` の上位 4 bit を `index - 1`、下位 4 bit を `total - 1` として扱い、`STRUCTURED_APPEND_PARITY` をそのまま `parity` に渡します。
+
+```js
+function zxingJavaResultToStructuredAppendPart(result) {
+  const sequence = result.resultMetadata.STRUCTURED_APPEND_SEQUENCE;
+  const parity = result.resultMetadata.STRUCTURED_APPEND_PARITY;
+
+  return {
+    index: (sequence >> 4) + 1,
+    total: (sequence & 0x0f) + 1,
+    parity,
+    data: result.rawBytes ?? result.text
+  };
+}
+
+const parts = zxingResults.map(zxingJavaResultToStructuredAppendPart);
+const merged = mergeStructuredAppendParts(parts);
+```
+
+metadata がない decoder output、たとえば decoded string だけの配列からは、順序、欠落、重複、parity を安全に判断できません。その場合は `mergeStructuredAppendParts()` に渡さず、decoder が返した通常の decoded data として扱ってください。実行可能な adapter example は [../examples/structured-append-merge.mjs](../examples/structured-append-merge.mjs) にあります。
+
 Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の metadata を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
 
 ### `QRCode.drawToCanvas(target, input, options)`

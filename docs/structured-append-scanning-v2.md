@@ -144,6 +144,48 @@ Rules:
 
 Binary input is normalized with `ArrayBufferView.byteOffset` and `byteLength` respected. String input is concatenated as strings and parity is verified from UTF-8 bytes.
 
+### Adapter Pattern
+
+scanner adapter は、decoder 固有の result object から SpecQR の part shape に変換する薄い層です。SpecQR core は decoder を持たず、adapter も特定 decoder を必須 dependency にしません。利用側の application や integration package が decoder output を読み、metadata が揃っている場合だけ `mergeStructuredAppendParts()` に渡します。
+
+ZXing Java style の metadata では、`STRUCTURED_APPEND_SEQUENCE` と `STRUCTURED_APPEND_PARITY` が候補になります。QR Structured Append の sequence indicator は 8 bit で、上位 4 bit が 0-based index、下位 4 bit が 0-based total count です。
+
+```js
+import { InvalidInputError, mergeStructuredAppendParts } from "specqr";
+
+function zxingJavaResultToStructuredAppendPart(result) {
+  const metadata = result.resultMetadata ?? {};
+  const sequence = metadata.STRUCTURED_APPEND_SEQUENCE;
+  const parity = metadata.STRUCTURED_APPEND_PARITY;
+
+  if (!Number.isInteger(sequence) || !Number.isInteger(parity)) {
+    throw new InvalidInputError("Structured Append metadata is required before merging decoded parts");
+  }
+
+  return {
+    index: (sequence >> 4) + 1,
+    total: (sequence & 0x0f) + 1,
+    parity,
+    data: result.rawBytes ?? result.text
+  };
+}
+
+const parts = zxingResults.map(zxingJavaResultToStructuredAppendPart);
+const merged = mergeStructuredAppendParts(parts);
+```
+
+この adapter は一例です。実際の decoder API では metadata field 名、binary data の取り出し方、string payload の扱いが違うことがあります。`examples/structured-append-merge.mjs` は ZXing Java style の mock object を使い、string parts、binary parts、shuffled scan order、missing / duplicate / parity mismatch の扱いを実行可能な形で示します。
+
+### Metadata-less Decoders
+
+`jsQR`、`zbarimg`、macOS Vision などは payload readability の確認には有用ですが、Structured Append metadata を常に取得できるとは限りません。metadata がない decoded string 配列を scan 順や印刷順で連結しても、仕様上の順序、欠落、重複、parity を検証したことにはなりません。
+
+metadata がない場合の推奨:
+
+- decoder が自動 merge 済み payload を返したなら、通常の decoded data として扱う。
+- decoder が per-symbol payload だけを返したなら、SpecQR では merge しない。
+- Structured Append metadata が必要な workflow では、ZXing Java や ZXing-C++ など metadata-returning decoder 候補を検討する。
+
 ### Options
 
 `options` is reserved for future narrow extensions. The current implementation accepts only an empty object.

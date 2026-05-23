@@ -220,6 +220,8 @@ const merged = QRCode.mergeStructuredAppendParts([
 console.log(merged.data);
 ```
 
+scanner adapter の具体例は [examples/structured-append-merge.mjs](examples/structured-append-merge.mjs) にあります。ZXing Java style の `STRUCTURED_APPEND_SEQUENCE` / `STRUCTURED_APPEND_PARITY` metadata を SpecQR の parts に変換する例と、metadata がない decoder では安全に復元しない方針を示しています。
+
 利用者が各 symbol の `index`、`total`、`parity` を明示したい場合は、低レベル header API も使えます。
 
 ```js

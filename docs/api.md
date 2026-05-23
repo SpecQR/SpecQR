@@ -100,7 +100,7 @@ Split policy は segment boundary first です。`byte` segment だけを byte b
 
 ### Structured Append scanning and future merge helper
 
-SpecQR は generator であり、QR decoder や scanner integration は提供しません。Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の `index` / `total` / `parity` を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を参照してください。
+SpecQR は generator であり、QR decoder や scanner integration は提供しません。Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の `index` / `total` / `parity` を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
 
 将来候補として、metadata-returning decoder 向けに `mergeStructuredAppendParts(parts, options?)` と `QRCode.mergeStructuredAppendParts(parts, options?)` を検討しています。候補 part shape は `{ index, total, parity, data }`、return shape は `{ data, total, parity, parts, diagnostics }` です。現時点では docs-only proposal であり、public API、TypeScript declarations、runtime behavior は存在しません。
 

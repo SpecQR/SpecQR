@@ -2,6 +2,8 @@
 
 この文書は SpecQR `1.0.0` 正式版の公開前後 checklist と、その後の RC 運用方針です。実際の npm publish、GitHub Release 作成、GitHub Pages deploy は、手動確認後に実行します。
 
+v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
+
 ## Release Channels
 
 - `latest`: 安定版利用者向け。`1.0.0` 正式版を公開したら `latest` は `1.0.0` を指します。
@@ -120,6 +122,7 @@ Release draft に含める内容:
 - 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting、SVG/PNG/canvas/Node/browser helpers。
 - 検証: golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison。
 - 非対応: Micro QR、rMQR、Structured Append public parity helper / decode・merge helper、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
+- Structured Append の読み取り後 merge helper は未実装。metadata-returning decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
 - Links: README、playground、conformance matrix、reference comparison、test plan。
 
 ## npm Publish

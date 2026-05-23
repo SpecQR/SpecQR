@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための計画です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
 
-v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper 案は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に分離して記録します。
+v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper 案は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
 ## v2.0.0 の目的
 
@@ -29,7 +29,7 @@ SpecQR v1.0.0 は、通常 QR Code Model 2 generation、Kanji、ECI、FNC1 first
 | GS1 Digital Link | element data と Digital Link URI の変換 helper。現段階は minimal create/parse + role metadata。Full canonicalization、resolver、compression は後続 phase。 |
 | Control segment model | ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering、capacity accounting、diagnostics を整理する内部 model は実装済み。 |
 | FNC1 second position | application indicator validation、encoding、diagnostics、golden / negative tests は実装済み。 |
-| Structured Append | low-level header encoding、manual chunks、高レベル `generateStructuredAppend()`、automatic splitting、manual segments 版 `generateSegmentsStructuredAppend()`、最大 16 symbols、parity consistency validation は実装済み。string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、scanner workflow と merge helper 判断材料は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に固定済み。 |
+| Structured Append | low-level header encoding、manual chunks、高レベル `generateStructuredAppend()`、automatic splitting、manual segments 版 `generateSegmentsStructuredAppend()`、最大 16 symbols、parity consistency validation は実装済み。string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、scanner workflow と merge helper 判断材料は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に固定済み。 |
 | Validation expansion | v2 feature 向け golden fixtures、bitstream / matrix checks、decoder validation の限界説明、reference comparison の対象外領域の明記。 |
 | Docs / examples / playground | GS1 QR、GS1 Digital Link、FNC1 second、Structured Append を誤用しにくい examples と docs。Structured Append は string / binary example と playground mode まで追加済み。 |
 
@@ -64,8 +64,10 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 10. **Structured Append manual segments design**: `generateSegmentsStructuredAppend()` の segment boundary policy、byte segment chunking、parity、diagnostics、negative cases を docs に固定する。完了済み。
 11. **Structured Append manual segments implementation**: docs に固定した設計に従い、runtime API、tests、packed smoke を追加する。完了済み。
 12. **Structured Append scanner workflow design**: decoder metadata 依存の限界、missing / duplicate / parity mismatch handling、将来の `mergeStructuredAppendParts(parts, options?)` API 案を docs-only で固定する。完了済み。
-13. **v2 validation expansion**: golden、decoder、optional external validation、reference comparison docs を v2 features に合わせて更新する。
-14. **v2 examples / playground / docs**: GS1 strict validation、Digital Link、FNC1 second、Structured Append の利用導線を整える。
+13. **Structured Append decoder metadata validation design**: ZXing Java / ZXing-C++ / zbar / jsQR / Vision などを調査し、metadata-returning decoder fixture と future optional lane の条件を docs-only で固定する。完了済み。
+14. **Project language policy**: v2 以降の README / docs / CHANGELOG / release notes / commit messages / PR-style summaries を日本語メインにする方針を固定する。完了済み。
+15. **v2 validation expansion**: golden、decoder、optional external validation、reference comparison docs を v2 features に合わせて更新する。
+16. **v2 examples / playground / docs**: GS1 strict validation、Digital Link、FNC1 second、Structured Append の利用導線を整える。
 
 ## Progress Notes
 
@@ -88,6 +90,8 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: Structured Append manual segments API designed. `generateSegmentsStructuredAppend(segments, options)` / `QRCode.generateSegmentsStructuredAppend(segments, options)` の docs-only proposal を `docs/structured-append-segments-v2.md` に追加しました。初期方針は segment boundary split を基本にし、byte segment のみ safe chunking を許可し、numeric / alphanumeric / kanji の途中分割、ECI / GS1 / FNC1 併用、runtime implementation は未対応です。
 - 2026-05-23: Structured Append manual segments API implemented. `generateSegmentsStructuredAppend(segments, options)` と `QRCode.generateSegmentsStructuredAppend(segments, options)` を追加し、segment boundary first split、byte segment safe chunking、canonical payload byte parity、per-symbol diagnostics、golden fixture、packed package smoke を追加しました。ECI / GS1 / FNC1 併用、numeric / alphanumeric / kanji mid-segment splitting、public parity helper、decode / merge helper は未対応です。
 - 2026-05-23: Structured Append scanner workflow documented. decoder が Structured Append metadata を返す場合と返さない場合の読み取り workflow、missing / duplicate / total mismatch / parity mismatch handling、将来候補の `mergeStructuredAppendParts(parts, options?)` API、core helper に入れる判断材料を `docs/structured-append-scanning-v2.md` に docs-only で固定しました。runtime behavior と package exports は変更していません。
+- 2026-05-23: Structured Append decoder metadata validation researched. ZXing Java、ZXing-C++、zbar、jsQR、macOS Vision、Scandit の Structured Append metadata 露出を整理し、metadata-returning fixture の第一候補、optional validation lane、`mergeStructuredAppendParts()` 実装前の preconditions を `docs/structured-append-decoder-validation-v2.md` に docs-only で固定しました。runtime behavior と package exports は変更していません。
+- 2026-05-23: Project language policy documented. v2 以降の README / docs / CHANGELOG / GitHub Release notes / commit messages / PR-style summaries / Codex final reports を日本語メインにし、package metadata や API names など最低限の英語導線を残す方針を `docs/project-language.md` に固定しました。
 
 ## Release Gate
 
@@ -104,7 +108,7 @@ v2.0.0 の正式 release では、少なくとも次を通すことを release g
 - published package smoke
 - GitHub Actions green
 
-Structured Append や FNC1 second は decoder によって露出方法が異なる可能性があるため、decoder validation だけを唯一の根拠にしません。control segment bit length、matrix / codeword golden fixtures、diagnostics、negative tests を組み合わせて release gate とします。Structured Append の読み取り後 merge validation は、metadata-returning decoder fixture が安定するまで release gate にしません。FNC1 second と Structured Append low-level header の基本 coverage は実装済みです。
+Structured Append や FNC1 second は decoder によって露出方法が異なる可能性があるため、decoder validation だけを唯一の根拠にしません。control segment bit length、matrix / codeword golden fixtures、diagnostics、negative tests を組み合わせて release gate とします。Structured Append の読み取り後 merge validation は、[Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に固定した metadata-returning decoder fixture 条件が安定するまで release gate にしません。FNC1 second と Structured Append low-level header の基本 coverage は実装済みです。
 
 ## v1 Compatibility Requirements
 

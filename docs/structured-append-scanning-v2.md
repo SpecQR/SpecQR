@@ -8,6 +8,8 @@
 
 `generateStructuredAppend()` と `generateSegmentsStructuredAppend()` は、複数 QR symbols を 1 つの logical message として扱うための Structured Append header を encode します。一方で、読み取り側の decoder がどの情報を返すかは実装ごとに大きく異なります。
 
+metadata-returning decoder 候補と optional validation lane の調査は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離しています。この文書では scanner workflow と将来の merge helper API 案に集中します。
+
 この文書では次を固定します。
 
 - SpecQR generator が保証する範囲
@@ -103,7 +105,7 @@ High-level generator の parity は original payload bytes の XOR です。た�
 
 ## Future API Proposal
 
-この API はまだ実装しません。decoder が Structured Append metadata を返せる環境でだけ使える optional helper として検討します。
+この API はまだ実装しません。decoder が Structured Append metadata を返せる環境でだけ使える optional helper として検討します。実装前の decoder fixture 条件は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) の `Merge Helper Preconditions` を満たす必要があります。
 
 ```ts
 function mergeStructuredAppendParts(
@@ -243,5 +245,7 @@ Structured Append generation remains validated by:
 - golden fixtures for matrix / codewords / diagnostics.
 - packed package smoke for public exports and TypeScript declarations.
 - decoder validation as a secondary signal only.
+
+Structured Append metadata validation remains planned, not required. Candidate decoder research and the future optional lane are tracked in [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md).
 
 Decoder merge validation is intentionally not a release gate until the project has a stable metadata-returning decoder fixture. When such a fixture exists, add tests for missing symbol, duplicate index, total mismatch, parity mismatch, mixed data type, and valid ordered merge.

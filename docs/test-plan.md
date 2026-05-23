@@ -93,6 +93,7 @@ v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめ�
 - Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。public parity helper は初期実装では非スコープ。
 - Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。
 - Structured Append scanner workflow: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` を返す場合だけ merge validation が可能であることを docs に固定する。metadata がない decoder では missing symbol、duplicate symbol、parity mismatch を検証できないため、現時点では runtime release gate にしない。
+- Structured Append decoder metadata: [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に従い、ZXing Java / ZXing-C++ など metadata-returning decoder 候補を optional lane として検討する。jsQR / zbar / Vision は payload readability には使えるが、`mergeStructuredAppendParts()` の release gate には使わない。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
 - Reference comparison limits: Nayuki comparison は fixed-condition matrix regression に使い、GS1 semantics、Digital Link conversion、Structured Append API shape の検証は unit / golden tests に分ける。
@@ -140,6 +141,8 @@ npm run verify:decode:optional
 これらの decoder は package の hard dependency ではありません。存在しない decoder は `skip` として報告され、script failure にはしません。少なくとも 1 つの optional decoder が利用できる場合、decode mismatch は failure になります。
 
 Optional script は local release checks や decoder environment を制御できる CI job に向いています。portable baseline としては `npm test` と `npm run verify:decode:jsqr` を保ちます。
+
+Structured Append の `index` / `total` / `parity` metadata を検証する lane はまだ実装していません。候補 decoder と fixture 条件は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) にまとめています。この lane は metadata が安定して取れることを確認するまで required CI gate にしません。
 
 ## CI
 

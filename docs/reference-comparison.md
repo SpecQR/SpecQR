@@ -64,7 +64,7 @@ Reference comparison は「固定条件で構築された matrix が独立実装
 
 ## Other Candidates
 
-次の実装・tool は追加候補として扱いますが、v1 系では必須 dependency にしません。
+次の実装・tool は追加候補として扱いますが、現在の required release gate では必須 dependency にしません。
 
 - Segno: Python package。固定条件比較に向きますが、Node-only CI では追加 runtime が増えます。
 - Zint: CLI / native dependency。ローカル環境にある場合の optional validation 向きです。
@@ -73,9 +73,9 @@ Reference comparison は「固定条件で構築された matrix が独立実装
 
 これらは、環境に存在しない場合でも core release gate を壊さない optional validation として追加する方針です。
 
-## v2.0.0 Planning Notes
+## v2.0.0 Readiness Notes
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 で強化する GS1 strict validation、GS1 Digital Link、FNC1 second position、Structured Append は、Nayuki matrix comparison だけでは十分に検証できません。FNC1 second position と Structured Append low-level header の基本実装は golden / unit tests で固定済みです。
+v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 で強化する GS1 strict validation、GS1 Digital Link、FNC1 second position、Structured Append は、Nayuki matrix comparison だけでは十分に検証できません。FNC1 second position と Structured Append low-level header の基本実装は golden / unit tests で固定済みです。
 
 - GS1 semantics: FNC1、AI validation、separator handling、Digital Link conversion は domain-level behavior なので、unit / golden tests と docs で確認します。`createGs1DigitalLink()` と `parseGs1DigitalLink()` は unit / packed package smoke で確認します。
 - FNC1 second position: decoder や参照実装によって application indicator の露出方法が異なるため、bit length、control segment placement、diagnostics、negative tests を優先します。

@@ -4,17 +4,28 @@
 
 ### Added
 
+- Added public GS1 raw element string parsing via `parseGs1ElementString(input)` and `QRCode.parseGs1ElementString(input)`, backed by strict supported-AI validation.
+- Added GS1 Digital Link helpers via `createGs1DigitalLink(input, options)` / `parseGs1DigitalLink(uri, options?)` and matching `QRCode` static methods.
+- Added catalog-driven GS1 AI metadata for supported AI validation, GTIN / SSCC check digit rules, separator behavior, and Digital Link path/query placement.
+- Added FNC1 second position support via `fnc1Second` option and manual `{ mode: "fnc1-second", applicationIndicator }` segments.
 - Added low-level Structured Append header support via `structuredAppend: { index, total, parity }` and manual `{ mode: "structured-append", index, total, parity }` segments.
 - Added Structured Append diagnostics, validation, unit coverage, golden fixture coverage, and packed package smoke coverage.
 - Added high-level Structured Append generation via `generateStructuredAppend(input, options)` and `QRCode.generateStructuredAppend(input, options)`.
 - Added automatic string / binary splitting, original payload byte XOR parity, top-level set diagnostics, fixed version / ECC / mask golden fixture coverage, TypeScript declarations, and packed package smoke coverage for high-level Structured Append.
+- Added manual segment Structured Append generation via `generateSegmentsStructuredAppend(segments, options)` and `QRCode.generateSegmentsStructuredAppend(segments, options)`.
 - Added Structured Append decoded parts merge support via `mergeStructuredAppendParts(parts, options?)` and `QRCode.mergeStructuredAppendParts(parts, options?)`.
 - Added merge validation for missing symbols, duplicate indexes, total/parity mismatch, mixed string/binary parts, and merged payload byte parity.
 - Added Structured Append scanner adapter examples showing ZXing Java style metadata mapping, string/binary merge, shuffled scan order, and expected merge errors.
+- Added playground and examples coverage for GS1 Digital Link, FNC1 second position, and Structured Append workflows.
+
+### Changed
+
+- Strengthened release-gate documentation for v2.0.0 API surface, conformance status, package contents, examples, playground, and validation lanes.
 
 ### Notes
 
-- Public parity helpers, QR decoder implementation, scanner integration, and npm publish are not part of this change.
+- Package version is intentionally still `1.0.0` until v2.0.0 release finalization.
+- Public parity helpers, QR decoder implementation, scanner integration, full GS1 AI catalog, GS1 Digital Link resolver/compression/full canonicalization, Micro QR, rMQR, logo overlay, styled modules, npm publish, and GitHub Release are not part of this change.
 
 ## 1.0.0 - 2026-05-22
 

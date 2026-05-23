@@ -7,7 +7,7 @@ SpecQR is a dependency-free JavaScript QR Code Model 2 generator. It focuses on 
 
 Repository: https://github.com/SpecQR/SpecQR
 
-SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するためのライブラリです。実用上「生成はできるが読めない」「仕様端で壊れる」「環境で挙動が変わる」問題を避けるため、v1 では対応範囲を明確に絞り、テストとデコード検証を厚めに置いています。
+SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するためのライブラリです。実用上「生成はできるが読めない」「仕様端で壊れる」「環境で挙動が変わる」問題を避けるため、対応範囲を明確に絞り、テスト、golden fixtures、デコード検証を厚めに置いています。
 
 ## インストール
 
@@ -40,7 +40,7 @@ npm install specqr@next
 - Structured Append Decoder Metadata Validation: [docs/structured-append-decoder-validation-v2.md](docs/structured-append-decoder-validation-v2.md)
 - GS1 Digital Link v2 Design: [docs/gs1-digital-link-v2.md](docs/gs1-digital-link-v2.md)
 
-## v1 の対応範囲
+## 現在の対応範囲
 
 - QR Code Model 2
 - Version 1 から 40
@@ -58,11 +58,11 @@ npm install specqr@next
 - Node PNG helper と browser Blob/ImageData/Object URL helper
 - capacity、mask/version selection、contrast、quiet zone、print warning を含む diagnostics
 
-Micro QR、rMQR、logo overlay、styled modules は v1 の対象外です。
+Micro QR、rMQR、logo overlay、styled modules は現在の core package の対象外です。
 
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
 
-v2.0.0 では、GS1 syntax layer、GS1 Digital Link、control segment model、検証体系の強化を中心に計画しています。Micro QR、rMQR、logo overlay、styled modules は v2.0.0 の対象外です。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
+v2.0.0 では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を release scope として扱います。package version は release finalization まで `1.0.0` のまま維持しています。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
 
 ## 基本的な使い方
 
@@ -165,7 +165,7 @@ const svg = QRCode.generate(data, {
 });
 ```
 
-`parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。`QRCode.generate(data, { gs1: true })` は raw GS1 element string を内部 validator で検証してから生成します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog と業界別 validation は v1 の対象外です。
+`parseGs1HumanReadable()` は対応 AI の parentheses 表記を `{ ai, value }[]` に変換します。`createGs1ElementString()` は値を検証し、可変長 AI の後に別の AI が続く場合だけ ASCII GS separator (`"\x1D"`) を挿入します。`QRCode.generate(data, { gs1: true })` は raw GS1 element string を内部 validator で検証してから生成します。AI values は先頭ゼロを保持するため string で渡してください。AI `00` の SSCC check digit と AI `01`/`02` の GTIN check digit は validation 対象です。全 GS1 AI catalog と業界別 validation は現在の対象外です。
 
 `(01)04912345678904(10)ABC123` のような parentheses 付き表記は human-readable input です。QR に渡す payload は parentheses を含まない raw GS1 element string です。human-readable input を直接 `gs1: true` に渡すと reject されるため、先に `parseGs1HumanReadable()` と `createGs1ElementString()` を使ってください。外部システムから受け取った raw GS1 element string は `parseGs1ElementString()` で `{ elements, hasSeparators }` に読み戻せます。`diagnostics: true` では `diagnostics.gs1Validation` に `elementCount`、`ais`、separator 有無が入ります。
 

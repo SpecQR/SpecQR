@@ -1,6 +1,6 @@
 # API
 
-この文書は SpecQR `1.0.0` の公開 API を説明します。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
+この文書は現在の SpecQR public API を説明します。v2.0.0 release finalization 前のため package version はまだ `1.0.0` のままですが、ここに載せている GS1 Digital Link、FNC1 second position、Structured Append API は現在の main branch に実装済みです。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
 
 ## Core
 
@@ -374,7 +374,7 @@ helper が対応する代表 AI は次の範囲です。
 
 validation は、対応 AI format、fixed/max length、numeric-only AI、printable ASCII text values、raw value 内の separator/parentheses rejection、AI `00` の SSCC check digit、AI `01`/`02` の GTIN check digit を対象にします。可変長 AI の後に別の element が続く場合は `"\x1D"` を挿入し、最後の可変長 AI は separator なしで終端します。
 
-GTIN / SSCC 以外の check digit rule、全 GS1 AI catalog、業界別 AI rule は v1 の対象外です。FNC1 second position は GS1 helper ではなく、独立した QR control mode として `fnc1Second` で扱います。
+GTIN / SSCC 以外の check digit rule、全 GS1 AI catalog、業界別 AI rule は現在の対象外です。FNC1 second position は GS1 helper ではなく、独立した QR control mode として `fnc1Second` で扱います。
 
 ## Return Values
 

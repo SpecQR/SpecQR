@@ -1,6 +1,6 @@
 # SpecQR Examples
 
-These examples import SpecQR through the package entrypoints, the same way an installed app would.
+これらの examples は、実際の利用アプリと同じように package entrypoints から SpecQR を import します。
 
 ## Node PNG file
 
@@ -8,7 +8,7 @@ These examples import SpecQR through the package entrypoints, the same way an in
 npm run examples:node
 ```
 
-By default this writes a PNG file into the operating system temporary directory. Pass a path to choose the output location.
+デフォルトでは OS の一時ディレクトリに PNG を書き出します。出力先を指定したい場合は path を渡します。
 
 ```sh
 node examples/node-save-png.mjs ./tmp/example-node.png
@@ -20,7 +20,7 @@ node examples/node-save-png.mjs ./tmp/example-node.png
 npm run examples:gs1
 ```
 
-This creates a GS1 QR SVG using the human-readable parser, GTIN check digit helper, and FNC1 first position.
+Human-readable parser、GTIN check digit helper、FNC1 first position を使って GS1 QR SVG を作ります。
 
 ## GS1 Digital Link QR
 
@@ -28,7 +28,7 @@ This creates a GS1 QR SVG using the human-readable parser, GTIN check digit help
 npm run examples:gs1-digital-link
 ```
 
-This creates a normal URL QR SVG from a GS1 Digital Link URI. It intentionally does not use `gs1: true`.
+GS1 Digital Link URI から通常 URL QR SVG を作ります。Digital Link は FNC1 first position ではないため、意図的に `gs1: true` は使いません。
 
 ## Structured Append
 
@@ -36,7 +36,7 @@ This creates a normal URL QR SVG from a GS1 Digital Link URI. It intentionally d
 npm run examples:structured-append
 ```
 
-This writes string and binary Structured Append sets as SVG/PNG symbols, plus a summary JSON file with total, parity, per-symbol chunk offsets, and diagnostics.
+string / binary input の Structured Append set を SVG/PNG symbols として書き出し、`total`、`parity`、per-symbol chunk offsets、diagnostics を含む summary JSON も保存します。
 
 ## Structured Append merge
 
@@ -44,18 +44,18 @@ This writes string and binary Structured Append sets as SVG/PNG symbols, plus a 
 npm run examples:structured-append-merge
 ```
 
-This shows how to adapt decoder output with Structured Append metadata into `{ index, total, parity, data }` parts for `mergeStructuredAppendParts()`. The example covers string parts, binary parts, shuffled scan order, expected missing/duplicate/parity errors, and a ZXing Java style metadata mapping.
+Structured Append metadata を持つ decoder output を、`mergeStructuredAppendParts()` に渡せる `{ index, total, parity, data }` parts へ変換する adapter 例です。string parts、binary parts、shuffled scan order、missing / duplicate / parity errors、ZXing Java style metadata mapping を覆います。
 
 ## Browser Blob / Object URL
 
-Serve the repository and open `examples/browser-blob-object-url.html`.
+repository を serve して `examples/browser-blob-object-url.html` を開きます。
 
 ```sh
 npm run playground
 ```
 
-Then open `http://127.0.0.1:4173/examples/browser-blob-object-url.html`.
+その後 `http://127.0.0.1:4173/examples/browser-blob-object-url.html` を開きます。
 
 ## TypeScript
 
-`examples/typescript-usage.ts` shows typed imports, diagnostic results, GS1 helpers, and Node helper usage.
+`examples/typescript-usage.ts` は typed imports、diagnostic results、GS1 helpers、Node helper の利用例です。

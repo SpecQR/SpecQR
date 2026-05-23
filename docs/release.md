@@ -1,12 +1,12 @@
 # Release Checklist
 
-この文書は SpecQR `1.0.0` 正式版の公開前後 checklist と、その後の RC 運用方針です。実際の npm publish、GitHub Release 作成、GitHub Pages deploy は、手動確認後に実行します。
+この文書は SpecQR の公開前後 checklist と RC 運用方針です。現在の main branch は v2.0.0 release candidate scope を含みますが、release finalization までは package version を `1.0.0` のまま維持します。実際の npm publish、GitHub Release 作成、GitHub Pages deploy は、手動確認後に実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
 ## Release Channels
 
-- `latest`: 安定版利用者向け。`1.0.0` 正式版を公開したら `latest` は `1.0.0` を指します。
+- `latest`: 安定版利用者向け。正式版を公開したら該当 stable version を指します。
 - `next`: RC / prerelease 利用者向け。次の prerelease を検証するときに使います。正式版公開後も、次の RC を出すまでは `next` を直ちに動かす必要はありません。
 
 通常 install:
@@ -23,20 +23,22 @@ npm install specqr@next
 
 正式版では `specqr` が stable channel、`specqr@next` が prerelease channel という扱いに揃えます。
 
-## 1.0.0 公開条件
+## v2.0.0 公開条件
 
 - `npm test` が green。
 - `npm run examples:smoke` が green。
 - `npm run pages:build` が green。
+- `npm run verify:decode` が macOS release machine で green。
 - `npm run verify:decode:jsqr` が green。
 - `npm run verify:reference:nayuki` が green。
 - `npm run verify:pack` が green。
-- macOS release machine で `npm run verify:decode` が green。
+- `npm run verify:structured-append:zxing-java` が、ZXing Java 環境なしなら明示 skip、環境ありなら metadata validation green。
 - `npm pack --dry-run` が clean な npm cache / CI 上で green。
-- 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@1.0.0` に対して green。
+- 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@2.0.0` に対して green。
 - GitHub Actions `CI` が green。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
-- v1 で未対応の Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に明記されている。
+- Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。
+- `package.json` の version を `2.0.0` に上げる commit / tag は、この checklist の verification が green になった後に別途行う。
 
 ## Pre-Publish Commands
 
@@ -44,10 +46,11 @@ npm install specqr@next
 npm test
 npm run examples:smoke
 npm run pages:build
+npm run verify:decode
 npm run verify:decode:jsqr
 npm run verify:reference:nayuki
 npm run verify:pack
-npm run verify:decode
+npm run verify:structured-append:zxing-java
 npm pack --dry-run
 npm publish --dry-run --tag latest
 ```
@@ -80,7 +83,7 @@ npm run verify:published
 特定の version や tag を確認したい場合:
 
 ```sh
-node tools/verify-published-package.js specqr@1.0.0 specqr@next
+node tools/verify-published-package.js specqr@2.0.0 specqr@next
 ```
 
 GitHub Actions の `Published Package Smoke` workflow は手動実行用です。通常の push CI には含めず、npm registry の一時的な障害で開発 CI が落ちないようにしています。
@@ -113,13 +116,13 @@ Manual deploy:
 
 Release draft に含める内容:
 
-- Tag: `v1.0.0`
-- Title: `SpecQR 1.0.0`
+- Tag: `v2.0.0`
+- Title: `SpecQR 2.0.0`
 - npm install:
   ```sh
   npm install specqr
   ```
-- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
+- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 Digital Link create/parse helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
 - 検証: golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison。
 - 非対応: Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
@@ -147,10 +150,10 @@ npm view specqr dist-tags versions --json
 npm run verify:published
 ```
 
-RC を deprecate する場合:
+古い prerelease を deprecate する場合:
 
 ```sh
-npm deprecate specqr@1.0.0-rc.2 "SpecQR 1.0.0 is available. Please use specqr@latest."
+npm deprecate specqr@2.0.0-rc.1 "SpecQR 2.0.0 is available. Please use specqr@latest."
 ```
 
 deprecate は正式版 publish と install smoke が成功してから行います。

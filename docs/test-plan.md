@@ -82,7 +82,7 @@ Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、rendere
 
 ## v2.0.0 Validation Planning
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model を追加する予定のため、次の検証カテゴリを release gate に加える方針です。FNC1 second position と Structured Append low-level header の基本 encoding / diagnostics / golden coverage は実装済みです。
+v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model が増えるため、次の検証カテゴリを release gate に含めます。FNC1 second position、Structured Append low-level header、高レベル分割、manual segments 分割、decoded parts merge helper の基本 coverage は実装済みです。
 
 - GS1 strict validation: current supported AI に限定して AI metadata、fixed / variable length、numeric / text constraints、separator insertion、GTIN / SSCC check digit、unsupported AI rejection を確認する。Supported AI metadata を広げる場合は、AI group ごとに validation と negative tests を追加する。
 - GS1 Digital Link conversion: `createGs1DigitalLink()` の URL construction、baseUrl validation、dictionary role metadata based path/query placement、invalid path placement rejection、invalid GS1 value rejection、`parseGs1DigitalLink()` の path/query parsing、unknown query preservation、percent-decoding、round-trip を確認する。FNC1 first の raw GS1 element string と URL-based QR を混同しないことを固定する。現在の output は deterministic builder であり、full canonicalization は未対応として docs に固定する。詳細な API proposal と validation policy は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) を参照する。
@@ -201,7 +201,7 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` と `QRCode.parseGs1ElementString()` を実行します。`validateGs1ElementString()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、invalid raw GS1 payload の `InvalidGs1Error`、同梱 `src/index.d.ts` の GS1 raw parser surface も確認します。TypeScript compiler pipeline は package の runtime / dev workflow を重くしないため導入せず、配布物に含まれる declaration text の軽量検査に留めています。
+この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`validateGs1ElementString()` や `validateGs1DigitalLink()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、invalid raw GS1 payload の `InvalidGs1Error`、同梱 `src/index.d.ts` の v2 API surface、npm package contents policy も確認します。TypeScript compiler pipeline は package の runtime / dev workflow を重くしないため導入せず、配布物に含まれる declaration text の軽量検査に留めています。
 
 公開済み npm package の install / import smoke は release 前後の確認として実行します。
 

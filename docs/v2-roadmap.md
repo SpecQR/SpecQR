@@ -1,8 +1,8 @@
 # SpecQR v2.0.0 Roadmap
 
-この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための計画です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
+この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
 
-v2 planning の対象は roadmap であり、現時点の runtime behavior や public API の約束ではありません。実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
+実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
 ## v2.0.0 の目的
 
@@ -11,6 +11,7 @@ v2 planning の対象は roadmap であり、現時点の runtime behavior や p
 - ECI、FNC1 first、FNC1 second、Structured Append を内部的に扱いやすい control segment model として整理する。
 - FNC1 second position、Structured Append low-level header、Structured Append high-level splitting は実装済み。次はこれらの control features を崩さずに GS1 syntax / validation を広げる。
 - v2 で増える control feature に対して、golden fixtures、decoder validation、reference comparison の限界を明記した検証体系を用意する。
+- v2.0.0 正式準備前に、public API、docs、examples、playground、package contents、release gate の整合性を監査する。
 
 ## v1.0.0 からの自然な拡張点
 
@@ -66,8 +67,9 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 12. **Structured Append scanner workflow design**: decoder metadata 依存の限界、missing / duplicate / parity mismatch handling、`mergeStructuredAppendParts(parts, options?)` API の境界を docs に固定する。完了済み。
 13. **Structured Append decoder metadata validation design**: ZXing Java / ZXing-C++ / zbar / jsQR / Vision などを調査し、metadata-returning decoder fixture と future optional lane の条件を docs-only で固定する。完了済み。
 14. **Project language policy**: v2 以降の README / docs / CHANGELOG / release notes / commit messages / PR-style summaries を日本語メインにする方針を固定する。完了済み。
-15. **v2 validation expansion**: golden、decoder、optional external validation、reference comparison docs を v2 features に合わせて更新する。
-16. **v2 examples / playground / docs**: GS1 strict validation、Digital Link、FNC1 second、Structured Append の利用導線を整える。
+15. **v2 validation expansion**: golden、decoder、optional external validation、reference comparison docs を v2 features に合わせて更新する。完了済み。
+16. **v2 examples / playground / docs**: GS1 strict validation、Digital Link、FNC1 second、Structured Append の利用導線を整える。完了済み。
+17. **v2 release readiness audit**: package version を変えずに public API surface、docs、CHANGELOG、package contents、examples、playground、release gate を監査する。完了済み。
 
 ## Progress Notes
 
@@ -95,6 +97,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: Structured Append ZXing Java metadata prototype added and expanded. `npm run verify:structured-append:zxing-java` を追加し、`ZXING_CLASSPATH`、`JAVA`、`JAVAC` が揃う環境だけで string / binary / manual segment split / byte chunking / fixed deterministic PNG を ZXing Java で読み、sequence indicator から復元した `index` / `total` と parity を SpecQR diagnostics と照合できるようにしました。runtime dependency と required CI gate は増やしていません。
 - 2026-05-23: Structured Append merge helper implemented. `mergeStructuredAppendParts(parts, options?)` と `QRCode.mergeStructuredAppendParts(parts, options?)` を追加し、decoder が返した `{ index, total, parity, data }` parts に対して missing、duplicate、total mismatch、parity mismatch、string/binary 混在、merged payload byte parity を検証して結合できるようにしました。QR decoder、scanner integration、public parity helper、runtime dependency は追加していません。
 - 2026-05-23: Structured Append scanner adapter examples documented. `examples/structured-append-merge.mjs` を追加し、ZXing Java style metadata から `{ index, total, parity, data }` parts を作る adapter pattern、string / binary merge、shuffled scan order、missing / duplicate / parity mismatch、metadata-less decoder の制限を examples smoke で確認するようにしました。Core API と runtime dependency は変更していません。
+- 2026-05-23: v2.0.0 release readiness audit completed. README、API docs、spec scope、conformance matrix、test plan、release checklist、CHANGELOG を v2 candidate state に合わせ、package version を `1.0.0` のまま維持する前提と v2.0.0 release gate を明確化しました。新機能、runtime dependency、npm publish、GitHub Release は追加していません。
 
 ## Release Gate
 

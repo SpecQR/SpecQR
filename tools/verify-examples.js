@@ -50,7 +50,11 @@ try {
   assert.equal(structuredMerge.negative.parityMismatch.code, "INVALID_INPUT");
   assert.equal(structuredMerge.negative.metadataMissing.code, "INVALID_INPUT");
 
-  await assertReadable("examples/typescript-usage.ts");
+  const typeScriptExample = await assertReadable("examples/typescript-usage.ts");
+  assert.match(typeScriptExample, /createGs1DigitalLink/);
+  assert.match(typeScriptExample, /parseGs1DigitalLink/);
+  assert.match(typeScriptExample, /generateStructuredAppend/);
+  assert.match(typeScriptExample, /mergeStructuredAppendParts/);
   await assertReadable("examples/browser-blob-object-url.html");
   await assertReadable("playground/index.html");
   await assertReadable("playground/playground.js");
@@ -81,4 +85,5 @@ function run(command, args) {
 async function assertReadable(path) {
   const contents = await readFile(path, "utf8");
   assert.ok(contents.length > 0, `${path} should not be empty`);
+  return contents;
 }

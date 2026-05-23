@@ -20,6 +20,7 @@ try {
     root
   );
   const [packed] = JSON.parse(packOutput);
+  assertPackContents(packed);
   const tarball = path.join(packDirectory, packed.filename);
 
   await writeFile(path.join(installDirectory, "package.json"), JSON.stringify({ type: "module" }, null, 2));
@@ -334,6 +335,45 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /static mergeStructuredAppendParts\(parts: QRStructuredAppendDecodedPart<string>\[]/);
   assert.match(declarations, /static createGs1DigitalLink\(/);
   assert.match(declarations, /static parseGs1DigitalLink\(/);
+}
+
+function assertPackContents(packed) {
+  assert.ok(Array.isArray(packed.files), "npm pack --json should include a files list");
+  const paths = packed.files.map((file) => file.path).sort();
+  const required = [
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "package.json",
+    "src/index.js",
+    "src/index.d.ts",
+    "src/node.js",
+    "src/browser.js",
+    "docs/api.md",
+    "docs/release.md",
+    "docs/spec-scope.md",
+    "docs/conformance.md",
+    "docs/test-plan.md",
+    "docs/v2-roadmap.md",
+    "examples/gs1-digital-link.mjs",
+    "examples/structured-append.mjs",
+    "examples/structured-append-merge.mjs",
+    "playground/index.html",
+    "tools/verify-packed-package.js"
+  ];
+
+  for (const requiredPath of required) {
+    assert.ok(paths.includes(requiredPath), `packed package should include ${requiredPath}`);
+  }
+
+  for (const packedPath of paths) {
+    assert.equal(packedPath.includes("node_modules/"), false, `packed package should not include ${packedPath}`);
+    assert.equal(packedPath.startsWith("tmp/"), false, `packed package should not include ${packedPath}`);
+    assert.equal(packedPath.startsWith("dist/"), false, `packed package should not include ${packedPath}`);
+    assert.equal(packedPath.startsWith(".github/"), false, `packed package should not include ${packedPath}`);
+    assert.equal(packedPath.endsWith(".tgz"), false, `packed package should not include ${packedPath}`);
+    assert.equal(packedPath.endsWith(".DS_Store"), false, `packed package should not include ${packedPath}`);
+  }
 }
 
 function run(command, args, cwd) {

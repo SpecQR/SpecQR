@@ -2,11 +2,11 @@
 
 ## Target
 
-SpecQR `1.0.0` は、実務で使う通常の QR Code Model 2 generation を対象にします。v1 では「通常 QR Code を安定して生成する」ことを優先し、別系統の QR family や装飾機能は core に混ぜません。
+SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。v2.0.0 release finalization 前のため package version はまだ `1.0.0` のままですが、現在の main branch は GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2.0.0 candidate scope です。別系統の QR family や装飾機能は core に混ぜません。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
-v2.0.0 の計画範囲は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting、manual segments splitting、`mergeStructuredAppendParts()` は実装済みです。Structured Append の string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper の境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
+v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting、manual segments splitting、`mergeStructuredAppendParts()` は実装済みです。Structured Append の string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper の境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
 ## 実装済み範囲
 
@@ -58,7 +58,7 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱います。`createGs1DigitalLink()` は supported AI から Digital Link URI を作り、`parseGs1DigitalLink()` は URI を `{ elements, primary, pathElements, queryElements, unknownQuery }` に戻します。Digital Link URI は通常 URL QR として `QRCode.generate(uri)` で生成し、`gs1: true` は指定しません。
 
-GS1 AI metadata は、現時点では SpecQR が v1 で対応済みの AI だけを小さな internal dictionary として手書き管理しています。これは supported AI の length、numeric/text constraint、GTIN / SSCC check digit rule、separator behavior、Digital Link role (`primary-key` / `key-qualifier` / `data-attribute`) を validation から参照しやすくするための内部構造であり、full GS1 AI catalog の取り込みではありません。Digital Link の default path/query placement と path placement validation もこの metadata を使います。将来 GS1 Barcode Syntax Dictionary などの外部資料を参照して catalog を広げる場合は、出典、license / usage terms、NOTICE の要否を確認し、仕様本文や大きな表を repository に無断コピーしない方針です。
+GS1 AI metadata は、現時点では SpecQR が対応する代表 AI だけを小さな internal dictionary として手書き管理しています。これは supported AI の length、numeric/text constraint、GTIN / SSCC check digit rule、separator behavior、Digital Link role (`primary-key` / `key-qualifier` / `data-attribute`) を validation から参照しやすくするための内部構造であり、full GS1 AI catalog の取り込みではありません。Digital Link の default path/query placement と path placement validation もこの metadata を使います。将来 GS1 Barcode Syntax Dictionary などの外部資料を参照して catalog を広げる場合は、出典、license / usage terms、NOTICE の要否を確認し、仕様本文や大きな表を repository に無断コピーしない方針です。
 
 raw GS1 element string は `parseGs1ElementString(input)` で `{ elements, hasSeparators }` に読み戻せます。この parser は parentheses を含まない payload を対象にし、fixed-length AI は dictionary の exact length で読み、variable-length AI は ASCII GS separator があれば次 element へ進み、separator なしなら final element として扱います。variable-length AI の後に別 AI が続く場合は separator が必要です。raw element string は括弧がないため、final variable-length value の末尾が supported fixed-length AI に見える曖昧ケースは、推測で分割せず missing separator として reject します。同じ validator は `generate(input, { gs1: true })` と diagnostics にも内部統合しています。`validateGs1ElementString()` は public API ではまだ提供しません。
 
@@ -70,7 +70,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 2015 版と 2024 版の差分、Micro QR、rMQR などは、今後の監査・別 module の対象です。ISO 本文や仕様表のコピーは repository に含めません。
 
-## v1 で意図的に対象外とするもの
+## 意図的に対象外とするもの
 
 次の機能は core Model 2 package には実装していません。
 
@@ -85,9 +85,9 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 - Logo overlay
 - Styled modules
 
-## v1 後の Roadmap
+## v2.0.0 後の Backlog
 
-v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 では、通常 QR Code Model 2 core を維持したまま次を優先します。
+v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 release candidate では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer を揃えています。正式 release 後は次を優先します。
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。

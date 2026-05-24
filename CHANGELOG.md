@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Changed
+
+- Updated GitHub Actions workflow actions to Node 24-compatible official major versions while keeping the project test runtime on Node 20.
 
 ## 2.0.0-rc.1 - 2026-05-23
 

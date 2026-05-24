@@ -1,6 +1,6 @@
 # Release Checklist
 
-この文書は SpecQR の公開前後 checklist と RC 運用方針です。現在の main branch は `2.0.0-rc.1` release candidate scope を含みます。実際の npm publish、GitHub Release 作成、GitHub Pages deploy は、手動確認後に実行します。
+この文書は SpecQR の公開前後 checklist と RC 運用方針です。現在の main branch は `2.0.0-rc.1` release candidate scope を含みます。`2.0.0-rc.1` は npm `next` tag、GitHub prerelease、GitHub Pages playground まで公開済みです。正式版 `2.0.0` の publish はまだ行いません。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
@@ -41,6 +41,15 @@ npm install specqr@next
 - `package.json` と `package-lock.json` の version が `2.0.0-rc.1` で一致している。
 - `npm publish --dry-run --tag next --cache /private/tmp/specqr-npm-cache` が green。
 - tag `v2.0.0-rc.1` は、上記 verification が green の main commit にだけ付ける。
+
+## v2.0.0-rc.1 公開後監査
+
+- npm dist tag は `latest: 1.0.0`、`next: 2.0.0-rc.1` を維持する。
+- `specqr@1.0.0` は deprecated にしない。
+- `node tools/verify-published-package.js specqr@2.0.0-rc.1 specqr@next` で root / node / browser subpath と v2 public API を確認する。
+- GitHub Release `v2.0.0-rc.1` は prerelease として公開し、release notes は日本語メイン、install command は `npm install specqr@next` を示す。
+- GitHub Pages は `https://specqr.github.io/SpecQR/` と `https://specqr.github.io/SpecQR/playground/` を確認し、playground に Structured Append workflow が含まれることを見る。
+- GitHub Actions workflow は official action の Node 24-compatible major を使う。SpecQR 自体の CI runtime は `node-version: 20` を維持し、action runtime deprecation warning だけを避ける。
 
 ## Pre-Publish Commands
 
@@ -116,7 +125,7 @@ Manual deploy:
 
 ## GitHub Release
 
-v2.0.0-rc.1 では、npm publish と install smoke が終わるまで GitHub Release は作成しません。作成する場合の release draft に含める内容:
+v2.0.0-rc.1 では、npm publish と install smoke が終わった後に GitHub prerelease を作成します。release notes に含める内容:
 
 - Tag: `v2.0.0-rc.1`
 - Title: `SpecQR 2.0.0-rc.1`

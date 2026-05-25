@@ -173,7 +173,7 @@ repository には GitHub Actions workflow `.github/workflows/ci.yml` があり�
 - `npm run verify:structured-append:zxing-java`
 - `npm pack --dry-run`
 
-代表 Node を 20 にする理由は、v1 / v2 RC の既存 release lane と同じ比較軸を保ちつつ、Node 18 / 22 / 24 の engines claim は軽量 matrix で別に検証するためです。macOS Vision validation は Swift、Vision、ImageMagick に依存するため、この代表 Node job では macOS runner を使います。
+代表 Node を 20 にする理由は、v1 / v2 の既存 release lane と同じ比較軸を保ちつつ、Node 18 / 22 / 24 の engines claim は軽量 matrix で別に検証するためです。macOS Vision validation は Swift、Vision、ImageMagick に依存するため、この代表 Node job では macOS runner を使います。
 
 ## Examples / Playground
 

@@ -148,8 +148,8 @@ expectType<ImageData>(toImageDataFromSegments([{ mode: "alphanumeric", data: "HE
 expectType<string>(toObjectURL("https://example.com"));
 expectType<string>(toObjectURLFromSegments([{ mode: "kanji", data: "漢字" }]));
 
-// @ts-expect-error validateGs1ElementString is intentionally not public in v2.0.0-rc.1.
+// @ts-expect-error validateGs1ElementString is intentionally not public in v2.0.0.
 specqr.validateGs1ElementString;
 
-// @ts-expect-error validateGs1DigitalLink is intentionally not public in v2.0.0-rc.1.
+// @ts-expect-error validateGs1DigitalLink is intentionally not public in v2.0.0.
 specqr.validateGs1DigitalLink;

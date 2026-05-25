@@ -2,7 +2,7 @@
 
 ## Target
 
-SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。SpecQR `2.0.0-rc.1` は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2.0.0 candidate scope です。別系統の QR family や装飾機能は core に混ぜません。
+SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。SpecQR `2.0.0` は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2.0.0 stable scope です。別系統の QR family や装飾機能は core に混ぜません。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
@@ -89,7 +89,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 ## v2.0.0 後の Backlog
 
-v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 release candidate では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer を揃えています。正式 release 後は次を優先します。
+v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 stable では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer を揃えています。正式 release 後は次を優先します。
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。

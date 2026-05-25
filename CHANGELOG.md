@@ -2,11 +2,41 @@
 
 ## Unreleased
 
-### Changed
+- まだありません。
 
-- Updated GitHub Actions workflow actions to Node 24-compatible official major versions while keeping the project test runtime on Node 20.
-- Added TypeScript compiler-based consumer type checks for the root, Node, and browser package exports.
-- Added a Node 18 / 20 / 22 / 24 CI engine matrix and kept heavier release gates on representative Node 20.
+## 2.0.0 - 2026-05-25
+
+SpecQR 2.0.0 is the stable v2 release for dependency-free QR Code Model 2 generation with GS1 syntax, GS1 Digital Link, FNC1 second position, Structured Append, and stronger release gates.
+
+### 追加
+
+- `parseGs1ElementString(input)` と `QRCode.parseGs1ElementString(input)` を公開し、raw GS1 element string を `{ elements, hasSeparators }` として読み戻せるようにしました。
+- `createGs1DigitalLink(input, options)` / `parseGs1DigitalLink(uri, options?)` と対応する `QRCode` static methods を追加しました。
+- GS1 AI metadata を catalog-driven な内部 dictionary として整理し、対応 AI の長さ、文字種、separator、GTIN / SSCC check digit、Digital Link path/query placement を検証に使うようにしました。
+- FNC1 second position を `fnc1Second` option と manual `{ mode: "fnc1-second", applicationIndicator }` segments で扱えるようにしました。
+- Structured Append low-level header を `structuredAppend` option と manual `{ mode: "structured-append", index, total, parity }` segments で扱えるようにしました。
+- `generateStructuredAppend(input, options)` / `QRCode.generateStructuredAppend(input, options)` を追加し、string / binary input を最大 16 symbols に自動分割できるようにしました。
+- `generateSegmentsStructuredAppend(segments, options)` / `QRCode.generateSegmentsStructuredAppend(segments, options)` を追加し、manual segments を Structured Append symbols に分割できるようにしました。
+- `mergeStructuredAppendParts(parts, options?)` / `QRCode.mergeStructuredAppendParts(parts, options?)` を追加し、metadata-returning decoder から得た Structured Append parts を検証して結合できるようにしました。
+- GS1 Digital Link、FNC1 second position、Structured Append workflow の examples、playground、scanner adapter example を追加しました。
+
+### 変更
+
+- v2.0.0 の API surface、conformance status、package contents、examples、playground、release gate に合わせて README / docs / CHANGELOG を整理しました。
+- TypeScript compiler-based consumer check を追加し、root / `specqr/node` / `specqr/browser` と v2 public API の型 surface を固定しました。
+- GitHub Actions を Node 24-compatible official action major に更新しました。
+- Node 18 / 20 / 22 / 24 の CI engine matrix を追加し、重い release gates は代表 Node 20 に集約しました。
+- package metadata を stable `2.0.0` に更新しました。
+
+### 検証・公開準備
+
+- `npm test`、`npm run verify:types`、`npm run examples:smoke`、`npm run pages:build`、`npm run verify:decode`、`npm run verify:decode:jsqr`、`npm run verify:reference:nayuki`、`npm run verify:pack`、`npm run verify:structured-append:zxing-java` を release gate として扱います。
+- `npm pack --dry-run` と `npm publish --dry-run --tag latest` を stable publish 前の必須確認にしました。
+- GitHub Actions `CI` は Node 18 / 20 / 22 / 24 matrix と Node 20 release gates を green にする方針です。
+
+### 意図的な制限
+
+- QR decoder、scanner integration、Structured Append public parity helper、full GS1 AI catalog、GS1 Digital Link resolver / compression / full canonicalizer、Micro QR、rMQR、logo overlay、styled modules、CJS build、minified browser build は v2.0.0 の対象外です。
 
 ## 2.0.0-rc.1 - 2026-05-23
 

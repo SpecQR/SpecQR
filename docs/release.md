@@ -1,13 +1,13 @@
 # Release Checklist
 
-この文書は SpecQR の公開前後 checklist と RC 運用方針です。現在の main branch は `2.0.0-rc.1` release candidate scope を含みます。`2.0.0-rc.1` は npm `next` tag、GitHub prerelease、GitHub Pages playground まで公開済みです。正式版 `2.0.0` の publish はまだ行いません。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.0.0` stable release package を準備済みの状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy は人間の最終判断後にだけ実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
 ## Release Channels
 
-- `latest`: 安定版利用者向け。正式版を公開したら該当 stable version を指します。
-- `next`: RC / prerelease 利用者向け。次の prerelease を検証するときに使います。正式版公開後も、次の RC を出すまでは `next` を直ちに動かす必要はありません。
+- `latest`: 安定版利用者向け。`2.0.0` 正式版 publish はこの tag で行います。
+- `next`: RC / prerelease 利用者向け。正式版公開後も、次の RC を出すまでは直ちに動かす必要はありません。
 
 通常 install:
 
@@ -15,16 +15,17 @@ v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries �
 npm install specqr
 ```
 
-v2.0.0-rc.1 / prerelease channel を明示して試す場合:
+prerelease channel を明示して試す場合:
 
 ```sh
 npm install specqr@next
 ```
 
-`specqr` は stable channel、`specqr@next` は prerelease channel として扱います。v2.0.0-rc.1 の npm publish は `next` tag で行います。
+通常利用者向けの install guide は `npm install specqr` を主導線にします。
 
-## v2.0.0-rc.1 公開条件
+## v2.0.0 Stable 公開条件
 
+- `package.json` と `package-lock.json` の version が `2.0.0` で一致している。
 - `npm test` が green。
 - `npm run verify:types` が green。
 - `npm run examples:smoke` が green。
@@ -34,25 +35,15 @@ npm install specqr@next
 - `npm run verify:reference:nayuki` が green。
 - `npm run verify:pack` が green。
 - `npm run verify:structured-append:zxing-java` が、ZXing Java 環境なしなら明示 skip、環境ありなら metadata validation green。
-- `npm pack --dry-run` が clean な npm cache / CI 上で green。
+- `npm ls --omit=dev` が runtime dependency なしを示す。
+- `npm pack --dry-run --cache /private/tmp/specqr-npm-cache` が green。
+- `npm publish --dry-run --tag latest --cache /private/tmp/specqr-npm-cache` が green。
 - GitHub Actions `CI` の Node 18 / 20 / 22 / 24 engine matrix が green。
 - representative Node 20 release gates が green。macOS Vision decode、Pages build、jsQR decode、Nayuki reference comparison、Structured Append ZXing Java optional lane、pack dry-run をここで確認する。
-- 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@2.0.0` に対して green。
-- GitHub Actions `CI` が green。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
 - Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。
-- `package.json` と `package-lock.json` の version が `2.0.0-rc.1` で一致している。
-- `npm publish --dry-run --tag next --cache /private/tmp/specqr-npm-cache` が green。
-- tag `v2.0.0-rc.1` は、上記 verification が green の main commit にだけ付ける。
 
-## v2.0.0-rc.1 公開後監査
-
-- npm dist tag は `latest: 1.0.0`、`next: 2.0.0-rc.1` を維持する。
-- `specqr@1.0.0` は deprecated にしない。
-- `node tools/verify-published-package.js specqr@2.0.0-rc.1 specqr@next` で root / node / browser subpath と v2 public API を確認する。
-- GitHub Release `v2.0.0-rc.1` は prerelease として公開し、release notes は日本語メイン、install command は `npm install specqr@next` を示す。
-- GitHub Pages は `https://specqr.github.io/SpecQR/` と `https://specqr.github.io/SpecQR/playground/` を確認し、playground に Structured Append workflow が含まれることを見る。
-- GitHub Actions workflow は official action の Node 24-compatible major を使う。SpecQR 自体の CI runtime は `node-version: 20` を維持し、action runtime deprecation warning だけを避ける。
+`v2.0.0` tag は、上記 verification が green の main commit にだけ付けます。stable preparation commit ではまだ tag を作らず、publish 直前の最終承認後に作るのが安全です。
 
 ## Pre-Publish Commands
 
@@ -67,18 +58,11 @@ npm run verify:reference:nayuki
 npm run verify:pack
 npm run verify:structured-append:zxing-java
 npm ls --omit=dev
-npm pack --dry-run
-npm publish --dry-run --tag next
-```
-
-ローカルの npm cache 権限に問題がある場合は、release verification として一時 cache を指定して確認します。
-
-```sh
 npm pack --dry-run --cache /private/tmp/specqr-npm-cache
-npm publish --dry-run --tag next --cache /private/tmp/specqr-npm-cache
+npm publish --dry-run --tag latest --cache /private/tmp/specqr-npm-cache
 ```
 
-## Published Package Smoke
+## Local Pack Smoke
 
 local pack install smoke は npm 公開前の配布物確認として実行します。
 
@@ -86,7 +70,7 @@ local pack install smoke は npm 公開前の配布物確認として実行し�
 npm run verify:pack
 ```
 
-この script は `npm pack` した tarball を一時 install し、root export と TypeScript declarations が source とずれていないことを確認します。特に GS1 raw parser の `parseGs1ElementString()`、`QRCode.parseGs1ElementString()`、非公開のままにする `validateGs1ElementString()` を検査します。
+この script は `npm pack` した tarball を一時 install し、root export と TypeScript declarations が source とずれていないことを確認します。GS1 raw parser、GS1 Digital Link、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser`、非公開 validator が public export されないことも確認します。
 
 TypeScript declarations は compiler-based consumer check でも確認します。
 
@@ -94,23 +78,21 @@ TypeScript declarations は compiler-based consumer check でも確認します�
 npm run verify:types
 ```
 
-この check は `tests/types/consumer.ts` を `tsc --noEmit` で検査し、`specqr` root export、`specqr/node`、`specqr/browser`、v2 public API、Node/browser helper、FNC1 second option、Structured Append option、非公開 validator が型上 export されないことを consumer 目線で固定します。
+## Published Package Smoke
 
-公開済み package が npm install 後に利用できることを確認します。
-
-```sh
-npm run verify:published
-```
-
-この script は一時ディレクトリを作り、`npm install specqr` と `npm install specqr@next` をそれぞれ実行します。その後、root export、`specqr/node`、`specqr/browser`、GS1 helper を import / 実行します。
-
-特定の version や tag を確認したい場合:
+`2.0.0` を publish した後は、npm registry から install できることを確認します。
 
 ```sh
-node tools/verify-published-package.js specqr@2.0.0-rc.1 specqr@next
+node tools/verify-published-package.js specqr@2.0.0 specqr
 ```
 
-GitHub Actions の `Published Package Smoke` workflow は手動実行用です。通常の push CI には含めず、npm registry の一時的な障害で開発 CI が落ちないようにしています。
+`next` tag の状態も同時に確認したい場合:
+
+```sh
+node tools/verify-published-package.js specqr@2.0.0 specqr specqr@next
+```
+
+`npm run verify:published` は既定で `specqr` と `specqr@next` を確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。
 
 ## Node Engine Matrix
 
@@ -123,7 +105,7 @@ GitHub Actions の `Published Package Smoke` workflow は手動実行用です�
 - `npm run verify:pack`
 - `npm ls --omit=dev`
 
-macOS Vision、ImageMagick、Swift、外部参照比較、Pages artifact、pack dry-run などの重い / 環境依存 gate は代表 Node 20 の `Release gates on Node 20` job に集約します。Node 20 は v1 / v2 RC の既存 release lane と同じで、runtime support matrix とは別に release artifact の比較軸を安定させるために使います。Node 18 matrix が失敗する場合は原因を調査し、修正困難な場合だけ `engines.node` を `>=20` に上げる案を人間判断として扱います。
+macOS Vision、ImageMagick、Swift、外部参照比較、Pages artifact、pack dry-run などの重い / 環境依存 gate は代表 Node 20 の `Release gates on Node 20` job に集約します。Node 20 は v1 / v2 の既存 release lane と同じで、runtime support matrix とは別に release artifact の比較軸を安定させるために使います。Node 18 matrix が失敗する場合は原因を調査し、修正困難な場合だけ `engines.node` を `>=20` に上げる案を人間判断として扱います。
 
 ## GitHub Pages Playground
 
@@ -149,34 +131,34 @@ Manual deploy:
 
 この workflow は `workflow_dispatch` のみで起動します。push だけでは deploy しません。
 
-## GitHub Release
+## GitHub Stable Release
 
-v2.0.0-rc.1 では、npm publish と install smoke が終わった後に GitHub prerelease を作成します。release notes に含める内容:
+`2.0.0` を npm `latest` で publish し、published package smoke が成功した後に GitHub Release を作成します。
 
-- Tag: `v2.0.0-rc.1`
-- Title: `SpecQR 2.0.0-rc.1`
+- Tag: `v2.0.0`
+- Title: `SpecQR 2.0.0`
 - npm install:
   ```sh
-  npm install specqr@next
+  npm install specqr
   ```
 - 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 Digital Link create/parse helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
-- 検証: golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison。
+- 検証: Node 18 / 20 / 22 / 24 matrix、golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison、local pack smoke、npm publish dry-run。
 - 非対応: Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
 - Links: README、playground、conformance matrix、reference comparison、test plan。
 
 ## npm Publish
 
-RC dry-run:
+Stable dry-run:
 
 ```sh
-npm publish --dry-run --tag next
+npm publish --dry-run --tag latest --cache /private/tmp/specqr-npm-cache
 ```
 
-RC 実 publish:
+Stable 実 publish:
 
 ```sh
-npm publish --tag next
+npm publish --tag latest
 ```
 
 公開後確認:
@@ -184,16 +166,16 @@ npm publish --tag next
 ```sh
 npm view specqr version
 npm view specqr dist-tags versions --json
-node tools/verify-published-package.js specqr@2.0.0-rc.1 specqr@next
+node tools/verify-published-package.js specqr@2.0.0 specqr
 ```
 
-v2.0.0 正式版 publish 時の dry-run / publish は `latest` tag で行います。古い prerelease を deprecate する場合:
+`2.0.0` stable が publish され、install smoke が成功した後、`2.0.0-rc.1` を deprecate するか判断します。deprecate する場合:
 
 ```sh
 npm deprecate specqr@2.0.0-rc.1 "SpecQR 2.0.0 is available. Please use specqr@latest."
 ```
 
-deprecate は正式版 publish と install smoke が成功してから行います。
+`next` tag は次の prerelease を出すまで `2.0.0-rc.1` のままでも問題ありません。必要なら stable publish 後に `npm dist-tag add specqr@2.0.0 next` を検討しますが、通常は `latest` と `next` の意味を分けるため、次の v2.x prerelease まで動かさない方が自然です。
 
 ## Package Contents Policy
 
@@ -215,4 +197,4 @@ npm package に含めないもの:
 - `.github`
 - local cache / logs / screenshots / tarballs
 
-SpecQR の runtime dependency は 0 を維持します。`jsqr` と `nayuki-qr-code-generator` は devDependency であり、library runtime には含めません。
+SpecQR の runtime dependency は 0 を維持します。`jsqr`、`nayuki-qr-code-generator`、TypeScript は devDependency であり、library runtime には含めません。

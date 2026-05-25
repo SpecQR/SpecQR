@@ -22,7 +22,7 @@ import {
 import { toBlob } from "../src/browser.js";
 import { toPngBuffer } from "../src/node.js";
 
-test("release candidate public API examples execute", () => {
+test("stable release public API examples execute", () => {
   const svg = QRCode.generate("https://example.com", {
     errorCorrectionLevel: "M",
     output: "svg"
@@ -101,7 +101,7 @@ test("release candidate public API examples execute", () => {
   assert.match(segmented, /^<svg /);
 });
 
-test("release candidate subpath helpers execute without pulling runtime dependencies", async () => {
+test("stable release subpath helpers execute without pulling runtime dependencies", async () => {
   const buffer = toPngBuffer("https://example.com");
   assert.ok(Buffer.isBuffer(buffer));
   assert.deepEqual(Array.from(buffer.subarray(0, 8)), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
@@ -120,7 +120,7 @@ test("release candidate subpath helpers execute without pulling runtime dependen
   ]);
 });
 
-test("release candidate invalid options fail with stable error classes", () => {
+test("stable release invalid options fail with stable error classes", () => {
   assert.throws(
     () => generate("HELLO", { version: 0 }),
     (error) => error instanceof InvalidVersionError && error.code === "INVALID_VERSION"
@@ -151,7 +151,7 @@ test("release candidate invalid options fail with stable error classes", () => {
   );
 });
 
-test("release candidate color and transparency behavior is explicit", () => {
+test("stable release color and transparency behavior is explicit", () => {
   assert.throws(
     () => generate("HELLO", { output: "png", foreground: "not-a-color" }),
     (error) => error instanceof InvalidColorError && error.code === "INVALID_COLOR"

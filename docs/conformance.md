@@ -1,6 +1,6 @@
 # Conformance Matrix
 
-この文書は現在の SpecQR main branch の対応範囲を、外から確認しやすい形で整理したものです。SpecQR `2.0.0-rc.1` の matrix は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append API まで含めます。SpecQR は通常 QR Code Model 2 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠をここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・外部比較で確認している範囲を明記します。
+この文書は現在の SpecQR main branch の対応範囲を、外から確認しやすい形で整理したものです。SpecQR `2.0.0` の matrix は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append API まで含めます。SpecQR は通常 QR Code Model 2 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠をここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・外部比較で確認している範囲を明記します。
 
 Status は次の意味で使います。
 
@@ -81,7 +81,7 @@ SpecQR の現在の対象は通常 QR Code Model 2 です。Version、mode、for
 
 ## v2.0.0 Readiness Notes
 
-v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model、検証体系を強化する release として準備しています。FNC1 second position、Structured Append low-level header、Structured Append high-level splitting、manual segments splitting、decoded parts merge helper の基本実装は完了済みです。release gate は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) と [Test Plan](./test-plan.md) を参照してください。
+v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model、検証体系を強化する stable release として準備しています。FNC1 second position、Structured Append low-level header、Structured Append high-level splitting、manual segments splitting、decoded parts merge helper の基本実装は完了済みです。release gate は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) と [Test Plan](./test-plan.md) を参照してください。
 
 | 項目 | v2.0.0 での扱い | 理由 |
 | --- | --- | --- |

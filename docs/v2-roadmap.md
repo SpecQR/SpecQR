@@ -1,6 +1,6 @@
-# SpecQR v2.0.0 Roadmap
+# SpecQR v2 Roadmap
 
-この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
+この文書は SpecQR `1.0.0` の公開後に、v2 系で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2 系は新しい QR family を一気に増やす release line ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release line として扱います。
 
 実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
@@ -103,6 +103,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-25: v2.0.1 release hygiene patch prepared. Runtime と public API は変更せず、package version、CHANGELOG、release checklist、SECURITY / CONTRIBUTING、supported GS1 AI docs、published package smoke coverage を整理しました。`latest` / `next` が stable に揃っている状態を docs と release checklist に反映しました。
 - 2026-05-25: v2.1.0 GS1 validation release designed. Runtime behavior、public API、package version は変更せず、supported AI introspection、non-throwing validation result、GS1 detail error codes、Digital Link misuse prevention、catalog expansion policy を [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に docs-only で固定しました。
 - 2026-05-25: v2.1.0 GS1 validation API implemented. `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` と対応する `QRCode` static methods を追加し、TypeScript surface、unit tests、packed package smoke に含めました。`validateGs1DigitalLink()`、Digital Link canonicalization、full GS1 AI catalog は未公開のままです。
+- 2026-05-25: v2.1.0 stable release package prepared. `package.json` / `package-lock.json` の version を `2.1.0` に揃え、CHANGELOG、README、API / release docs を stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.1.0` tag 作成は最終承認まで行いません。
 
 ## v2.1.0 GS1 Validation Release Scope
 

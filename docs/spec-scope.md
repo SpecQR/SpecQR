@@ -2,7 +2,7 @@
 
 ## Target
 
-SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。SpecQR `2.0.0` は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2.0.0 stable scope です。別系統の QR family や装飾機能は core に混ぜません。
+SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。SpecQR `2.1.0` は、GS1 strict parser、GS1 validation API、GS1 Digital Link、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む v2 stable scope です。別系統の QR family や装飾機能は core に混ぜません。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
@@ -91,25 +91,25 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 - Logo overlay
 - Styled modules
 
-## v2.0.0 後の Backlog
+## v2 系 Backlog
 
-v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 stable では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer を揃えています。正式 release 後は次を優先します。
+v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定します。2.1.0 stable では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer と GS1 validation API を揃えています。以後は次を優先します。
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
-- GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` の v2.1.0 proposal を起点に、throwing API と non-throwing API の責務を分ける。
+- GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。次は supported AI catalog の拡張、Digital Link 専用 validation、業界別 rule の扱いを個別に設計する。
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
 - Structured Append: low-level header encoding、string / binary high-level automatic splitting API、manual segments high-level splitting API、decoded parts 向け `mergeStructuredAppendParts()` は実装済み。manual segments の分割方針は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 helper の前提は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に固定済み。public parity helper と QR decoder / scanner integration は未対応。
 - v2 validation expansion: golden / bitstream / matrix / decoder / reference comparison の範囲整理。
 
-通常 QR Code Model 2 以外の symbol family や visual customization は、v2.0.0 には混ぜず、将来の別 module として扱う方針です。
+通常 QR Code Model 2 以外の symbol family や visual customization は、v2 core には混ぜず、将来の別 module として扱う方針です。
 
 - `@specqr/micro`: Micro QR implementation
 - `@specqr/rmqr`: rectangular QR implementation
 - `@specqr/styled`: logo / module styling helpers と scan-risk diagnostics
 
-`@specqr/gs1` や `@specqr/structured-append` のような分割 package は、v2.0.0 の実装が大きくなりすぎる場合の将来候補です。v2.0.0 の最初の方針は、既存 `specqr` package の Model 2 scope 内で GS1 / Structured Append を安全に扱えるかを検証することです。
+`@specqr/gs1` や `@specqr/structured-append` のような分割 package は、v2 系の実装が大きくなりすぎる場合の将来候補です。現時点の方針は、既存 `specqr` package の Model 2 scope 内で GS1 / Structured Append を安全に扱えるかを検証することです。
 
 ## Design Principle
 

@@ -2,9 +2,27 @@
 
 ## Unreleased
 
+まだありません。
+
+## 2.1.0 - 2026-05-25
+
+SpecQR 2.1.0 is the stable GS1 validation release for dependency-free QR Code Model 2 generation.
+
+SpecQR 2.1.0 は、2.0 系の QR / GS1 / Structured Append API を保ったまま、GS1 helper を UI や入力フォームで扱いやすくする validation release です。QR generation runtime、package exports、runtime dependency 方針は維持しています。
+
+### 追加
+
 - GS1 AI metadata introspection API として `getSupportedGs1Ais()` / `getGs1AiInfo(ai)`、および対応する `QRCode` static methods を追加しました。
 - GS1 UI / form validation 向けの non-throwing API として `validateGs1Elements()` / `validateGs1ElementString()`、および対応する `QRCode` static methods を追加しました。
 - GS1 detail error code、TypeScript declarations、unit tests、packed package smoke、README / docs を v2.1 validation API に合わせて更新しました。
+
+### 公開準備
+
+- `package.json` / `package-lock.json` の version を `2.1.0` に更新しました。
+- README、API docs、conformance matrix、spec scope、release checklist を `2.1.0` stable publish 前提に整理しました。
+
+### 意図的な制限
+
 - `validateGs1DigitalLink()`、Digital Link canonicalization、full GS1 AI catalog は引き続き未公開・非スコープです。
 
 ## 2.0.1 - 2026-05-25

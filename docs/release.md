@@ -1,6 +1,6 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.0.x` stable / patch release package を準備できる状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy は人間の最終判断後にだけ実行します。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.1.0` stable release package を準備できる状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy は人間の最終判断後にだけ実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
@@ -54,7 +54,7 @@ release hygiene patch では、コード変更がなくても公開物の整合�
 git status --short
 git rev-parse HEAD
 git rev-parse origin/main
-git rev-parse v2.0.0
+git rev-parse vX.Y.Z # tag 作成後
 npm view specqr version dist-tags repository homepage bugs --json
 ```
 
@@ -109,16 +109,16 @@ npm run verify:types
 stable を publish した後は、npm registry から install できることを確認します。
 
 ```sh
-node tools/verify-published-package.js specqr@2.0.0 specqr@latest
+node tools/verify-published-package.js specqr@2.1.0 specqr@latest
 ```
 
 `next` tag の状態も同時に確認したい場合:
 
 ```sh
-node tools/verify-published-package.js specqr@2.0.0 specqr@latest specqr@next
+node tools/verify-published-package.js specqr@2.1.0 specqr@latest specqr@next
 ```
 
-`npm run verify:published` は既定で `specqr` と `specqr@next` を確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。
+`npm run verify:published` は既定で `specqr` と `specqr@next` を確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。未公開の 2.1.0 を確認する段階では `npm run verify:pack` と `npm publish --dry-run` を使い、registry smoke と local pack smoke を混同しないでください。
 
 ## Node Engine Matrix
 
@@ -167,9 +167,9 @@ stable version を npm `latest` で publish し、published package smoke が成
   ```sh
   npm install specqr
   ```
-- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 Digital Link create/parse helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
+- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 validation / supported AI introspection API、GS1 Digital Link create/parse helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
 - 検証: Node 18 / 20 / 22 / 24 matrix、golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison、local pack smoke、npm publish dry-run。
-- 非対応: Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
+- 非対応: Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、`validateGs1DigitalLink()`、GS1 Digital Link resolver / compression / full canonicalizer。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
 - Links: README、playground、conformance matrix、reference comparison、test plan。
 
@@ -198,7 +198,7 @@ node tools/verify-published-package.js specqr@X.Y.Z specqr@latest
 stable が publish され、install smoke が成功した後、対応する RC を deprecate するか判断します。deprecate する場合:
 
 ```sh
-npm deprecate specqr@2.0.0-rc.1 "SpecQR 2.0.0 is available. Please use specqr@latest."
+npm deprecate specqr@X.Y.Z-rc.N "SpecQR X.Y.Z is available. Please use specqr@latest."
 ```
 
 `next` tag は stable publish 後に `latest` と同じ stable version へ揃えても構いません。次の RC を出すときに `next` を prerelease version へ向け直します。docs では、`next` が stable を指している期間でも通常利用は `npm install specqr` を主導線にします。

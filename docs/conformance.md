@@ -1,6 +1,6 @@
 # Conformance Matrix
 
-この文書は現在の SpecQR main branch の対応範囲を、外から確認しやすい形で整理したものです。SpecQR `2.0.0` の matrix は、GS1 strict parser、GS1 Digital Link、FNC1 second position、Structured Append API まで含めます。SpecQR は通常 QR Code Model 2 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠をここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・外部比較で確認している範囲を明記します。
+この文書は現在の SpecQR main branch の対応範囲を、外から確認しやすい形で整理したものです。SpecQR `2.1.0` の matrix は、GS1 strict parser、GS1 validation API、GS1 Digital Link、FNC1 second position、Structured Append API まで含めます。SpecQR は通常 QR Code Model 2 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠をここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・外部比較で確認している範囲を明記します。
 
 Status は次の意味で使います。
 
@@ -9,7 +9,7 @@ Status は次の意味で使います。
 - `Partial`: 意図的に範囲を絞って対応しています。
 - `Not supported`: 現在の core package の対象外です。
 
-v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に分けています。この matrix では現在の実装状態を主に示し、正式 release 後に残す領域は各 section の notes で明示します。
+v2 系の release scope は [SpecQR v2 Roadmap](./v2-roadmap.md) に分けています。この matrix では現在の実装状態を主に示し、正式 release 後に残す領域は各 section の notes で明示します。
 
 ## Core QR Code Model 2
 
@@ -80,11 +80,11 @@ SpecQR の現在の対象は通常 QR Code Model 2 です。Version、mode、for
 
 ただし、ISO/IEC 18004:2024 の全項目を網羅監査したものではありません。2015 版との差分、Micro QR、rMQR、その他 domain-specific usage は今後の確認範囲として扱います。
 
-## v2.0.0 Readiness Notes
+## v2 Readiness Notes
 
-v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model、検証体系を強化する stable release として準備しています。FNC1 second position、Structured Append low-level header、Structured Append high-level splitting、manual segments splitting、decoded parts merge helper の基本実装は完了済みです。release gate は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) と [Test Plan](./test-plan.md) を参照してください。
+v2 系は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model、検証体系を強化する stable release line として扱います。FNC1 second position、Structured Append low-level header、Structured Append high-level splitting、manual segments splitting、decoded parts merge helper、GS1 validation result API の基本実装は完了済みです。release gate は [SpecQR v2 Roadmap](./v2-roadmap.md) と [Test Plan](./test-plan.md) を参照してください。
 
-| 項目 | v2.0.0 での扱い | 理由 |
+| 項目 | v2 系での扱い | 理由 |
 | --- | --- | --- |
 | Full GS1 AI catalog / strict validation | Remaining | 現在は代表 AI に限定した strict parser / validator です。Metadata expansion は AI group ごとに validation と tests を揃えて v2 後 backlog として進めます。 |
 | GS1 validation result API | Tested | 既存 throwing API を維持しながら UI / form validation 向けの non-throwing result API と supported AI introspection API を追加しています。詳細 error code と catalog expansion policy は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。 |
@@ -96,9 +96,9 @@ v2.0.0 は、通常 QR Code Model 2 core を維持したまま、GS1 syntax laye
 | Structured Append scanner workflow | Partial / tested | scanner metadata の有無による workflow、metadata が取れた場合の `mergeStructuredAppendParts()`、missing / duplicate / parity mismatch handling を [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に整理しました。metadata-returning decoder fixture の候補と ZXing Java optional validation prototype は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に整理しています。QR decoder / scanner integration は未対応です。 |
 | v2 validation expansion | Tested / ongoing | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics / packed smoke を組み合わせて確認します。ZXing Java metadata validation は optional lane のままです。 |
 
-## v2.0.0 Outside Scope
+## v2 Outside Scope
 
-次の項目は現在未対応であり、v2.0.0 の中心 scope にも含めません。別 symbol family や visual customization を同時に進めると、v2 の GS1 / control segment / Structured Append の検証範囲が広がりすぎるためです。
+次の項目は現在未対応であり、v2 系の中心 scope にも含めません。別 symbol family や visual customization を同時に進めると、v2 の GS1 / control segment / Structured Append の検証範囲が広がりすぎるためです。
 
 - Micro QR
 - rMQR

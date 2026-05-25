@@ -1,6 +1,6 @@
 # API
 
-この文書は現在の SpecQR public API を説明します。SpecQR `2.0.0` では、ここに載せている GS1 Digital Link、FNC1 second position、Structured Append API を stable scope として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
+この文書は現在の SpecQR public API を説明します。SpecQR `2.1.0` では、2.0.0 で stable scope に入れた GS1 Digital Link、FNC1 second position、Structured Append API に加え、GS1 validation / supported AI introspection API を stable public API として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
 
 ## Core
 

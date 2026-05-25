@@ -86,7 +86,7 @@ function parseGs1DigitalLink(
 
 `parseGs1DigitalLink()` が成功すれば validation 済みの parse result を返し、失敗時は `InvalidGs1Error` を throw するため、boolean-only validator は最初の公開 API には不要と判断します。現時点では `validateGs1DigitalLink()` は public export していません。
 
-v2.1.0 の GS1 validation release でも、Digital Link 専用の `validateGs1DigitalLink(uri, options?)` は v2.2.0 以降の候補として deferred にします。理由は、Digital Link canonicalization、resolver、unknown query、path placement policy が raw element string validation より広い surface を持つためです。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用を一部検出する proposal に留めます。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) を参照してください。
+v2.1.0 の GS1 validation release でも、Digital Link 専用の `validateGs1DigitalLink(uri, options?)` は v2.2.0 以降の候補として deferred にします。理由は、Digital Link canonicalization、resolver、unknown query、path placement policy が raw element string validation より広い surface を持つためです。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用の一部を non-throwing validation result として検出します。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) を参照してください。
 
 ## Supported v2 Scope
 

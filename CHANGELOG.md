@@ -6,6 +6,7 @@
 
 - Updated GitHub Actions workflow actions to Node 24-compatible official major versions while keeping the project test runtime on Node 20.
 - Added TypeScript compiler-based consumer type checks for the root, Node, and browser package exports.
+- Added a Node 18 / 20 / 22 / 24 CI engine matrix and kept heavier release gates on representative Node 20.
 
 ## 2.0.0-rc.1 - 2026-05-23
 

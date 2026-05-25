@@ -9,6 +9,8 @@ Repository: https://github.com/SpecQR/SpecQR
 
 SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するためのライブラリです。実用上「生成はできるが読めない」「仕様端で壊れる」「環境で挙動が変わる」問題を避けるため、対応範囲を明確に絞り、テスト、golden fixtures、デコード検証を厚めに置いています。
 
+Node.js は `>=18` をサポート範囲にし、CI では Node 18 / 20 / 22 / 24 の engine matrix を release gate として確認します。
+
 ## インストール
 
 ```sh

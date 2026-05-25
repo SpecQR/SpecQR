@@ -35,6 +35,8 @@ npm install specqr@next
 - `npm run verify:pack` が green。
 - `npm run verify:structured-append:zxing-java` が、ZXing Java 環境なしなら明示 skip、環境ありなら metadata validation green。
 - `npm pack --dry-run` が clean な npm cache / CI 上で green。
+- GitHub Actions `CI` の Node 18 / 20 / 22 / 24 engine matrix が green。
+- representative Node 20 release gates が green。macOS Vision decode、Pages build、jsQR decode、Nayuki reference comparison、Structured Append ZXing Java optional lane、pack dry-run をここで確認する。
 - 公開前は `npm run verify:published` が現行公開版に対して green。公開後は `specqr@2.0.0` に対して green。
 - GitHub Actions `CI` が green。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
@@ -64,6 +66,7 @@ npm run verify:decode:jsqr
 npm run verify:reference:nayuki
 npm run verify:pack
 npm run verify:structured-append:zxing-java
+npm ls --omit=dev
 npm pack --dry-run
 npm publish --dry-run --tag next
 ```
@@ -108,6 +111,19 @@ node tools/verify-published-package.js specqr@2.0.0-rc.1 specqr@next
 ```
 
 GitHub Actions の `Published Package Smoke` workflow は手動実行用です。通常の push CI には含めず、npm registry の一時的な障害で開発 CI が落ちないようにしています。
+
+## Node Engine Matrix
+
+`package.json` は Node.js `>=18` を support claim として宣言します。stable release 前の `CI` workflow は Node 18 / 20 / 22 / 24 の matrix で次の軽量 gate を実行します。
+
+- `npm ci`
+- `npm test`
+- `npm run verify:types`
+- `npm run examples:smoke`
+- `npm run verify:pack`
+- `npm ls --omit=dev`
+
+macOS Vision、ImageMagick、Swift、外部参照比較、Pages artifact、pack dry-run などの重い / 環境依存 gate は代表 Node 20 の `Release gates on Node 20` job に集約します。Node 20 は v1 / v2 RC の既存 release lane と同じで、runtime support matrix とは別に release artifact の比較軸を安定させるために使います。Node 18 matrix が失敗する場合は原因を調査し、修正困難な場合だけ `engines.node` を `>=20` に上げる案を人間判断として扱います。
 
 ## GitHub Pages Playground
 

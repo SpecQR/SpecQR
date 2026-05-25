@@ -7,8 +7,30 @@ on:
   pull_request:
 
 jobs:
-  test:
+  engine-matrix:
+    name: Node ${{ matrix.node-version }} engine gate
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run verify:types
+      - run: npm run examples:smoke
+      - run: npm run verify:pack
+      - run: npm ls --omit=dev
+
+  release-gates:
+    name: Release gates on Node 20
+    runs-on: macos-latest
+    needs: engine-matrix
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -16,11 +38,14 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npm run verify:types
-      - run: npm run examples:smoke
+      - name: Ensure ImageMagick for Vision decode fixtures
+        run: |
+          if ! command -v magick >/dev/null 2>&1; then
+            brew install imagemagick
+          fi
       - run: npm run pages:build
+      - run: npm run verify:decode
       - run: npm run verify:decode:jsqr
       - run: npm run verify:reference:nayuki
-      - run: npm run verify:pack
+      - run: npm run verify:structured-append:zxing-java
       - run: npm pack --dry-run

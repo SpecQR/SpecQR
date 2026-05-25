@@ -64,6 +64,8 @@ raw GS1 element string は `parseGs1ElementString(input)` で `{ elements, hasSe
 
 package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の separate export を持ちます。CommonJS と minified browser build は build pipeline を導入するまで生成しません。source package は dependency-free runtime を保ちます。
 
+Node.js runtime は `package.json` の `engines.node` で `>=18` を宣言します。v2.0.0 stable 前の CI では Node 18 / 20 / 22 / 24 で `npm test`、TypeScript consumer check、examples smoke、local pack install smoke、runtime dependency check を通すことを release gate にします。macOS Vision decode、Pages build、jsQR decode、Nayuki reference comparison、Structured Append metadata optional lane、pack dry-run は代表 Node 20 に集約します。
+
 ## ISO/IEC 18004:2024 について
 
 SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていますが、ISO/IEC 18004:2024 の全項目について「完全準拠」とは表現しません。Version 1-40、mode encoding、format / version information、Reed-Solomon、masking、remainder bits など、core generation に必要な領域を tests と golden fixtures で固定しています。

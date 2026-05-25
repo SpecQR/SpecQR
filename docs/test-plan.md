@@ -155,19 +155,25 @@ npm run verify:structured-append:zxing-java
 
 ## CI
 
-repository には minimal GitHub Actions workflow `.github/workflows/ci.yml` があります。実行内容は次の通りです。
+repository には GitHub Actions workflow `.github/workflows/ci.yml` があります。`package.json` の `engines.node: >=18` を実際の release gate にするため、Node 18 / 20 / 22 / 24 の matrix を使います。すべての Node version で次を実行します。
 
 - `npm ci`
 - `npm test`
 - `npm run verify:types`
 - `npm run examples:smoke`
+- `npm run verify:pack`
+- `npm ls --omit=dev`
+
+重い / 環境依存 release gate は代表 Node 20 の job で実行します。
+
 - `npm run pages:build`
+- `npm run verify:decode`
 - `npm run verify:decode:jsqr`
 - `npm run verify:reference:nayuki`
-- `npm run verify:pack`
+- `npm run verify:structured-append:zxing-java`
 - `npm pack --dry-run`
 
-macOS Vision validation は Swift、Vision、ImageMagick に依存するため、local/macOS release check として扱います。
+代表 Node を 20 にする理由は、v1 / v2 RC の既存 release lane と同じ比較軸を保ちつつ、Node 18 / 22 / 24 の engines claim は軽量 matrix で別に検証するためです。macOS Vision validation は Swift、Vision、ImageMagick に依存するため、この代表 Node job では macOS runner を使います。
 
 ## Examples / Playground
 

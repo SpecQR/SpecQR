@@ -61,6 +61,16 @@ assert.deepEqual(Array.from(png.subarray(0, 8)), [0x89, 0x50, 0x4E, 0x47, 0x0D, 
 const blob = toBlob("published smoke");
 assert.equal(blob.type, "image/png");
 
+assert.equal(typeof specqr.parseGs1ElementString, "function");
+assert.equal(typeof specqr.QRCode.parseGs1ElementString, "function");
+assert.equal(typeof specqr.createGs1DigitalLink, "function");
+assert.equal(typeof specqr.parseGs1DigitalLink, "function");
+assert.equal(typeof specqr.generateStructuredAppend, "function");
+assert.equal(typeof specqr.QRCode.generateStructuredAppend, "function");
+assert.equal(typeof specqr.mergeStructuredAppendParts, "function");
+assert.equal(specqr.validateGs1ElementString, undefined);
+assert.equal(specqr.validateGs1DigitalLink, undefined);
+
 if (typeof specqr.appendGtinCheckDigit === "function") {
   const gtin = specqr.appendGtinCheckDigit("0491234567890");
   assert.equal(gtin, "04912345678904");
@@ -73,6 +83,49 @@ if (
   const gs1 = specqr.createGs1ElementString(specqr.parseGs1HumanReadable("(01)04912345678904(17)251231"));
   assert.equal(gs1, "010491234567890417251231");
 }
+
+const rawGs1 = "010491234567890410ABC123\\x1D17251231";
+const parsedGs1 = specqr.parseGs1ElementString(rawGs1);
+assert.deepEqual(parsedGs1, {
+  elements: [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ],
+  hasSeparators: true
+});
+const digitalLink = specqr.createGs1DigitalLink(parsedGs1, { baseUrl: "https://example.com" });
+assert.equal(digitalLink, "https://example.com/01/04912345678904/10/ABC123?17=251231");
+assert.deepEqual(specqr.QRCode.parseGs1DigitalLink(digitalLink).elements, parsedGs1.elements);
+
+const fnc1Second = specqr.QRCode.generate("AA1234BBB112", {
+  fnc1Second: "37",
+  mode: "alphanumeric",
+  version: 1,
+  errorCorrectionLevel: "Q",
+  output: "matrix",
+  diagnostics: true
+});
+assert.equal(fnc1Second.diagnostics.fnc1, "second-position");
+assert.equal(fnc1Second.diagnostics.fnc1Second.applicationIndicatorCodeword, 37);
+
+const structuredAppendInput = "A".repeat(31);
+const structuredAppend = specqr.generateStructuredAppend(structuredAppendInput, {
+  version: 1,
+  errorCorrectionLevel: "L",
+  mode: "alphanumeric",
+  output: "matrix",
+  diagnostics: true
+});
+assert.equal(structuredAppend.total, 2);
+assert.equal(structuredAppend.parity, 65);
+const parts = structuredAppend.diagnostics.symbols.map((symbol) => ({
+  index: symbol.index,
+  total: symbol.total,
+  parity: symbol.parity,
+  data: structuredAppendInput.slice(symbol.inputStart, symbol.inputStart + symbol.inputLength)
+}));
+assert.equal(specqr.mergeStructuredAppendParts([parts[1], parts[0]]).data, structuredAppendInput);
 `);
 }
 

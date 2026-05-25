@@ -220,3 +220,5 @@ npm run verify:published
 ```
 
 この check は一時ディレクトリで `npm install specqr` と `npm install specqr@next` を実行し、root export、`specqr/node`、`specqr/browser`、GS1 helper が install 後に動くことを確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。
+
+v2 系では published smoke でも、GS1 raw parser、GS1 Digital Link helper、FNC1 second position、Structured Append API の代表ケースを確認します。`latest` と `next` が同じ stable version を指している期間は、両方が同じ version に解決されることも確認します。

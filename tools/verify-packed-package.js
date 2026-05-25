@@ -343,6 +343,8 @@ function assertPackContents(packed) {
   const required = [
     "README.md",
     "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
     "LICENSE",
     "package.json",
     "src/index.js",
@@ -351,6 +353,7 @@ function assertPackContents(packed) {
     "src/browser.js",
     "docs/api.md",
     "docs/release.md",
+    "docs/gs1-supported-ai.md",
     "docs/spec-scope.md",
     "docs/conformance.md",
     "docs/test-plan.md",

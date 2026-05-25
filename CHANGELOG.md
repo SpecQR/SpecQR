@@ -4,6 +4,25 @@
 
 - まだありません。
 
+## 2.0.1 - 2026-05-25
+
+SpecQR 2.0.1 は、2.0.0 stable 公開後の release hygiene patch です。QR generation runtime と public API は変更せず、公開物、release checklist、security / contribution docs、GS1 対応 AI の説明、published package smoke を整えました。
+
+### 変更
+
+- `package.json` / `package-lock.json` の version を `2.0.1` に更新しました。
+- `README.md` と docs から対応 GS1 AI 一覧へ辿れるようにしました。
+- `docs/release.md` に main / tag / npm / GitHub Release / Pages の consistency check を追加し、`latest` / `next` tag の公開後運用を現状に合わせました。
+- `SECURITY.md` を追加し、脆弱性報告先、supported versions、dependency-free runtime で受け付ける範囲を明記しました。
+- `CONTRIBUTING.md` を追加し、golden fixtures、verify scripts、仕様引用時の注意、日本語メイン運用方針を整理しました。
+- `docs/gs1-supported-ai.md` を追加し、現在 supported AI、fixed / variable length、check digit validation、Digital Link role、separator behavior、full GS1 AI catalog ではないことを明記しました。
+- published package smoke を軽く補強し、GS1 raw parser、GS1 Digital Link、FNC1 second position、Structured Append public API の install 後 smoke も確認するようにしました。
+
+### 意図的な制限
+
+- 新機能、runtime dependency、package exports、public API は追加していません。
+- GS1 full AI catalog、Digital Link validator、Structured Append parity helper、Micro QR、rMQR、logo overlay、styled modules は引き続き v2.0.1 の対象外です。
+
 ## 2.0.0 - 2026-05-25
 
 SpecQR 2.0.0 is the stable v2 release for dependency-free QR Code Model 2 generation with GS1 syntax, GS1 Digital Link, FNC1 second position, Structured Append, and stronger release gates.

@@ -100,6 +100,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: v2.0.0 release readiness audit completed. README、API docs、spec scope、conformance matrix、test plan、release checklist、CHANGELOG を v2 candidate state に合わせ、v2.0.0 release gate を明確化しました。新機能、runtime dependency、npm publish、GitHub Release は追加していません。
 - 2026-05-23: v2.0.0-rc.1 release finalization started. `package.json` / `package-lock.json` の version を `2.0.0-rc.1` に揃え、npm `next` tag 向け dry-run、package contents、tag 作成を release gate として扱います。実 publish、GitHub Release、GitHub Pages deploy は手動判断まで行いません。
 - 2026-05-25: v2.0.0 stable release package preparation completed. `package.json` / `package-lock.json` の version を `2.0.0` に揃え、README、CHANGELOG、release checklist、scope / conformance docs を stable 向けに更新しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.0.0` tag 作成は最終承認まで行いません。
+- 2026-05-25: v2.0.1 release hygiene patch prepared. Runtime と public API は変更せず、package version、CHANGELOG、release checklist、SECURITY / CONTRIBUTING、supported GS1 AI docs、published package smoke coverage を整理しました。`latest` / `next` が stable に揃っている状態を docs と release checklist に反映しました。
 
 ## Release Gate
 

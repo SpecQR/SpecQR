@@ -1,13 +1,13 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.0.0` stable release package を準備済みの状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy は人間の最終判断後にだけ実行します。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.0.x` stable / patch release package を準備できる状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy は人間の最終判断後にだけ実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
 ## Release Channels
 
-- `latest`: 安定版利用者向け。`2.0.0` 正式版 publish はこの tag で行います。
-- `next`: RC / prerelease 利用者向け。正式版公開後も、次の RC を出すまでは直ちに動かす必要はありません。
+- `latest`: 安定版利用者向け。stable release はこの tag で行います。
+- `next`: RC / prerelease 利用者向け。stable 公開直後は `latest` と同じ version に揃えても構いません。次の prerelease を出すときに、あらためて `next` を RC に向けます。
 
 通常 install:
 
@@ -21,11 +21,11 @@ prerelease channel を明示して試す場合:
 npm install specqr@next
 ```
 
-通常利用者向けの install guide は `npm install specqr` を主導線にします。
+通常利用者向けの install guide は `npm install specqr` を主導線にします。`next` が `latest` と同じ stable version を指している期間は、README / docs で「通常利用は `specqr`」と説明し、`next` を prerelease 専用の必須導線として扱わないようにします。
 
-## v2.0.0 Stable 公開条件
+## Stable / Patch 公開条件
 
-- `package.json` と `package-lock.json` の version が `2.0.0` で一致している。
+- `package.json` と `package-lock.json` の version が公開予定 version で一致している。
 - `npm test` が green。
 - `npm run verify:types` が green。
 - `npm run examples:smoke` が green。
@@ -40,10 +40,36 @@ npm install specqr@next
 - `npm publish --dry-run --tag latest --cache /private/tmp/specqr-npm-cache` が green。
 - GitHub Actions `CI` の Node 18 / 20 / 22 / 24 engine matrix が green。
 - representative Node 20 release gates が green。macOS Vision decode、Pages build、jsQR decode、Nayuki reference comparison、Structured Append ZXing Java optional lane、pack dry-run をここで確認する。
-- README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md) が現在の実装範囲と矛盾していない。
+- README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md)、[Supported GS1 AIs](./gs1-supported-ai.md) が現在の実装範囲と矛盾していない。
+- [Security Policy](../SECURITY.md) と [Contributing](../CONTRIBUTING.md) が release / validation 方針と矛盾していない。
 - Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。
 
-`v2.0.0` tag は、上記 verification が green の main commit にだけ付けます。stable preparation commit ではまだ tag を作らず、publish 直前の最終承認後に作るのが安全です。
+release tag は、上記 verification が green の main commit にだけ付けます。stable preparation commit ではまだ tag を作らず、publish 直前の最終承認後に作るのが安全です。
+
+## Main / Tag / npm / Pages Consistency Check
+
+release hygiene patch では、コード変更がなくても公開物の整合を確認します。
+
+```sh
+git status --short
+git rev-parse HEAD
+git rev-parse origin/main
+git rev-parse v2.0.0
+npm view specqr version dist-tags repository homepage bugs --json
+```
+
+確認すること:
+
+- working tree が clean、または release hygiene commit に含める変更だけが残っている。
+- `origin/main` が local main と同期している。
+- 直近 stable tag が意図した stable commit を指している。
+- npm `latest` が直近 stable を指している。
+- npm `next` が docs の説明と矛盾していない。stable 公開後に `next` を stable へ揃えた場合は、その状態を README / release notes で「通常利用は `specqr`」と説明する。
+- npm package metadata の repository / homepage / bugs が `https://github.com/SpecQR/SpecQR` に揃っている。
+- GitHub Release の tag / title / notes が npm package version と矛盾していない。
+- GitHub Pages playground が `https://specqr.github.io/SpecQR/playground/` で表示され、現在の source / docs と同期した artifact になっている。
+- `README.md` / `CHANGELOG.md` / docs に古い RC 中心の案内が残っていない。
+- npm package contents に `tmp`、`dist`、`node_modules`、tarball、local cache、logs、screenshots が含まれていない。
 
 ## Pre-Publish Commands
 
@@ -80,16 +106,16 @@ npm run verify:types
 
 ## Published Package Smoke
 
-`2.0.0` を publish した後は、npm registry から install できることを確認します。
+stable を publish した後は、npm registry から install できることを確認します。
 
 ```sh
-node tools/verify-published-package.js specqr@2.0.0 specqr
+node tools/verify-published-package.js specqr@2.0.0 specqr@latest
 ```
 
 `next` tag の状態も同時に確認したい場合:
 
 ```sh
-node tools/verify-published-package.js specqr@2.0.0 specqr specqr@next
+node tools/verify-published-package.js specqr@2.0.0 specqr@latest specqr@next
 ```
 
 `npm run verify:published` は既定で `specqr` と `specqr@next` を確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。
@@ -133,10 +159,10 @@ Manual deploy:
 
 ## GitHub Stable Release
 
-`2.0.0` を npm `latest` で publish し、published package smoke が成功した後に GitHub Release を作成します。
+stable version を npm `latest` で publish し、published package smoke が成功した後に GitHub Release を作成します。
 
-- Tag: `v2.0.0`
-- Title: `SpecQR 2.0.0`
+- Tag: `vX.Y.Z`
+- Title: `SpecQR X.Y.Z`
 - npm install:
   ```sh
   npm install specqr
@@ -166,16 +192,16 @@ npm publish --tag latest
 ```sh
 npm view specqr version
 npm view specqr dist-tags versions --json
-node tools/verify-published-package.js specqr@2.0.0 specqr
+node tools/verify-published-package.js specqr@X.Y.Z specqr@latest
 ```
 
-`2.0.0` stable が publish され、install smoke が成功した後、`2.0.0-rc.1` を deprecate するか判断します。deprecate する場合:
+stable が publish され、install smoke が成功した後、対応する RC を deprecate するか判断します。deprecate する場合:
 
 ```sh
 npm deprecate specqr@2.0.0-rc.1 "SpecQR 2.0.0 is available. Please use specqr@latest."
 ```
 
-`next` tag は次の prerelease を出すまで `2.0.0-rc.1` のままでも問題ありません。必要なら stable publish 後に `npm dist-tag add specqr@2.0.0 next` を検討しますが、通常は `latest` と `next` の意味を分けるため、次の v2.x prerelease まで動かさない方が自然です。
+`next` tag は stable publish 後に `latest` と同じ stable version へ揃えても構いません。次の RC を出すときに `next` を prerelease version へ向け直します。docs では、`next` が stable を指している期間でも通常利用は `npm install specqr` を主導線にします。
 
 ## Package Contents Policy
 

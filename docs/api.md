@@ -279,6 +279,8 @@ Human-readable input は、表示・入力しやすさのための `(01)04912345
 
 Human-readable input を直接 `QRCode.generate(input, { gs1: true })` に渡すと `InvalidGs1Error` になります。`parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw GS1 element string を作ってから `gs1: true` に渡してください。
 
+現在 supported AI の一覧、fixed / variable length、check digit validation、Digital Link role、separator behavior は [Supported GS1 AIs](./gs1-supported-ai.md) にまとめています。SpecQR は full GS1 AI catalog や業界別 validation をまだ提供しません。
+
 ### `parseGs1ElementString(input)`
 
 外部システムから受け取った raw GS1 element string を、supported AI dictionary に基づいて `{ elements, hasSeparators }` に読み戻します。Human-readable parentheses notation は受け付けません。

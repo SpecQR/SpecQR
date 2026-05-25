@@ -55,6 +55,7 @@
     "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",
     "verify:decode:independent": "npm run verify:decode:jsqr",
     "verify:structured-append:zxing-java": "node tools/verify-structured-append-zxing-java.js",
+    "verify:types": "tsc -p tests/types/tsconfig.json --noEmit",
     "verify:pack": "node tools/verify-packed-package.js",
     "verify:published": "node tools/verify-published-package.js",
     "verify:reference:nayuki": "node tools/verify-reference-nayuki.js"
@@ -76,7 +77,9 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "jsqr": "^1.4.0",
-    "nayuki-qr-code-generator": "^1.8.0"
+    "nayuki-qr-code-generator": "^1.8.0",
+    "typescript": "^6.0.3"
   }
 }

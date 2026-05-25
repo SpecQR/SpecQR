@@ -22,6 +22,7 @@
 - Node helpers が PNG buffers を返し、PNG file を書き出すこと。
 - Browser helpers が platform support のある環境で Blob/ImageData/Object URL output を返すこと。
 - Examples smoke が Node PNG / GS1 SVG / GS1 Digital Link / Structured Append examples と browser/playground source files を確認すること。
+- TypeScript consumer check が `specqr` root export、`specqr/node`、`specqr/browser` を compiler で検査し、v2 API と Node/browser helper declarations が consumer import で壊れていないことを確認すること。
 - Nayuki reference comparison が fixed payload / fixed Version / fixed ECC / fixed mask の matrix exact match を確認すること。
 - Root、Node、browser subpath exports が import 可能であること。
 - Deterministic random payloads が matrix shape、capacity、masking、diagnostics invariants を満たすこと。
@@ -158,6 +159,7 @@ repository には minimal GitHub Actions workflow `.github/workflows/ci.yml` が
 
 - `npm ci`
 - `npm test`
+- `npm run verify:types`
 - `npm run examples:smoke`
 - `npm run pages:build`
 - `npm run verify:decode:jsqr`
@@ -201,7 +203,9 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`validateGs1ElementString()` や `validateGs1DigitalLink()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、invalid raw GS1 payload の `InvalidGs1Error`、同梱 `src/index.d.ts` の v2 API surface、npm package contents policy も確認します。TypeScript compiler pipeline は package の runtime / dev workflow を重くしないため導入せず、配布物に含まれる declaration text の軽量検査に留めています。
+この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`validateGs1ElementString()` や `validateGs1DigitalLink()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、invalid raw GS1 payload の `InvalidGs1Error`、同梱 `src/index.d.ts` の v2 API surface、npm package contents policy も確認します。
+
+TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は `tests/types/consumer.ts` を TypeScript compiler で `noEmit` 検査し、root / node / browser subpath import、`QRCode.generate()`、`generateSegments()`、GS1 raw parser、GS1 Digital Link helper、Structured Append helpers、FNC1 second option、low-level `structuredAppend` option、Node PNG helper、browser Blob/ImageData/Object URL helper の public type surface を consumer 目線で固定します。
 
 公開済み npm package の install / import smoke は release 前後の確認として実行します。
 

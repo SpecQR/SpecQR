@@ -26,6 +26,7 @@ npm install specqr@next
 ## v2.0.0-rc.1 公開条件
 
 - `npm test` が green。
+- `npm run verify:types` が green。
 - `npm run examples:smoke` が green。
 - `npm run pages:build` が green。
 - `npm run verify:decode` が macOS release machine で green。
@@ -55,6 +56,7 @@ npm install specqr@next
 
 ```sh
 npm test
+npm run verify:types
 npm run examples:smoke
 npm run pages:build
 npm run verify:decode
@@ -82,6 +84,14 @@ npm run verify:pack
 ```
 
 この script は `npm pack` した tarball を一時 install し、root export と TypeScript declarations が source とずれていないことを確認します。特に GS1 raw parser の `parseGs1ElementString()`、`QRCode.parseGs1ElementString()`、非公開のままにする `validateGs1ElementString()` を検査します。
+
+TypeScript declarations は compiler-based consumer check でも確認します。
+
+```sh
+npm run verify:types
+```
+
+この check は `tests/types/consumer.ts` を `tsc --noEmit` で検査し、`specqr` root export、`specqr/node`、`specqr/browser`、v2 public API、Node/browser helper、FNC1 second option、Structured Append option、非公開 validator が型上 export されないことを consumer 目線で固定します。
 
 公開済み package が npm install 後に利用できることを確認します。
 

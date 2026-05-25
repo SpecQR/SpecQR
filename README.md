@@ -39,6 +39,7 @@ npm install specqr@next
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Project Language Policy: [docs/project-language.md](docs/project-language.md)
 - Supported GS1 AIs: [docs/gs1-supported-ai.md](docs/gs1-supported-ai.md)
+- GS1 Validation v2.1 Design: [docs/gs1-validation-v2.1.md](docs/gs1-validation-v2.1.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
 - Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
 - Structured Append Scanning Workflow: [docs/structured-append-scanning-v2.md](docs/structured-append-scanning-v2.md)
@@ -68,6 +69,8 @@ Micro QR、rMQR、logo overlay、styled modules は現在の core package の対
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
 
 v2.0.0 では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を stable release scope として扱います。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
+
+v2.1.0 は GS1 validation release として、supported AI catalog の段階的拡張、AI metadata introspection、non-throwing validation result、GS1 error code / diagnostics 整理を設計しています。現時点では docs-only proposal であり、runtime behavior と public API は変更していません。詳細は [GS1 Validation v2.1 Design](docs/gs1-validation-v2.1.md) を参照してください。
 
 ## 基本的な使い方
 

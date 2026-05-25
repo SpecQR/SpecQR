@@ -4,6 +4,8 @@
 
 QR に encode する payload は parentheses を含まない raw GS1 element string です。Human-readable 表記は `parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw element string にします。外部から受け取った raw element string は `parseGs1ElementString()` で読み戻せます。
 
+v2.1.0 では、この catalog を一気に full GS1 AI catalog に広げるのではなく、AI group ごとに metadata、validation、negative tests、docs を揃えて拡張する方針です。Introspection API と non-throwing validation API の proposal は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に分けています。この文書の表は現在の runtime が扱う supported AI の一覧であり、v2.1.0 proposal の API 実装を意味しません。
+
 ## Separator Behavior
 
 - Fixed-length AI は value length が決まっているため separator は不要です。
@@ -72,6 +74,17 @@ Digital Link helper は internal AI metadata の role を使い、default path/q
 | `3100`-`3105` | Net weight in kilograms | fixed 6 | numeric | data-attribute | none |
 | `3200`-`3205` | Net weight in pounds | fixed 6 | numeric | data-attribute | none |
 | `91`-`99` | Company internal information | variable 1-90 | printable ASCII | data-attribute | required when followed |
+
+## v2.1.0 Catalog Expansion Plan
+
+v2.1.0 の catalog 拡張は、既存表に AI を追加する前に public metadata shape と validation result を固定します。候補 group は次の順で検討します。
+
+1. Date and product lifecycle AIs: 既存 `11`, `12`, `13`, `15`, `16`, `17` の `YYMMDD` semantics を error にするか warning にするかを先に固定します。
+2. Quantity / measure families: `30`, `37`, `310n`, `320n` を起点に decimal indicator metadata を public `valueKind` へ出すかを決めます。
+3. GLN / party / location AIs: `410` through `415` と `414` primary role を維持しつつ、追加 GLN group は Digital Link role と path placement tests を揃えてから広げます。
+4. Geographic / origin AIs: `422`, `424`, `425`, `426` の numeric validation は維持し、国コード存在 validation は v2.1.0 ではまだ入れない候補です。
+
+Full GS1 AI catalog、industry-specific validation、Digital Link full canonicalization は v2.1.0 の一括対象にはしません。GS1 Barcode Syntax Dictionary など外部 metadata を使う場合は、source URL、version、取得日、license / usage terms、NOTICE 要否、generated dictionary policy を先に docs に固定します。
 
 ## Non-Scope
 

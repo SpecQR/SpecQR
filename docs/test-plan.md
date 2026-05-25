@@ -99,6 +99,23 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
 - Reference comparison limits: Nayuki comparison は fixed-condition matrix regression に使い、GS1 semantics、Digital Link conversion、Structured Append API shape の検証は unit / golden tests に分ける。
 
+## v2.1.0 GS1 Validation Planning
+
+v2.1.0 は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定した GS1 validation release として扱います。実装時は新しい QR generation behavior ではなく、GS1 helper の public validation surface を中心に次を release gate に含めます。
+
+- Supported AI introspection: `getSupportedGs1Ais()` が stable public metadata shape を返し、internal dictionary object を mutation 可能な形で漏らさないこと。
+- Single AI lookup: `getGs1AiInfo(ai)` が exact AI と supported family AI を扱い、unsupported AI を throw せず `null` として扱う方針を検証すること。
+- Non-throwing element validation: `validateGs1Elements(elements, options?)` が `{ ok: true, elements, warnings }` と `{ ok: false, errors, warnings }` を安定して返すこと。
+- Non-throwing raw element string validation: `validateGs1ElementString(input, options?)` が `parseGs1ElementString()` と同じ validation source を使い、成功時に `hasSeparators` を返すこと。
+- Detail error codes: unsupported AI、invalid length、invalid charset、missing separator、unexpected separator、invalid check digit、invalid Digital Link placement、invalid input を negative tests で固定すること。
+- Throwing API compatibility: `parseGs1HumanReadable()`、`createGs1ElementString()`、`parseGs1ElementString()`、`createGs1DigitalLink()`、`parseGs1DigitalLink()` の existing `InvalidGs1Error.code === "INVALID_GS1"` behavior を壊さないこと。
+- GS1 QR Code / Digital Link misuse prevention: raw GS1 element string と URL-based Digital Link URI を混同した場合の validation result と docs を確認すること。
+- Catalog expansion: AI group を追加するときは metadata、positive / negative validation、Digital Link role、docs、packed package smoke を同じ変更に含めること。
+- TypeScript surface: proposed API の return shape と error/warning code literal type を consumer check で固定すること。
+- Packed package smoke: new API が installed package root export と `QRCode` static method で動くこと、未公開にした API が漏れていないことを確認すること。
+
+`validateGs1DigitalLink(uri, options?)` は v2.1.0 の第一候補には含めません。Digital Link full canonicalization、resolver、unknown query policy は v2.2.0 以降の design として扱い、v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用を検出する範囲に留めます。
+
 ## Decoder Validation
 
 より高い信頼性のため、generated SVG または rasterized output を少なくとも 1 つの独立 decoder で検証します。

@@ -8,6 +8,8 @@ SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にし
 
 v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting、manual segments splitting、`mergeStructuredAppendParts()` は実装済みです。Structured Append の string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper の境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
+v2.1.0 は GS1 validation release として、supported AI catalog の段階的拡張、AI metadata introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱う予定です。現時点では [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に docs-only proposal として固定しており、runtime behavior、public API、package version は変更していません。
+
 ## 実装済み範囲
 
 - QR Code Model 2 のみ
@@ -78,6 +80,8 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 - Full GS1 AI catalog validation
 - Industry-specific GS1 AI rules
+- Public GS1 validation result API。v2.1.0 の proposal は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定済みですが、現在の runtime にはまだありません。
+- GS1 Digital Link non-throwing validator / full canonicalizer
 - Structured Append public parity helper
 - QR decoder / scanner integration
 - Micro QR
@@ -92,6 +96,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 v2.0.0 の詳細な方針は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) に固定します。v2.0.0 stable では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer を揃えています。正式 release 後は次を優先します。
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
+- GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` の v2.1.0 proposal を起点に、throwing API と non-throwing API の責務を分ける。
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。

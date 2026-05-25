@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2.0.0 で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2.0.0 は新しい QR family を一気に増やす release ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release として扱います。
 
-実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
+実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
 ## v2.0.0 の目的
 
@@ -101,6 +101,43 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-23: v2.0.0-rc.1 release finalization started. `package.json` / `package-lock.json` の version を `2.0.0-rc.1` に揃え、npm `next` tag 向け dry-run、package contents、tag 作成を release gate として扱います。実 publish、GitHub Release、GitHub Pages deploy は手動判断まで行いません。
 - 2026-05-25: v2.0.0 stable release package preparation completed. `package.json` / `package-lock.json` の version を `2.0.0` に揃え、README、CHANGELOG、release checklist、scope / conformance docs を stable 向けに更新しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.0.0` tag 作成は最終承認まで行いません。
 - 2026-05-25: v2.0.1 release hygiene patch prepared. Runtime と public API は変更せず、package version、CHANGELOG、release checklist、SECURITY / CONTRIBUTING、supported GS1 AI docs、published package smoke coverage を整理しました。`latest` / `next` が stable に揃っている状態を docs と release checklist に反映しました。
+- 2026-05-25: v2.1.0 GS1 validation release designed. Runtime behavior、public API、package version は変更せず、supported AI introspection、non-throwing validation result、GS1 detail error codes、Digital Link misuse prevention、catalog expansion policy を [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に docs-only で固定しました。
+
+## v2.1.0 GS1 Validation Release Scope
+
+v2.1.0 は、新しい QR symbol family や Structured Append 追加ではなく、v2.0 で入った GS1 layer を利用者が安全に扱うための validation release として設計します。
+
+### Proposed Public API
+
+- `getSupportedGs1Ais()`: current supported AI catalog を public metadata shape で返す。
+- `getGs1AiInfo(ai)`: 1 つの AI の metadata を返す。unsupported AI は `null`。
+- `validateGs1Elements(elements, options?)`: `{ ai, value }[]` を non-throwing result で検証する。
+- `validateGs1ElementString(input, options?)`: raw GS1 element string を non-throwing result で検証する。
+
+`validateGs1DigitalLink(uri, options?)` は v2.1.0 では公開しない第一候補です。Digital Link は canonicalization、resolver、unknown query、path placement policy の surface が広いため、v2.2.0 以降で別 design として扱います。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で Digital Link placement の誤用を一部検出できるようにする案を優先します。
+
+### Stable Result Shape
+
+Validation API は、成功時に `{ ok: true, elements, warnings }`、失敗時に `{ ok: false, errors, warnings }` を返す方針です。`validateGs1ElementString()` の成功 result はこれに `hasSeparators` を加えます。Throwing API は既存どおり `InvalidGs1Error` を投げ、non-throwing API は UI / form validation 用に detail error code を返します。
+
+### Detail Error Codes
+
+v2.1.0 で固定する detail code の候補は次です。
+
+- `GS1_UNSUPPORTED_AI`
+- `GS1_INVALID_LENGTH`
+- `GS1_INVALID_CHARSET`
+- `GS1_MISSING_SEPARATOR`
+- `GS1_UNEXPECTED_SEPARATOR`
+- `GS1_INVALID_CHECK_DIGIT`
+- `GS1_INVALID_DIGITAL_LINK_PLACEMENT`
+- `GS1_INVALID_INPUT`
+
+Existing `InvalidGs1Error.code` は互換性のため `"INVALID_GS1"` のまま維持します。
+
+### Catalog Expansion Policy
+
+v2.1.0 は supported AI catalog を一括で full catalog にしません。Date / lifecycle、quantity / measure、GLN / party、origin / geographic のような AI group ごとに metadata、validation、negative tests、docs、Digital Link role を揃えてから追加します。GS1 Barcode Syntax Dictionary など外部 metadata を使う場合は、source、version、license / usage terms、generated data policy を先に固定します。
 
 ## Release Gate
 

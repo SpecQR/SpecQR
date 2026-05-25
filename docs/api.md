@@ -303,6 +303,23 @@ console.log(parsed);
 
 invalid raw input は `InvalidGs1Error` で reject します。対象は unsupported AI、invalid length、invalid charset、invalid GTIN / SSCC check digit、variable-length AI 後の missing separator、human-readable parentheses direct input です。`validateGs1ElementString()` は public API としてはまだ提供していません。
 
+### v2.1.0 Proposed GS1 Validation API
+
+v2.1.0 では、既存の throwing API を維持したまま、UI / form validation に向いた non-throwing API と catalog introspection API を追加する方針です。現時点では proposal であり、runtime export はまだありません。
+
+```ts
+getSupportedGs1Ais(): Gs1AiInfo[];
+getGs1AiInfo(ai: string): Gs1AiInfo | null;
+validateGs1Elements(elements, options?): Gs1ValidationResult;
+validateGs1ElementString(input, options?): Gs1ElementStringValidationResult;
+```
+
+`getSupportedGs1Ais()` / `getGs1AiInfo(ai)` は `ai`、`label`、fixed / variable length、`valueKind`、check digit rule、Digital Link role、separator requirement を公開 metadata として返す案です。AI family は concrete AI entries に展開して返し、internal dictionary object はそのまま露出しません。
+
+`validateGs1Elements()` / `validateGs1ElementString()` は成功時に `{ ok: true, elements, warnings }`、失敗時に `{ ok: false, errors, warnings }` を返す案です。Raw element string validation の成功 result には `hasSeparators` も入ります。Detail error code は `GS1_UNSUPPORTED_AI`、`GS1_INVALID_LENGTH`、`GS1_INVALID_CHARSET`、`GS1_MISSING_SEPARATOR`、`GS1_UNEXPECTED_SEPARATOR`、`GS1_INVALID_CHECK_DIGIT`、`GS1_INVALID_DIGITAL_LINK_PLACEMENT`、`GS1_INVALID_INPUT` を候補にします。
+
+`validateGs1DigitalLink(uri, options?)` は Digital Link full canonicalization / resolver / unknown query policy と関係が深いため、v2.1.0 では公開せず v2.2.0 以降へ回す第一候補です。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) を参照してください。
+
 ### `createGs1DigitalLink(input, options)`
 
 GS1 element data から GS1 Digital Link URI string を作ります。`input` は `{ ai, value }[]`、または `parseGs1ElementString()` の戻り値 `{ elements, hasSeparators }` を受け付けます。

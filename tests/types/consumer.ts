@@ -7,11 +7,19 @@ import {
   generateSegments,
   generateSegmentsStructuredAppend,
   generateStructuredAppend,
+  getGs1AiInfo,
+  getSupportedGs1Ais,
   mergeStructuredAppendParts,
   parseGs1DigitalLink,
   parseGs1ElementString,
+  validateGs1Elements,
+  validateGs1ElementString,
+  type GS1AiInfo,
   type GS1DigitalLinkParseResult,
   type GS1ElementStringParseResult,
+  type GS1ElementStringValidationResult,
+  type GS1ValidationError,
+  type GS1ValidationResult,
   type QRCodeDiagnosticResult,
   type QRMatrix,
   type QRStructuredAppendMergeResult,
@@ -66,6 +74,26 @@ const parsedRaw = parseGs1ElementString("010491234567890410ABC123\x1D17251231");
 expectType<GS1ElementStringParseResult>(parsedRaw);
 expectType<string>(parsedRaw.elements[0].ai);
 expectType<boolean>(QRCode.parseGs1ElementString("010491234567890417251231").hasSeparators);
+
+const supportedAis = getSupportedGs1Ais();
+expectType<GS1AiInfo[]>(supportedAis);
+expectType<GS1AiInfo | null>(getGs1AiInfo("01"));
+expectType<GS1AiInfo[]>(QRCode.getSupportedGs1Ais());
+expectType<GS1AiInfo | null>(QRCode.getGs1AiInfo("3102"));
+
+const elementValidation = validateGs1Elements([{ ai: "01", value: "04912345678904" }]);
+expectType<GS1ValidationResult>(elementValidation);
+if (!elementValidation.ok) {
+  expectType<GS1ValidationError>(elementValidation.errors[0]);
+}
+
+const rawValidation = validateGs1ElementString("010491234567890417251231");
+expectType<GS1ElementStringValidationResult>(rawValidation);
+expectType<GS1ElementStringValidationResult>(QRCode.validateGs1ElementString("010491234567890417251231"));
+if (rawValidation.ok) {
+  expectType<boolean>(rawValidation.hasSeparators);
+  expectType<string>(rawValidation.elements[0].value);
+}
 
 const digitalLink = createGs1DigitalLink(parsedRaw, { baseUrl: "https://example.com" });
 expectType<string>(digitalLink);
@@ -147,9 +175,6 @@ expectType<ImageData>(toImageData("https://example.com"));
 expectType<ImageData>(toImageDataFromSegments([{ mode: "alphanumeric", data: "HELLO" }]));
 expectType<string>(toObjectURL("https://example.com"));
 expectType<string>(toObjectURLFromSegments([{ mode: "kanji", data: "漢字" }]));
-
-// @ts-expect-error validateGs1ElementString is intentionally not public in v2.0.0.
-specqr.validateGs1ElementString;
 
 // @ts-expect-error validateGs1DigitalLink is intentionally not public in v2.0.0.
 specqr.validateGs1DigitalLink;

@@ -57,10 +57,16 @@ assert.equal(typeof specqr.createGs1DigitalLink, "function");
 assert.equal(typeof specqr.QRCode.createGs1DigitalLink, "function");
 assert.equal(typeof specqr.parseGs1DigitalLink, "function");
 assert.equal(typeof specqr.QRCode.parseGs1DigitalLink, "function");
+assert.equal(typeof specqr.getSupportedGs1Ais, "function");
+assert.equal(typeof specqr.QRCode.getSupportedGs1Ais, "function");
+assert.equal(typeof specqr.getGs1AiInfo, "function");
+assert.equal(typeof specqr.QRCode.getGs1AiInfo, "function");
+assert.equal(typeof specqr.validateGs1Elements, "function");
+assert.equal(typeof specqr.QRCode.validateGs1Elements, "function");
+assert.equal(typeof specqr.validateGs1ElementString, "function");
+assert.equal(typeof specqr.QRCode.validateGs1ElementString, "function");
 assert.equal(specqr.validateGs1DigitalLink, undefined);
 assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
-assert.equal(specqr.validateGs1ElementString, undefined);
-assert.equal(specqr.QRCode.validateGs1ElementString, undefined);
 
 const fnc1Second = specqr.generate("AA1234BBB112", {
   fnc1Second: "37",
@@ -223,6 +229,27 @@ assert.equal(
   }),
   "https://example.com/01/04912345678904/10/ABC123?17=251231"
 );
+assert.equal(specqr.getGs1AiInfo("01").checkDigitRule, "gtin");
+assert.equal(specqr.QRCode.getSupportedGs1Ais().some((metadata) => metadata.ai === "3105"), true);
+assert.deepEqual(specqr.validateGs1Elements([{ ai: "01", value: "04912345678904" }]), {
+  ok: true,
+  elements: [{ ai: "01", value: "04912345678904" }],
+  warnings: []
+});
+assert.deepEqual(specqr.QRCode.validateGs1ElementString(rawWithSeparator), {
+  ok: true,
+  elements: [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ],
+  hasSeparators: true,
+  warnings: []
+});
+assert.equal(
+  specqr.validateGs1ElementString("010491234567890410ABC12317251231").errors[0].code,
+  "GS1_MISSING_SEPARATOR"
+);
 assert.equal(
   specqr.QRCode.createGs1DigitalLink([{ ai: "01", value: "04912345678904" }], {
     baseUrl: "https://example.com/stem/"
@@ -292,6 +319,19 @@ async function assertTypeDeclarations(directory) {
     declarations,
     /export function parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /export interface GS1AiInfo\s*{/);
+  assert.match(declarations, /export interface GS1ValidationError\s*{/);
+  assert.match(declarations, /export type GS1ValidationResult = GS1ValidationSuccess \| GS1ValidationFailure;/);
+  assert.match(declarations, /export function getSupportedGs1Ais\(\): GS1AiInfo\[];/);
+  assert.match(declarations, /export function getGs1AiInfo\(ai: string\): GS1AiInfo \| null;/);
+  assert.match(
+    declarations,
+    /export function validateGs1Elements\(elements: GS1Element\[], options\?: GS1ValidationOptions\): GS1ValidationResult;/
+  );
+  assert.match(
+    declarations,
+    /export function validateGs1ElementString\(\s*input: string,\s*options\?: GS1ValidationOptions\s*\): GS1ElementStringValidationResult;/
+  );
   assert.match(declarations, /fnc1Second\?: false \| string;/);
   assert.match(declarations, /structuredAppend\?: false \| QRStructuredAppendOptions;/);
   assert.match(declarations, /\| { mode: "fnc1-second"; applicationIndicator: string }/);
@@ -330,6 +370,8 @@ async function assertTypeDeclarations(directory) {
     declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /static getSupportedGs1Ais\(\): GS1AiInfo\[];/);
+  assert.match(declarations, /static validateGs1ElementString\(input: string, options\?: GS1ValidationOptions\): GS1ElementStringValidationResult;/);
   assert.match(declarations, /static generateStructuredAppend\(input: QRInput/);
   assert.match(declarations, /static generateSegmentsStructuredAppend\(segments: QRSegmentInput\[]/);
   assert.match(declarations, /static mergeStructuredAppendParts\(parts: QRStructuredAppendDecodedPart<string>\[]/);

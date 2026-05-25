@@ -9,6 +9,8 @@ import {
   createGs1DigitalLink,
   createGs1ElementString,
   DataTooLongError,
+  getGs1AiInfo,
+  getSupportedGs1Ais,
   GS1_FNC1_SEPARATOR,
   InvalidGs1Error,
   QRCode,
@@ -18,6 +20,8 @@ import {
   parseGs1ElementString,
   parseGs1HumanReadable,
   validateGs1CheckDigit,
+  validateGs1Elements,
+  validateGs1ElementString as validatePublicGs1ElementString,
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "../src/index.js";
@@ -40,6 +44,10 @@ test("GS1 compatibility entrypoint preserves public helper exports", () => {
   assert.equal(typeof gs1Entrypoint.createGs1DigitalLink, "function");
   assert.equal(typeof gs1Entrypoint.parseGs1DigitalLink, "function");
   assert.equal(typeof gs1Entrypoint.parseGs1HumanReadable, "function");
+  assert.equal(typeof gs1Entrypoint.getSupportedGs1Ais, "function");
+  assert.equal(typeof gs1Entrypoint.getGs1AiInfo, "function");
+  assert.equal(typeof gs1Entrypoint.validateGs1Elements, "function");
+  assert.equal(typeof gs1Entrypoint.validateGs1ElementString, "function");
   assert.equal(typeof gs1Entrypoint.calculateGs1CheckDigit, "function");
   assert.equal(typeof gs1Entrypoint.appendGtinCheckDigit, "function");
   assert.equal(typeof gs1Entrypoint.appendSsccCheckDigit, "function");
@@ -122,6 +130,96 @@ test("GS1 AI dictionary adapts metadata to the validator spec shape", () => {
     maxLength: 90
   });
   assert.equal(getGs1AiSpec("9999"), null);
+});
+
+test("public GS1 AI introspection returns stable concrete metadata", () => {
+  assert.deepEqual(
+    getSupportedGs1Ais().map((metadata) => metadata.ai),
+    [
+      "00",
+      "01",
+      "02",
+      "10",
+      "11",
+      "12",
+      "13",
+      "15",
+      "16",
+      "17",
+      "20",
+      "21",
+      "22",
+      "30",
+      "37",
+      "240",
+      "241",
+      "400",
+      "410",
+      "411",
+      "412",
+      "413",
+      "414",
+      "415",
+      "420",
+      "422",
+      "424",
+      "425",
+      "426",
+      "3100",
+      "3101",
+      "3102",
+      "3103",
+      "3104",
+      "3105",
+      "3200",
+      "3201",
+      "3202",
+      "3203",
+      "3204",
+      "3205",
+      "91",
+      "92",
+      "93",
+      "94",
+      "95",
+      "96",
+      "97",
+      "98",
+      "99"
+    ]
+  );
+
+  assert.deepEqual(getGs1AiInfo("01"), {
+    ai: "01",
+    label: "Global trade item number",
+    length: { type: "fixed", exact: 14 },
+    valueKind: "numeric",
+    checkDigitRule: "gtin",
+    digitalLinkRole: "primary-key",
+    separator: "none"
+  });
+  assert.deepEqual(getGs1AiInfo("3102"), {
+    ai: "3102",
+    label: "Net weight in kilograms",
+    length: { type: "fixed", exact: 6 },
+    valueKind: "numeric",
+    checkDigitRule: "none",
+    digitalLinkRole: "data-attribute",
+    separator: "none"
+  });
+  assert.deepEqual(QRCode.getGs1AiInfo("10"), {
+    ai: "10",
+    label: "Batch or lot number",
+    length: { type: "variable", min: 1, max: 20 },
+    valueKind: "text",
+    checkDigitRule: "none",
+    digitalLinkRole: "key-qualifier",
+    digitalLinkPathForPrimary: ["01"],
+    separator: "required-when-followed"
+  });
+  assert.equal(getGs1AiInfo("250"), null);
+  assert.equal(getGs1AiInfo(1), null);
+  assert.equal(QRCode.getSupportedGs1Ais().some((metadata) => metadata.ai === "99"), true);
 });
 
 test("internal GS1 element string validator parses fixed-length sequences", () => {
@@ -284,6 +382,129 @@ test("public GS1 element string parser rejects malformed raw element strings", (
         message.test(error.message)
     );
   }
+});
+
+test("public GS1 validation API returns non-throwing success results", () => {
+  const elements = [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ];
+  const raw = createGs1ElementString(elements);
+
+  assert.deepEqual(validateGs1Elements(elements), {
+    ok: true,
+    elements,
+    warnings: []
+  });
+  assert.deepEqual(QRCode.validateGs1Elements(elements, { context: "digital-link" }), {
+    ok: true,
+    elements,
+    warnings: []
+  });
+  assert.deepEqual(validatePublicGs1ElementString(raw), {
+    ok: true,
+    elements,
+    hasSeparators: true,
+    warnings: []
+  });
+  assert.deepEqual(QRCode.validateGs1ElementString("010491234567890417251231"), {
+    ok: true,
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "17", value: "251231" }
+    ],
+    hasSeparators: false,
+    warnings: []
+  });
+});
+
+test("public GS1 element validation collects structured errors", () => {
+  const result = validateGs1Elements([
+    { ai: "01", value: "0491234567890" },
+    { ai: "30", value: "12A" },
+    { ai: "9999", value: "ABC" }
+  ]);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.errors.map((error) => error.code), [
+    "GS1_INVALID_LENGTH",
+    "GS1_INVALID_CHARSET",
+    "GS1_UNSUPPORTED_AI"
+  ]);
+  assert.deepEqual(result.errors.map((error) => error.elementIndex), [0, 1, 2]);
+  assert.deepEqual(result.errors.map((error) => error.ai), ["01", "30", "9999"]);
+
+  const firstOnly = validateGs1Elements([
+    { ai: "01", value: "0491234567890" },
+    { ai: "30", value: "12A" }
+  ], { collectAllErrors: false });
+  assert.equal(firstOnly.ok, false);
+  assert.equal(firstOnly.errors.length, 1);
+  assert.equal(firstOnly.errors[0].code, "GS1_INVALID_LENGTH");
+});
+
+test("public GS1 raw element string validation maps detailed error codes", () => {
+  const cases = [
+    ["(01)04912345678904", "GS1_INVALID_INPUT", undefined],
+    [`010491234567890410ABC12317251231`, "GS1_MISSING_SEPARATOR", "10"],
+    ["250ABC", "GS1_UNSUPPORTED_AI", "250"],
+    ["010491234567890", "GS1_INVALID_LENGTH", "01"],
+    ["10ロット1", "GS1_INVALID_CHARSET", "10"],
+    ["0104912345678905", "GS1_INVALID_CHECK_DIGIT", "01"],
+    [`10ABC${GS1_FNC1_SEPARATOR}`, "GS1_UNEXPECTED_SEPARATOR", undefined],
+    [`0104912345678904${GS1_FNC1_SEPARATOR}17251231`, "GS1_UNEXPECTED_SEPARATOR", undefined]
+  ];
+
+  for (const [input, code, ai] of cases) {
+    const result = validatePublicGs1ElementString(input);
+    assert.equal(result.ok, false);
+    assert.equal(result.errors.length, 1);
+    assert.equal(result.errors[0].code, code, input);
+    assert.equal(result.errors[0].ai, ai);
+  }
+});
+
+test("public GS1 validation rejects invalid validation options without throwing", () => {
+  assert.deepEqual(validateGs1Elements([{ ai: "01", value: "04912345678904" }], { context: "other" }), {
+    ok: false,
+    errors: [
+      {
+        code: "GS1_INVALID_INPUT",
+        message: "GS1 validation options.context must be \"element-string\" or \"digital-link\"",
+        reason: "invalid-options",
+        expected: "element-string or digital-link"
+      }
+    ],
+    warnings: []
+  });
+  assert.deepEqual(validatePublicGs1ElementString("0104912345678904", { allowUnsupportedAi: true }), {
+    ok: false,
+    errors: [
+      {
+        code: "GS1_INVALID_INPUT",
+        message: "GS1 validation options.allowUnsupportedAi must be false",
+        reason: "invalid-options",
+        expected: false
+      }
+    ],
+    warnings: []
+  });
+});
+
+test("public GS1 element validation reports Digital Link context placement issues", () => {
+  assert.deepEqual(validateGs1Elements([{ ai: "17", value: "251231" }], { context: "digital-link" }), {
+    ok: false,
+    errors: [
+      {
+        code: "GS1_INVALID_DIGITAL_LINK_PLACEMENT",
+        message: "GS1 Digital Link elements must include a primary AI 00, 01, or 414",
+        reason: "invalid-digital-link-placement",
+        expected: "primary AI 00, 01, or 414"
+      }
+    ],
+    warnings: []
+  });
 });
 
 test("GS1 Digital Link helper creates stable URL QR payloads", () => {

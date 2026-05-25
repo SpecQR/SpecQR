@@ -99,9 +99,9 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
 - Reference comparison limits: Nayuki comparison は fixed-condition matrix regression に使い、GS1 semantics、Digital Link conversion、Structured Append API shape の検証は unit / golden tests に分ける。
 
-## v2.1.0 GS1 Validation Planning
+## v2.1.0 GS1 Validation
 
-v2.1.0 は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定した GS1 validation release として扱います。実装時は新しい QR generation behavior ではなく、GS1 helper の public validation surface を中心に次を release gate に含めます。
+v2.1 系は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定した GS1 validation release として扱います。新しい QR generation behavior ではなく、GS1 helper の public validation surface を中心に次を release gate に含めます。
 
 - Supported AI introspection: `getSupportedGs1Ais()` が stable public metadata shape を返し、internal dictionary object を mutation 可能な形で漏らさないこと。
 - Single AI lookup: `getGs1AiInfo(ai)` が exact AI と supported family AI を扱い、unsupported AI を throw せず `null` として扱う方針を検証すること。
@@ -114,7 +114,7 @@ v2.1.0 は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定し�
 - TypeScript surface: proposed API の return shape と error/warning code literal type を consumer check で固定すること。
 - Packed package smoke: new API が installed package root export と `QRCode` static method で動くこと、未公開にした API が漏れていないことを確認すること。
 
-`validateGs1DigitalLink(uri, options?)` は v2.1.0 の第一候補には含めません。Digital Link full canonicalization、resolver、unknown query policy は v2.2.0 以降の design として扱い、v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用を検出する範囲に留めます。
+`validateGs1DigitalLink(uri, options?)` は公開していません。Digital Link full canonicalization、resolver、unknown query policy は v2.2.0 以降の design として扱い、v2.1 系では `validateGs1Elements(elements, { context: "digital-link" })` の option surface だけを固定しています。
 
 ## Decoder Validation
 
@@ -226,7 +226,7 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`validateGs1ElementString()` や `validateGs1DigitalLink()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、invalid raw GS1 payload の `InvalidGs1Error`、同梱 `src/index.d.ts` の v2 API surface、npm package contents policy も確認します。
+この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`validateGs1DigitalLink()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、non-throwing validation result、同梱 `src/index.d.ts` の v2 / v2.1 API surface、npm package contents policy も確認します。
 
 TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は `tests/types/consumer.ts` を TypeScript compiler で `noEmit` 検査し、root / node / browser subpath import、`QRCode.generate()`、`generateSegments()`、GS1 raw parser、GS1 Digital Link helper、Structured Append helpers、FNC1 second option、low-level `structuredAppend` option、Node PNG helper、browser Blob/ImageData/Object URL helper の public type surface を consumer 目線で固定します。
 

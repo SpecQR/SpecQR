@@ -130,6 +130,15 @@ const AI_FAMILY_ENTRIES = [
 ];
 
 const EXACT_AI_ENTRY_MAP = new Map(EXACT_AI_ENTRIES.map((metadata) => [metadata.ai, metadata]));
+const FAMILY_AI_CODES = Object.freeze([
+  ...expandNumericRange(3100, 3105),
+  ...expandNumericRange(3200, 3205),
+  ...expandNumericRange(91, 99)
+]);
+const PUBLIC_SUPPORTED_AI_CODES = Object.freeze([
+  ...EXACT_AI_ENTRIES.map((metadata) => metadata.ai),
+  ...FAMILY_AI_CODES
+]);
 
 export const GS1_AI_DICTIONARY = Object.freeze({
   exact: Object.freeze(EXACT_AI_ENTRIES),
@@ -165,6 +174,19 @@ export function getGs1AiSpec(ai) {
     spec.checkDigit = metadata.checkDigitRule;
   }
   return spec;
+}
+
+export function getSupportedGs1Ais() {
+  return Object.freeze(PUBLIC_SUPPORTED_AI_CODES.map((ai) => getGs1AiInfo(ai)));
+}
+
+export function getGs1AiInfo(ai) {
+  if (typeof ai !== "string") {
+    return null;
+  }
+
+  const metadata = getGs1AiDictionaryEntry(ai);
+  return metadata ? toPublicAiInfo(metadata) : null;
 }
 
 function entry(ai, label, lengthType, options) {
@@ -203,6 +225,34 @@ function normalizeLengthOptions(lengthType, options) {
     normalized.exactLength = options.exactLength;
   }
   return normalized;
+}
+
+function expandNumericRange(start, end) {
+  const values = [];
+  for (let value = start; value <= end; value += 1) {
+    values.push(String(value));
+  }
+  return values;
+}
+
+function toPublicAiInfo(metadata) {
+  const info = {
+    ai: metadata.ai,
+    label: metadata.label,
+    length: metadata.lengthType === VARIABLE
+      ? Object.freeze({ type: "variable", min: metadata.minLength, max: metadata.maxLength })
+      : Object.freeze({ type: "fixed", exact: metadata.exactLength }),
+    valueKind: metadata.valueKind,
+    checkDigitRule: metadata.checkDigitRule ?? "none",
+    digitalLinkRole: metadata.digitalLinkRole ?? "not-supported",
+    separator: metadata.separator
+  };
+
+  if (metadata.digitalLinkPathForPrimary) {
+    info.digitalLinkPathForPrimary = Object.freeze([...metadata.digitalLinkPathForPrimary]);
+  }
+
+  return Object.freeze(info);
 }
 
 function toRuntimeEntry(metadata, ai) {

@@ -70,7 +70,7 @@ Micro QR、rMQR、logo overlay、styled modules は現在の core package の対
 
 v2.0.0 では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を stable release scope として扱います。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
 
-v2.1.0 は GS1 validation release として、supported AI catalog の段階的拡張、AI metadata introspection、non-throwing validation result、GS1 error code / diagnostics 整理を設計しています。現時点では docs-only proposal であり、runtime behavior と public API は変更していません。詳細は [GS1 Validation v2.1 Design](docs/gs1-validation-v2.1.md) を参照してください。
+v2.1 系では GS1 validation layer を強化しています。Supported AI metadata は `getSupportedGs1Ais()` / `getGs1AiInfo(ai)` で確認でき、UI / form validation では throwing API の代わりに `validateGs1Elements()` / `validateGs1ElementString()` の non-throwing result を使えます。詳細は [GS1 Validation v2.1 Design](docs/gs1-validation-v2.1.md) を参照してください。
 
 ## 基本的な使い方
 
@@ -184,6 +184,19 @@ import { parseGs1ElementString } from "specqr";
 
 const parsed = parseGs1ElementString("010491234567890410ABC123\x1D17251231");
 console.log(parsed.elements);
+```
+
+入力フォームなどで例外を投げずに検証したい場合は、non-throwing validation API を使えます。
+
+```js
+import { getGs1AiInfo, validateGs1ElementString } from "specqr";
+
+console.log(getGs1AiInfo("01")?.checkDigitRule); // "gtin"
+
+const validation = validateGs1ElementString("010491234567890410ABC12317251231");
+if (!validation.ok) {
+  console.log(validation.errors[0].code); // "GS1_MISSING_SEPARATOR"
+}
 ```
 
 ## FNC1 second position

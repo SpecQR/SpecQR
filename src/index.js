@@ -38,10 +38,14 @@ import {
   calculateSsccCheckDigit,
   createGs1DigitalLink,
   createGs1ElementString,
+  getGs1AiInfo,
+  getSupportedGs1Ais,
   GS1_FNC1_SEPARATOR,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
   validateGs1CheckDigit,
+  validateGs1Elements,
+  validateGs1ElementString,
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "./gs1.js";
@@ -64,10 +68,14 @@ export {
   calculateSsccCheckDigit,
   createGs1DigitalLink,
   createGs1ElementString,
+  getGs1AiInfo,
+  getSupportedGs1Ais,
   GS1_FNC1_SEPARATOR,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
   validateGs1CheckDigit,
+  validateGs1Elements,
+  validateGs1ElementString,
   validateGtinCheckDigit,
   validateSsccCheckDigit
 } from "./gs1.js";
@@ -130,6 +138,22 @@ export class QRCode {
 
   static parseGs1ElementString(input) {
     return parseGs1ElementString(input);
+  }
+
+  static getSupportedGs1Ais() {
+    return getSupportedGs1Ais();
+  }
+
+  static getGs1AiInfo(ai) {
+    return getGs1AiInfo(ai);
+  }
+
+  static validateGs1Elements(elements, options = undefined) {
+    return validateGs1Elements(elements, options);
+  }
+
+  static validateGs1ElementString(input, options = undefined) {
+    return validateGs1ElementString(input, options);
   }
 
   static calculateGs1CheckDigit(digits) {

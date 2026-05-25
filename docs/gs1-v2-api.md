@@ -1,6 +1,6 @@
 # GS1 v2 API
 
-この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。Digital Link URI helper の `createGs1DigitalLink()` / `parseGs1DigitalLink()` も公開済みです。`validateGs1ElementString()` はまだ公開していません。FNC1 second position と Structured Append low-level header は GS1 raw element string parser API ではなく、独立した QR control mode として実装済みです。
+この文書は、SpecQR v2 系で公開する GS1 raw element string parser API の設計記録です。`parseGs1ElementString(input)` は root export と `QRCode.parseGs1ElementString(input)` static method として実装済みです。Digital Link URI helper の `createGs1DigitalLink()` / `parseGs1DigitalLink()` も公開済みです。v2.1 系では non-throwing の `validateGs1ElementString(input, options?)` も公開済みです。FNC1 second position と Structured Append low-level header は GS1 raw element string parser API ではなく、独立した QR control mode として実装済みです。
 
 v1 の public API は次の役割を持ちます。
 
@@ -44,7 +44,7 @@ function validateGs1ElementString(input: string): true;
 
 この候補は internal API と同じく、valid なら `true`、invalid なら `InvalidGs1Error` を throw します。`false` を返す API にはしません。失敗理由を捨てると、unsupported AI、missing separator、check digit error を利用者が区別しにくくなるためです。
 
-v2.1.0 では、この boolean-only / throw-only validator 案ではなく、UI / form validation に向いた result object API を別 proposal として扱います。`validateGs1ElementString(input, options?)` は `{ ok: true, elements, hasSeparators, warnings }` または `{ ok: false, errors, warnings }` を返す non-throwing API 候補です。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に移しました。この文書の `validateGs1ElementString()` discussion は v2.0 raw parser 公開時点の rejected alternatives として残します。
+v2.1 系では、この boolean-only / throw-only validator 案ではなく、UI / form validation に向いた result object API を公開しています。`validateGs1ElementString(input, options?)` は `{ ok: true, elements, hasSeparators, warnings }` または `{ ok: false, errors, warnings }` を返します。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に移しました。この文書の boolean-only `validateGs1ElementString()` discussion は v2.0 raw parser 公開時点の rejected alternatives として残します。
 
 ## Relationship To Existing APIs
 
@@ -148,7 +148,7 @@ parseGs1ElementString("010491234567890410ABC12317251231");
 ## Non-Scope For This API
 
 - package exports の変更
-- public `validateGs1ElementString()`
+- boolean-only / throwing-only `validateGs1ElementString()`
 - full GS1 AI catalog
 - GS1 Digital Link resolver / compression / full canonicalizer
 - FNC1 second position の GS1 parser 統合。FNC1 second 自体は `fnc1Second` QR control option として実装済みです。

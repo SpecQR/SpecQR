@@ -77,7 +77,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-22: GS1 AI dictionary foundation completed. v1 で対応済みの AI metadata を internal dictionary として整理し、validation は dictionary lookup を経由するようにしました。full GS1 AI catalog、GS1 Digital Link、strict parser 拡張は未導入です。
 - 2026-05-22: Internal strict GS1 element string validation groundwork completed. raw element string を dictionary metadata で scan / validate する internal validator を追加しました。public `parseGs1ElementString()` API、GS1 Digital Link、FNC1 second position は未導入です。
 - 2026-05-22: Internal GS1 raw validation integrated into generation. `generate(input, { gs1: true })` は raw GS1 element string を内部 validator に通し、diagnostics には `gs1Validation` metadata を追加しました。public parser API と package exports は変更していません。
-- 2026-05-23: Public GS1 raw parser API implemented. `parseGs1ElementString(input)` を root export と `QRCode.parseGs1ElementString(input)` に追加し、return shape、error behavior、ambiguity policy、rejected alternatives を `docs/gs1-v2-api.md` に整理しました。`validateGs1ElementString()` はまだ public API ではありません。
+- 2026-05-23: Public GS1 raw parser API implemented. `parseGs1ElementString(input)` を root export と `QRCode.parseGs1ElementString(input)` に追加し、return shape、error behavior、ambiguity policy、rejected alternatives を `docs/gs1-v2-api.md` に整理しました。この時点では `validateGs1ElementString()` は public API ではありませんでしたが、v2.1 validation API として後続実装済みです。
 - 2026-05-23: GS1 Digital Link v2 design documented. `createGs1DigitalLink(elements, options)` と `parseGs1DigitalLink(uri, options?)` の API proposal、FNC1 first GS1 QR と通常 URL QR の区別、validation policy、conversion examples、non-scope を `docs/gs1-digital-link-v2.md` に固定しました。
 - 2026-05-23: GS1 Digital Link URI builder implemented. `createGs1DigitalLink(input, options)` を root export と `QRCode.createGs1DigitalLink()` に追加し、supported AI validation、baseUrl validation、path/query placement、packed package smoke を追加しました。
 - 2026-05-23: GS1 Digital Link URI parser implemented. `parseGs1DigitalLink(uri, options?)` を root export と `QRCode.parseGs1DigitalLink()` に追加し、path/query parsing、unknown query preservation、percent-decoding、builder/parser round-trip、packed package smoke を追加しました。
@@ -102,27 +102,28 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-25: v2.0.0 stable release package preparation completed. `package.json` / `package-lock.json` の version を `2.0.0` に揃え、README、CHANGELOG、release checklist、scope / conformance docs を stable 向けに更新しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.0.0` tag 作成は最終承認まで行いません。
 - 2026-05-25: v2.0.1 release hygiene patch prepared. Runtime と public API は変更せず、package version、CHANGELOG、release checklist、SECURITY / CONTRIBUTING、supported GS1 AI docs、published package smoke coverage を整理しました。`latest` / `next` が stable に揃っている状態を docs と release checklist に反映しました。
 - 2026-05-25: v2.1.0 GS1 validation release designed. Runtime behavior、public API、package version は変更せず、supported AI introspection、non-throwing validation result、GS1 detail error codes、Digital Link misuse prevention、catalog expansion policy を [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に docs-only で固定しました。
+- 2026-05-25: v2.1.0 GS1 validation API implemented. `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` と対応する `QRCode` static methods を追加し、TypeScript surface、unit tests、packed package smoke に含めました。`validateGs1DigitalLink()`、Digital Link canonicalization、full GS1 AI catalog は未公開のままです。
 
 ## v2.1.0 GS1 Validation Release Scope
 
-v2.1.0 は、新しい QR symbol family や Structured Append 追加ではなく、v2.0 で入った GS1 layer を利用者が安全に扱うための validation release として設計します。
+v2.1.0 は、新しい QR symbol family や Structured Append 追加ではなく、v2.0 で入った GS1 layer を利用者が安全に扱うための validation release です。
 
-### Proposed Public API
+### Public API
 
 - `getSupportedGs1Ais()`: current supported AI catalog を public metadata shape で返す。
 - `getGs1AiInfo(ai)`: 1 つの AI の metadata を返す。unsupported AI は `null`。
 - `validateGs1Elements(elements, options?)`: `{ ai, value }[]` を non-throwing result で検証する。
 - `validateGs1ElementString(input, options?)`: raw GS1 element string を non-throwing result で検証する。
 
-`validateGs1DigitalLink(uri, options?)` は v2.1.0 では公開しない第一候補です。Digital Link は canonicalization、resolver、unknown query、path placement policy の surface が広いため、v2.2.0 以降で別 design として扱います。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で Digital Link placement の誤用を一部検出できるようにする案を優先します。
+`validateGs1DigitalLink(uri, options?)` は v2.1.0 では公開しません。Digital Link は canonicalization、resolver、unknown query、path placement policy の surface が広いため、v2.2.0 以降で別 design として扱います。
 
 ### Stable Result Shape
 
-Validation API は、成功時に `{ ok: true, elements, warnings }`、失敗時に `{ ok: false, errors, warnings }` を返す方針です。`validateGs1ElementString()` の成功 result はこれに `hasSeparators` を加えます。Throwing API は既存どおり `InvalidGs1Error` を投げ、non-throwing API は UI / form validation 用に detail error code を返します。
+Validation API は、成功時に `{ ok: true, elements, warnings }`、失敗時に `{ ok: false, errors, warnings }` を返します。`validateGs1ElementString()` の成功 result はこれに `hasSeparators` を加えます。Throwing API は既存どおり `InvalidGs1Error` を投げ、non-throwing API は UI / form validation 用に detail error code を返します。
 
 ### Detail Error Codes
 
-v2.1.0 で固定する detail code の候補は次です。
+v2.1.0 で固定する detail code は次です。
 
 - `GS1_UNSUPPORTED_AI`
 - `GS1_INVALID_LENGTH`

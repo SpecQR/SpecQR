@@ -1,8 +1,8 @@
 # GS1 Validation v2.1 Design
 
-この文書は SpecQR `2.1.0` を GS1 validation release として設計固定するための docs-only proposal です。`2.1.0` では通常 QR Code Model 2 core、v2.0 の public API、runtime dependency-free policy を維持したまま、GS1 helper の introspection と non-throwing validation を追加する方針にします。
+この文書は SpecQR `2.1.0` を GS1 validation release として設計固定するための文書です。`2.1` 系では通常 QR Code Model 2 core、v2.0 の public API、runtime dependency-free policy を維持したまま、GS1 helper の introspection と non-throwing validation を追加します。
 
-この文書は設計です。現時点では runtime behavior、public API、package exports、package version、npm publish、GitHub Release は変更しません。
+`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。`validateGs1DigitalLink()`、GS1 Digital Link full canonicalization、full GS1 AI catalog は引き続き非スコープです。
 
 ## Goals
 
@@ -134,7 +134,7 @@ type Gs1ValidationFailure = {
 };
 ```
 
-`elements` は normalize 済みの `{ ai, value }[]` を返します。`warnings` は validation を失敗にしない注意です。例えば Digital Link URI として path に置けない AI が含まれるが、raw GS1 element string としては valid な場合は、`options.context: "digital-link"` のときだけ warning または error にします。
+`elements` は normalize 済みの `{ ai, value }[]` を返します。`warnings` は validation を失敗にしない注意です。`options.context: "digital-link"` では、Digital Link として primary AI が無い入力を structured error として返します。Full path / query placement policy は `validateGs1DigitalLink()` と合わせて後続に回します。
 
 ### `validateGs1ElementString(input, options?)`
 
@@ -180,7 +180,7 @@ type Gs1ElementStringValidationFailure = {
 - path placement と primary/key-qualifier relation をどこまで full catalog に広げるか。
 - industry profile 由来の rule を扱うか。
 
-v2.1.0 では `createGs1DigitalLink()` / `parseGs1DigitalLink()` の throwing behavior を維持し、Digital Link 向け non-throwing validator は v2.2.0 の候補に回します。ただし `validateGs1Elements(elements, { context: "digital-link" })` で Digital Link placement の誤用を一部検出できる設計にします。
+v2.1.0 では `createGs1DigitalLink()` / `parseGs1DigitalLink()` の throwing behavior を維持し、Digital Link 向け non-throwing validator は v2.2.0 の候補に回します。ただし `validateGs1Elements(elements, { context: "digital-link" })` で primary AI 不足のような明確な誤用だけを検出します。
 
 ## Validation Options
 
@@ -276,7 +276,7 @@ SpecQR は v2.1.0 でも次の区別を維持します。
 
 - `QRCode.generate(uri, { gs1: true })` は raw GS1 element string validator で reject される現状を維持します。
 - `validateGs1ElementString("https://example.com/...")` は `GS1_UNSUPPORTED_AI` または `GS1_INVALID_INPUT` として失敗します。
-- `validateGs1Elements(elements, { context: "digital-link" })` は Digital Link path role に合わない AI を `GS1_INVALID_DIGITAL_LINK_PLACEMENT` として返す候補です。
+- `validateGs1Elements(elements, { context: "digital-link" })` は Digital Link primary AI が無い入力を `GS1_INVALID_DIGITAL_LINK_PLACEMENT` として返します。Path / query placement の full validation は `validateGs1DigitalLink()` の後続設計に回します。
 - `validateGs1DigitalLink()` は v2.2.0 に回し、v2.1.0 では Digital Link URI の full validation を主張しません。
 
 ## Catalog Expansion Plan
@@ -355,7 +355,7 @@ v2.1.0 実装時は少なくとも次を確認します。
 
 ## Documentation Impact
 
-v2.1.0 実装時に更新する docs:
+v2.1 系の実装で更新する docs:
 
 - `docs/api.md`: new public API の正式説明。
 - `docs/gs1-supported-ai.md`: catalog metadata shape と新 supported AI group。
@@ -365,4 +365,4 @@ v2.1.0 実装時に更新する docs:
 - `README.md`: 短い usage link。
 - `CHANGELOG.md`: `2.1.0` release entry。
 
-この design commit では、上記の実装後更新ではなく、提案 API と release scope の設計だけを記録します。
+この文書は、実装済み API と今後の catalog expansion / Digital Link validation backlog の境界を記録します。

@@ -8,7 +8,7 @@ SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にし
 
 v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting、manual segments splitting、`mergeStructuredAppendParts()` は実装済みです。Structured Append の string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper の境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
-v2.1.0 は GS1 validation release として、supported AI catalog の段階的拡張、AI metadata introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱う予定です。現時点では [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に docs-only proposal として固定しており、runtime behavior、public API、package version は変更していません。
+v2.1 系は GS1 validation release として、supported AI catalog introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱います。`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。今後の catalog expansion 方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。
 
 ## 実装済み範囲
 
@@ -62,7 +62,7 @@ GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力
 
 GS1 AI metadata は、現時点では SpecQR が対応する代表 AI だけを小さな internal dictionary として手書き管理しています。これは supported AI の length、numeric/text constraint、GTIN / SSCC check digit rule、separator behavior、Digital Link role (`primary-key` / `key-qualifier` / `data-attribute`) を validation から参照しやすくするための内部構造であり、full GS1 AI catalog の取り込みではありません。現在の supported AI は [Supported GS1 AIs](./gs1-supported-ai.md) にまとめています。Digital Link の default path/query placement と path placement validation もこの metadata を使います。将来 GS1 Barcode Syntax Dictionary などの外部資料を参照して catalog を広げる場合は、出典、license / usage terms、NOTICE の要否を確認し、仕様本文や大きな表を repository に無断コピーしない方針です。
 
-raw GS1 element string は `parseGs1ElementString(input)` で `{ elements, hasSeparators }` に読み戻せます。この parser は parentheses を含まない payload を対象にし、fixed-length AI は dictionary の exact length で読み、variable-length AI は ASCII GS separator があれば次 element へ進み、separator なしなら final element として扱います。variable-length AI の後に別 AI が続く場合は separator が必要です。raw element string は括弧がないため、final variable-length value の末尾が supported fixed-length AI に見える曖昧ケースは、推測で分割せず missing separator として reject します。同じ validator は `generate(input, { gs1: true })` と diagnostics にも内部統合しています。`validateGs1ElementString()` は public API ではまだ提供しません。
+raw GS1 element string は `parseGs1ElementString(input)` で `{ elements, hasSeparators }` に読み戻せます。この parser は parentheses を含まない payload を対象にし、fixed-length AI は dictionary の exact length で読み、variable-length AI は ASCII GS separator があれば次 element へ進み、separator なしなら final element として扱います。variable-length AI の後に別 AI が続く場合は separator が必要です。raw element string は括弧がないため、final variable-length value の末尾が supported fixed-length AI に見える曖昧ケースは、推測で分割せず missing separator として reject します。同じ validator は `generate(input, { gs1: true })` と diagnostics にも内部統合しています。UI / form validation では `validateGs1ElementString()` が `{ ok, elements, hasSeparators, errors, warnings }` 系の non-throwing result を返します。
 
 package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の separate export を持ちます。CommonJS と minified browser build は build pipeline を導入するまで生成しません。source package は dependency-free runtime を保ちます。
 
@@ -80,7 +80,7 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 - Full GS1 AI catalog validation
 - Industry-specific GS1 AI rules
-- Public GS1 validation result API。v2.1.0 の proposal は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定済みですが、現在の runtime にはまだありません。
+- GS1 Digital Link 専用の non-throwing validator。`validateGs1DigitalLink()` は未公開です。
 - GS1 Digital Link non-throwing validator / full canonicalizer
 - Structured Append public parity helper
 - QR decoder / scanner integration

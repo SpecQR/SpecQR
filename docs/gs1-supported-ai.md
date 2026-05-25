@@ -4,7 +4,11 @@
 
 QR に encode する payload は parentheses を含まない raw GS1 element string です。Human-readable 表記は `parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw element string にします。外部から受け取った raw element string は `parseGs1ElementString()` で読み戻せます。
 
-v2.1.0 では、この catalog を一気に full GS1 AI catalog に広げるのではなく、AI group ごとに metadata、validation、negative tests、docs を揃えて拡張する方針です。Introspection API と non-throwing validation API の proposal は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に分けています。この文書の表は現在の runtime が扱う supported AI の一覧であり、v2.1.0 proposal の API 実装を意味しません。
+v2.1 系では、この catalog を一気に full GS1 AI catalog に広げるのではなく、AI group ごとに metadata、validation、negative tests、docs を揃えて拡張します。現在の supported AI は `getSupportedGs1Ais()` / `getGs1AiInfo(ai)` から public metadata として取得できます。Non-throwing validation API の方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に分けています。
+
+## Public Introspection
+
+`getSupportedGs1Ais()` はこの文書の supported AI を concrete entries として返します。AI family は `3100`-`3105`、`3200`-`3205`、`91`-`99` に展開済みです。`getGs1AiInfo(ai)` は 1 つの AI metadata を返し、unsupported AI は `null` を返します。どちらも internal dictionary object や正規表現は返しません。
 
 ## Separator Behavior
 

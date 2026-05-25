@@ -23,10 +23,16 @@ test("package root, node, and browser subpath exports are importable", async () 
   assert.equal(typeof root.QRCode.parseGs1DigitalLink, "function");
   assert.equal(typeof root.parseGs1ElementString, "function");
   assert.equal(typeof root.QRCode.parseGs1ElementString, "function");
+  assert.equal(typeof root.getSupportedGs1Ais, "function");
+  assert.equal(typeof root.QRCode.getSupportedGs1Ais, "function");
+  assert.equal(typeof root.getGs1AiInfo, "function");
+  assert.equal(typeof root.QRCode.getGs1AiInfo, "function");
+  assert.equal(typeof root.validateGs1Elements, "function");
+  assert.equal(typeof root.QRCode.validateGs1Elements, "function");
+  assert.equal(typeof root.validateGs1ElementString, "function");
+  assert.equal(typeof root.QRCode.validateGs1ElementString, "function");
   assert.equal(root.validateGs1DigitalLink, undefined);
   assert.equal(root.QRCode.validateGs1DigitalLink, undefined);
-  assert.equal(root.validateGs1ElementString, undefined);
-  assert.equal(root.QRCode.validateGs1ElementString, undefined);
   assert.equal(root.applyControlSegments, undefined);
   assert.equal(root.QRCode.applyControlSegments, undefined);
   assert.equal(root.createControlSegments, undefined);

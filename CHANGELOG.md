@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- まだありません。
+- GS1 AI metadata introspection API として `getSupportedGs1Ais()` / `getGs1AiInfo(ai)`、および対応する `QRCode` static methods を追加しました。
+- GS1 UI / form validation 向けの non-throwing API として `validateGs1Elements()` / `validateGs1ElementString()`、および対応する `QRCode` static methods を追加しました。
+- GS1 detail error code、TypeScript declarations、unit tests、packed package smoke、README / docs を v2.1 validation API に合わせて更新しました。
+- `validateGs1DigitalLink()`、Digital Link canonicalization、full GS1 AI catalog は引き続き未公開・非スコープです。
 
 ## 2.0.1 - 2026-05-25
 

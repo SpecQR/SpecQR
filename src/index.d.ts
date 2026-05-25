@@ -393,6 +393,91 @@ export interface GS1ElementStringParseResult {
   hasSeparators: boolean;
 }
 
+export type GS1AiLength =
+  | { type: "fixed"; exact: number }
+  | { type: "variable"; min: number; max: number };
+
+export type GS1ValueKind = "numeric" | "text" | "date" | "decimal";
+export type GS1CheckDigitRule = "none" | "gtin" | "sscc";
+export type GS1DigitalLinkRole = "primary-key" | "key-qualifier" | "data-attribute" | "not-supported";
+export type GS1SeparatorRequirement = "none" | "required-when-followed";
+
+export interface GS1AiInfo {
+  ai: string;
+  label: string;
+  length: GS1AiLength;
+  valueKind: GS1ValueKind;
+  checkDigitRule: GS1CheckDigitRule;
+  digitalLinkRole: GS1DigitalLinkRole;
+  digitalLinkPathForPrimary?: string[];
+  separator: GS1SeparatorRequirement;
+}
+
+export type GS1ValidationContext = "element-string" | "digital-link";
+
+export interface GS1ValidationOptions {
+  context?: GS1ValidationContext;
+  allowUnsupportedAi?: false;
+  collectAllErrors?: boolean;
+}
+
+export type GS1ValidationErrorCode =
+  | "GS1_UNSUPPORTED_AI"
+  | "GS1_INVALID_LENGTH"
+  | "GS1_INVALID_CHARSET"
+  | "GS1_MISSING_SEPARATOR"
+  | "GS1_UNEXPECTED_SEPARATOR"
+  | "GS1_INVALID_CHECK_DIGIT"
+  | "GS1_INVALID_DIGITAL_LINK_PLACEMENT"
+  | "GS1_INVALID_INPUT";
+
+export interface GS1ValidationError {
+  code: GS1ValidationErrorCode;
+  message: string;
+  ai?: string;
+  value?: string;
+  offset?: number;
+  elementIndex?: number;
+  reason?: string;
+  expected?: unknown;
+}
+
+export type GS1ValidationWarningCode =
+  | "GS1_DIGITAL_LINK_QUERY_ONLY"
+  | "GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED"
+  | "GS1_SEPARATOR_NOT_NEEDED"
+  | "GS1_CATALOG_PARTIAL";
+
+export interface GS1ValidationWarning {
+  code: GS1ValidationWarningCode;
+  message: string;
+  ai?: string;
+  elementIndex?: number;
+}
+
+export interface GS1ValidationSuccess {
+  ok: true;
+  elements: GS1Element[];
+  warnings: GS1ValidationWarning[];
+}
+
+export interface GS1ValidationFailure {
+  ok: false;
+  errors: GS1ValidationError[];
+  warnings: GS1ValidationWarning[];
+}
+
+export type GS1ValidationResult = GS1ValidationSuccess | GS1ValidationFailure;
+
+export interface GS1ElementStringValidationSuccess extends GS1ValidationSuccess {
+  hasSeparators: boolean;
+}
+
+export type GS1ElementStringValidationFailure = GS1ValidationFailure;
+export type GS1ElementStringValidationResult =
+  | GS1ElementStringValidationSuccess
+  | GS1ElementStringValidationFailure;
+
 export interface GS1DigitalLinkOptions {
   baseUrl: string | URL;
   primaryAi?: "00" | "01" | "414";
@@ -429,6 +514,13 @@ export function parseGs1DigitalLink(
 ): GS1DigitalLinkParseResult;
 export function parseGs1HumanReadable(input: string): GS1Element[];
 export function parseGs1ElementString(input: string): GS1ElementStringParseResult;
+export function getSupportedGs1Ais(): GS1AiInfo[];
+export function getGs1AiInfo(ai: string): GS1AiInfo | null;
+export function validateGs1Elements(elements: GS1Element[], options?: GS1ValidationOptions): GS1ValidationResult;
+export function validateGs1ElementString(
+  input: string,
+  options?: GS1ValidationOptions
+): GS1ElementStringValidationResult;
 export function calculateGs1CheckDigit(digits: string): string;
 export function validateGs1CheckDigit(digitsWithCheckDigit: string): boolean;
 export function calculateGtinCheckDigit(gtinWithoutCheckDigit: string): string;
@@ -510,6 +602,10 @@ export class QRCode {
   ): GS1DigitalLinkParseResult;
   static parseGs1HumanReadable(input: string): GS1Element[];
   static parseGs1ElementString(input: string): GS1ElementStringParseResult;
+  static getSupportedGs1Ais(): GS1AiInfo[];
+  static getGs1AiInfo(ai: string): GS1AiInfo | null;
+  static validateGs1Elements(elements: GS1Element[], options?: GS1ValidationOptions): GS1ValidationResult;
+  static validateGs1ElementString(input: string, options?: GS1ValidationOptions): GS1ElementStringValidationResult;
   static calculateGs1CheckDigit(digits: string): string;
   static validateGs1CheckDigit(digitsWithCheckDigit: string): boolean;
   static calculateGtinCheckDigit(gtinWithoutCheckDigit: string): string;

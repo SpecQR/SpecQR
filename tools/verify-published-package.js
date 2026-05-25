@@ -68,7 +68,14 @@ assert.equal(typeof specqr.parseGs1DigitalLink, "function");
 assert.equal(typeof specqr.generateStructuredAppend, "function");
 assert.equal(typeof specqr.QRCode.generateStructuredAppend, "function");
 assert.equal(typeof specqr.mergeStructuredAppendParts, "function");
-assert.equal(specqr.validateGs1ElementString, undefined);
+assert.equal(typeof specqr.getSupportedGs1Ais, "function");
+assert.equal(typeof specqr.QRCode.getSupportedGs1Ais, "function");
+assert.equal(typeof specqr.getGs1AiInfo, "function");
+assert.equal(typeof specqr.QRCode.getGs1AiInfo, "function");
+assert.equal(typeof specqr.validateGs1Elements, "function");
+assert.equal(typeof specqr.QRCode.validateGs1Elements, "function");
+assert.equal(typeof specqr.validateGs1ElementString, "function");
+assert.equal(typeof specqr.QRCode.validateGs1ElementString, "function");
 assert.equal(specqr.validateGs1DigitalLink, undefined);
 
 if (typeof specqr.appendGtinCheckDigit === "function") {
@@ -94,6 +101,27 @@ assert.deepEqual(parsedGs1, {
   ],
   hasSeparators: true
 });
+
+const supportedAis = specqr.getSupportedGs1Ais();
+assert.equal(Array.isArray(supportedAis), true);
+assert.equal(supportedAis.some((entry) => entry.ai === "01"), true);
+assert.deepEqual(specqr.getGs1AiInfo("01").length, { type: "fixed", exact: 14 });
+assert.equal(specqr.getGs1AiInfo("999"), null);
+
+const validation = specqr.validateGs1ElementString(rawGs1);
+assert.equal(validation.ok, true);
+assert.deepEqual(validation.elements, parsedGs1.elements);
+assert.equal(validation.hasSeparators, true);
+assert.equal(specqr.QRCode.validateGs1ElementString("010491234567890410ABC12317251231").ok, false);
+assert.equal(
+  specqr.validateGs1Elements([{ ai: "01", value: "04912345678904" }]).ok,
+  true
+);
+assert.equal(
+  specqr.QRCode.validateGs1Elements([{ ai: "01", value: "04912345678900" }]).ok,
+  false
+);
+
 const digitalLink = specqr.createGs1DigitalLink(parsedGs1, { baseUrl: "https://example.com" });
 assert.equal(digitalLink, "https://example.com/01/04912345678904/10/ABC123?17=251231");
 assert.deepEqual(specqr.QRCode.parseGs1DigitalLink(digitalLink).elements, parsedGs1.elements);

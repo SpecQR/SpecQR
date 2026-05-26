@@ -1,6 +1,6 @@
 # GS1 Digital Link v2 Design
 
-この文書は、SpecQR v2 系で追加する GS1 Digital Link helper の設計記録です。`createGs1DigitalLink(input, options)` と `parseGs1DigitalLink(uri, options?)` は実装済みです。resolver、compression、full canonicalizer はまだ実装していません。
+この文書は、SpecQR v2 系で追加する GS1 Digital Link helper の設計記録です。`createGs1DigitalLink(input, options)` と `parseGs1DigitalLink(uri, options?)` は実装済みです。resolver、compression、full canonicalizer はまだ実装していません。v2.2.0 で公開候補にする non-throwing validation と deterministic normalization の設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に分けます。
 
 参考にする外部仕様は [GS1 Digital Link Standard: URI Syntax 1.6.0](https://ref.gs1.org/standards/digital-link/uri-syntax/) と [GS1 Digital Link overview](https://www.gs1.org/standards/gs1-digital-link) です。SpecQR の v2 helper はこの仕様全体の完全実装ではなく、既存 GS1 element data から安全に URL QR を作るための小さな API layer として始めます。
 
@@ -78,6 +78,7 @@ function parseGs1DigitalLink(
 次は v2 初期 API には含めません。
 
 - `validateGs1DigitalLink(uri)`
+- `normalizeGs1DigitalLink(uri)`
 - resolver client / network API
 - Digital Link compression / decompression
 - resolver description file lookup
@@ -86,7 +87,7 @@ function parseGs1DigitalLink(
 
 `parseGs1DigitalLink()` が成功すれば validation 済みの parse result を返し、失敗時は `InvalidGs1Error` を throw するため、boolean-only validator は最初の公開 API には不要と判断します。現時点では `validateGs1DigitalLink()` は public export していません。
 
-v2.1.0 の GS1 validation release でも、Digital Link 専用の `validateGs1DigitalLink(uri, options?)` は v2.2.0 以降の候補として deferred にします。理由は、Digital Link canonicalization、resolver、unknown query、path placement policy が raw element string validation より広い surface を持つためです。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用の一部を non-throwing validation result として検出します。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) を参照してください。
+v2.1.0 の GS1 validation release でも、Digital Link 専用の `validateGs1DigitalLink(uri, options?)` は deferred にしました。理由は、Digital Link canonicalization、resolver、unknown query、path placement policy が raw element string validation より広い surface を持つためです。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用の一部を non-throwing validation result として検出します。v2.2.0 の候補 API と policy は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定します。
 
 ## Supported v2 Scope
 
@@ -372,6 +373,7 @@ console.log(parsed.elements);
 ## Remaining Non-scope
 
 - `validateGs1DigitalLink()` public API
+- `normalizeGs1DigitalLink()` public API
 - Network resolver / redirect / linkset lookup
 - Resolver Description File lookup
 - Digital Link compression / decompression
@@ -409,12 +411,13 @@ console.log(parsed.elements);
 - `QRCode.generate(uri, { gs1: true })` misuse stays rejected through existing GS1 raw validator.
 - Full canonicalization remains out of scope for the current helper.
 
-次フェーズでは、AI metadata の拡張単位を決め、必要な範囲で Digital Link canonicalization、resolver integration を検討します。Control segment model refactor、FNC1 second position、Structured Append low-level header の基本実装は完了済みです。
+次フェーズでは、AI metadata の拡張単位を決め、必要な範囲で Digital Link validation、deterministic normalization、canonicalization、resolver integration を検討します。Control segment model refactor、FNC1 second position、Structured Append low-level header の基本実装は完了済みです。
 
 ## Implementation Order
 
 1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute. (done for currently supported AI)
 2. Document current canonical output policy and supported AI metadata expansion plan. (done)
 3. Refactor the control segment model so ECI / FNC1 first can share infrastructure with FNC1 second / Structured Append. (done for ECI / FNC1 first / FNC1 second / Structured Append low-level)
-4. Revisit supported AI expansion and full canonicalization after broader metadata exists.
-5. Consider resolver / linkset integrations outside the core QR generator.
+4. Implement v2.2.0 `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` according to the validation design. (deferred)
+5. Revisit supported AI expansion and full canonicalization after broader metadata exists.
+6. Consider resolver / linkset integrations outside the core QR generator.

@@ -334,7 +334,7 @@ if (!result.ok) {
 }
 ```
 
-`validateGs1DigitalLink(uri, options?)` は Digital Link full canonicalization / resolver / unknown query policy と関係が深いため公開していません。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API で扱います。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) を参照してください。
+`validateGs1DigitalLink(uri, options?)` は Digital Link full canonicalization / resolver / unknown query policy と関係が深いため、現在の public API には含めていません。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API で扱います。v2.2.0 では、non-throwing `validateGs1DigitalLink()` と string-returning `normalizeGs1DigitalLink()` を追加する候補です。提案中の result shape は成功時 `{ ok: true, result, warnings }`、失敗時 `{ ok: false, errors, warnings }` で、normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy に限定します。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
 
 ### `createGs1DigitalLink(input, options)`
 

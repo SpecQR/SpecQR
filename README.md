@@ -40,6 +40,7 @@ npm install specqr@next
 - Project Language Policy: [docs/project-language.md](docs/project-language.md)
 - Supported GS1 AIs: [docs/gs1-supported-ai.md](docs/gs1-supported-ai.md)
 - GS1 Validation v2.1 Design: [docs/gs1-validation-v2.1.md](docs/gs1-validation-v2.1.md)
+- GS1 Digital Link Validation v2.2 Design: [docs/gs1-digital-link-validation-v2.2.md](docs/gs1-digital-link-validation-v2.2.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
 - Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
 - Structured Append Scanning Workflow: [docs/structured-append-scanning-v2.md](docs/structured-append-scanning-v2.md)
@@ -68,7 +69,7 @@ Micro QR、rMQR、logo overlay、styled modules は現在の core package の対
 
 詳細な対応状況は [Conformance Matrix](docs/conformance.md) にまとめています。外部参照実装との固定条件比較は [External Reference Comparison](docs/reference-comparison.md) を参照してください。
 
-v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を stable release scope として扱います。詳細は [v2 Roadmap](docs/v2-roadmap.md) と [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md) を参照してください。
+v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を stable release scope として扱います。詳細は [v2 Roadmap](docs/v2-roadmap.md)、[GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md)、[GS1 Digital Link Validation v2.2 Design](docs/gs1-digital-link-validation-v2.2.md) を参照してください。
 
 2.1.0 では GS1 validation layer を stable API として強化しました。Supported AI metadata は `getSupportedGs1Ais()` / `getGs1AiInfo(ai)` で確認でき、UI / form validation では throwing API の代わりに `validateGs1Elements()` / `validateGs1ElementString()` の non-throwing result を使えます。詳細は [GS1 Validation v2.1 Design](docs/gs1-validation-v2.1.md) を参照してください。
 

@@ -8,7 +8,7 @@ SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にし
 
 v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting、manual segments splitting、`mergeStructuredAppendParts()` は実装済みです。Structured Append の string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper の境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
-v2.1 系は GS1 validation release として、supported AI catalog introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱います。`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。今後の catalog expansion 方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。
+v2.1 系は GS1 validation release として、supported AI catalog introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱います。`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。今後の catalog expansion 方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。v2.2.0 で公開候補にする Digital Link 専用 validation / normalization API は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に docs-only で固定しています。
 
 ## 実装済み範囲
 
@@ -80,8 +80,8 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 - Full GS1 AI catalog validation
 - Industry-specific GS1 AI rules
-- GS1 Digital Link 専用の non-throwing validator。`validateGs1DigitalLink()` は未公開です。
-- GS1 Digital Link non-throwing validator / full canonicalizer
+- GS1 Digital Link 専用の non-throwing validator / normalizer の runtime 実装。`validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` は未公開です。
+- GS1 Digital Link full canonicalizer
 - Structured Append public parity helper
 - QR decoder / scanner integration
 - Micro QR
@@ -97,7 +97,7 @@ v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定しま
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
 - GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。次は supported AI catalog の拡張、Digital Link 専用 validation、業界別 rule の扱いを個別に設計する。
-- GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に full AI catalog metadata、canonicalization、resolver 周辺を検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
+- GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の round-trip を起点に、次に `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` を v2.2.0 proposal に従って実装する。Full AI catalog metadata、full canonicalization、resolver 周辺はその後に検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
 - Structured Append: low-level header encoding、string / binary high-level automatic splitting API、manual segments high-level splitting API、decoded parts 向け `mergeStructuredAppendParts()` は実装済み。manual segments の分割方針は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 helper の前提は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に固定済み。public parity helper と QR decoder / scanner integration は未対応。

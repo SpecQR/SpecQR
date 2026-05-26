@@ -116,6 +116,20 @@ v2.1 系は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定し�
 
 `validateGs1DigitalLink(uri, options?)` は公開していません。Digital Link full canonicalization、resolver、unknown query policy は v2.2.0 以降の design として扱い、v2.1 系では `validateGs1Elements(elements, { context: "digital-link" })` の option surface だけを固定しています。
 
+## v2.2.0 GS1 Digital Link Validation / Normalization
+
+v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定した proposal を release gate にします。Runtime 実装時には次を確認します。
+
+- Public export: `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` と `QRCode` static method が root package と TypeScript declarations で一致すること。
+- Validation result: 成功時 `{ ok: true, result, warnings }`、失敗時 `{ ok: false, errors, warnings }` の shape を固定すること。
+- Throwing compatibility: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の existing throw behavior と output が変わらないこと。
+- Unknown query: default preserve、`unknownQuery: "reject"`、unknown query relative order preservation を確認すること。
+- Percent encoding: GS1 AI path / query value の decode / validation / re-encode、invalid percent escape rejection を確認すること。
+- URI policy: `http:` warning、`https:` success、other scheme rejection、fragment rejection を確認すること。
+- Placement / duplicates: duplicate AI、path に置けない AI、invalid GTIN / SSCC check digit を detail error code で確認すること。
+- Normalization: string return、idempotency、GS1 AI query lexical sort、unknown query の non-sorting policy、SpecQR deterministic policy と full canonicalizer の違いを tests / docs に残すこと。
+- Packed package smoke: installed package から new API と `QRCode` static method が動き、docs examples と TypeScript consumer check が通ること。
+
 ## Decoder Validation
 
 より高い信頼性のため、generated SVG または rasterized output を少なくとも 1 つの独立 decoder で検証します。

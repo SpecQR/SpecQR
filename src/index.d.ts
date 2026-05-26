@@ -429,6 +429,11 @@ export type GS1ValidationErrorCode =
   | "GS1_UNEXPECTED_SEPARATOR"
   | "GS1_INVALID_CHECK_DIGIT"
   | "GS1_INVALID_DIGITAL_LINK_PLACEMENT"
+  | "GS1_DIGITAL_LINK_INVALID_URI"
+  | "GS1_DIGITAL_LINK_FRAGMENT_NOT_ALLOWED"
+  | "GS1_INVALID_PERCENT_ENCODING"
+  | "GS1_DIGITAL_LINK_UNKNOWN_QUERY"
+  | "GS1_DUPLICATE_AI"
   | "GS1_INVALID_INPUT";
 
 export interface GS1ValidationError {
@@ -436,6 +441,7 @@ export interface GS1ValidationError {
   message: string;
   ai?: string;
   value?: string;
+  key?: string;
   offset?: number;
   elementIndex?: number;
   reason?: string;
@@ -443,6 +449,7 @@ export interface GS1ValidationError {
 }
 
 export type GS1ValidationWarningCode =
+  | "GS1_DIGITAL_LINK_HTTP"
   | "GS1_DIGITAL_LINK_QUERY_ONLY"
   | "GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED"
   | "GS1_SEPARATOR_NOT_NEEDED"
@@ -452,7 +459,11 @@ export interface GS1ValidationWarning {
   code: GS1ValidationWarningCode;
   message: string;
   ai?: string;
+  key?: string;
+  value?: string;
   elementIndex?: number;
+  count?: number;
+  reason?: string;
 }
 
 export interface GS1ValidationSuccess {
@@ -502,6 +513,22 @@ export interface GS1DigitalLinkParseResult {
   unknownQuery: GS1DigitalLinkUnknownQuery[];
 }
 
+export interface GS1DigitalLinkValidationOptions {
+  primaryAi?: "00" | "01" | "414";
+  unknownQuery?: "preserve" | "reject";
+}
+
+export interface GS1DigitalLinkValidationSuccess {
+  ok: true;
+  result: GS1DigitalLinkParseResult;
+  warnings: GS1ValidationWarning[];
+}
+
+export type GS1DigitalLinkValidationFailure = GS1ValidationFailure;
+export type GS1DigitalLinkValidationResult =
+  | GS1DigitalLinkValidationSuccess
+  | GS1DigitalLinkValidationFailure;
+
 export const GS1_FNC1_SEPARATOR: "\x1D";
 export function createGs1ElementString(elements: GS1Element[]): string;
 export function createGs1DigitalLink(
@@ -512,6 +539,10 @@ export function parseGs1DigitalLink(
   uri: string | URL,
   options?: GS1DigitalLinkParseOptions
 ): GS1DigitalLinkParseResult;
+export function validateGs1DigitalLink(
+  uri: string | URL,
+  options?: GS1DigitalLinkValidationOptions
+): GS1DigitalLinkValidationResult;
 export function parseGs1HumanReadable(input: string): GS1Element[];
 export function parseGs1ElementString(input: string): GS1ElementStringParseResult;
 export function getSupportedGs1Ais(): GS1AiInfo[];
@@ -600,6 +631,10 @@ export class QRCode {
     uri: string | URL,
     options?: GS1DigitalLinkParseOptions
   ): GS1DigitalLinkParseResult;
+  static validateGs1DigitalLink(
+    uri: string | URL,
+    options?: GS1DigitalLinkValidationOptions
+  ): GS1DigitalLinkValidationResult;
   static parseGs1HumanReadable(input: string): GS1Element[];
   static parseGs1ElementString(input: string): GS1ElementStringParseResult;
   static getSupportedGs1Ais(): GS1AiInfo[];

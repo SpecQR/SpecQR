@@ -1,6 +1,6 @@
 # API
 
-この文書は現在の SpecQR public API を説明します。SpecQR `2.1.0` では、2.0.0 で stable scope に入れた GS1 Digital Link、FNC1 second position、Structured Append API に加え、GS1 validation / supported AI introspection API を stable public API として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
+この文書は現在の SpecQR main branch public API を説明します。SpecQR v2 系では、GS1 Digital Link、FNC1 second position、Structured Append API、GS1 validation / supported AI introspection API、GS1 Digital Link validation API を stable public API として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
 
 ## Core
 
@@ -274,6 +274,7 @@ QRCode.generateSegments([
 - `validateGs1ElementString(input, options?)`: raw GS1 element string を例外なしの result object として検証します。
 - `createGs1DigitalLink(input, options)`: 対応 AI の element data から GS1 Digital Link URI を返します。これは通常 URL QR 用の helper であり、`gs1: true` は使いません。
 - `parseGs1DigitalLink(uri, options?)`: GS1 Digital Link URI から `{ elements, primary, pathElements, queryElements, unknownQuery }` を返します。
+- `validateGs1DigitalLink(uri, options?)`: GS1 Digital Link URI を non-throwing validation result として検証します。
 - `GS1_FNC1_SEPARATOR`: 可変長 AI の後に別の element が続く場合に挿入される ASCII GS separator `"\x1D"` です。
 - `calculateGs1CheckDigit(digits)`: GS1 mod-10 check digit を計算します。
 - `validateGs1CheckDigit(digitsWithCheckDigit)`: 末尾 check digit を検証します。
@@ -334,7 +335,7 @@ if (!result.ok) {
 }
 ```
 
-`validateGs1DigitalLink(uri, options?)` は Digital Link full canonicalization / resolver / unknown query policy と関係が深いため、現在の public API には含めていません。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API で扱います。v2.2.0 では、non-throwing `validateGs1DigitalLink()` と string-returning `normalizeGs1DigitalLink()` を追加する候補です。提案中の result shape は成功時 `{ ok: true, result, warnings }`、失敗時 `{ ok: false, errors, warnings }` で、normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy に限定します。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
+`validateGs1DigitalLink(uri, options?)` は v2.2.0 の Digital Link polish API として公開しています。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API でも扱えます。`normalizeGs1DigitalLink()` はまだ公開していません。Normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy として次 phase に分けます。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
 
 ### `createGs1DigitalLink(input, options)`
 
@@ -401,6 +402,50 @@ const regenerated = createGs1DigitalLink(parsed, {
 `unknownQuery` には GS1 AI として扱わない query parameter を `{ key, value }` で保持します。数字 2-4 桁の query key は GS1 AI として validation されるため、unsupported AI や invalid value は `InvalidGs1Error` になります。`options.unknownQuery: "reject"` を指定すると、GS1 AI ではない query parameter も reject します。
 
 `options.primaryAi` は `"00" | "01" | "414"` を指定できます。指定しない場合は path 内の最初の supported primary AI を探します。path 上で primary AI より前にある segment は URI stem として扱い、返り値には含めません。
+
+### `validateGs1DigitalLink(uri, options?)`
+
+GS1 Digital Link URI を検証し、throw ではなく validation result を返します。`parseGs1DigitalLink()` の throwing behavior は変えません。
+
+```js
+import { validateGs1DigitalLink } from "specqr";
+
+const result = validateGs1DigitalLink(
+  "https://example.com/01/04912345678904/10/ABC123?17=251231&linkType=all"
+);
+
+if (result.ok) {
+  console.log(result.result.elements);
+  console.log(result.warnings);
+} else {
+  console.log(result.errors[0].code);
+}
+```
+
+成功時は `{ ok: true, result, warnings }` を返し、`result` は `parseGs1DigitalLink()` と同じ `{ elements, primary, pathElements, queryElements, unknownQuery }` です。失敗時は `{ ok: false, errors, warnings }` を返します。
+
+`options` は `parseGs1DigitalLink()` と同じ `primaryAi?: "00" | "01" | "414"` と `unknownQuery?: "preserve" | "reject"` を受け付けます。Default は `unknownQuery: "preserve"` です。
+
+代表的な detail error code は次です。
+
+- `GS1_DIGITAL_LINK_INVALID_URI`
+- `GS1_DIGITAL_LINK_FRAGMENT_NOT_ALLOWED`
+- `GS1_INVALID_PERCENT_ENCODING`
+- `GS1_DIGITAL_LINK_UNKNOWN_QUERY`
+- `GS1_UNSUPPORTED_AI`
+- `GS1_INVALID_LENGTH`
+- `GS1_INVALID_CHARSET`
+- `GS1_INVALID_CHECK_DIGIT`
+- `GS1_INVALID_DIGITAL_LINK_PLACEMENT`
+- `GS1_DUPLICATE_AI`
+- `GS1_INVALID_INPUT`
+
+代表的な warning code は次です。
+
+- `GS1_DIGITAL_LINK_HTTP`
+- `GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED`
+
+`http:` URI は validation failure にはせず、`GS1_DIGITAL_LINK_HTTP` warning を返します。Fragment、非 `http` / `https` scheme、malformed path、invalid percent encoding は `ok: false` です。
 
 helper が対応する代表 AI は次の範囲です。
 

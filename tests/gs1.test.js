@@ -19,6 +19,7 @@ import {
   parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
+  validateGs1DigitalLink,
   validateGs1CheckDigit,
   validateGs1Elements,
   validateGs1ElementString as validatePublicGs1ElementString,
@@ -687,6 +688,193 @@ test("GS1 Digital Link parser rejects invalid URI values", () => {
       `Expected InvalidGs1Error matching ${message}`
     );
   }
+});
+
+test("public GS1 Digital Link validation returns non-throwing success results", () => {
+  const uri = "https://example.com/stem/01/04912345678904/21/SER%2F1?foo=bar&17=251231&linkType=all";
+  const result = validateGs1DigitalLink(uri);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.result, {
+    elements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "21", value: "SER/1" },
+      { ai: "17", value: "251231" }
+    ],
+    primary: { ai: "01", value: "04912345678904" },
+    pathElements: [
+      { ai: "01", value: "04912345678904" },
+      { ai: "21", value: "SER/1" }
+    ],
+    queryElements: [
+      { ai: "17", value: "251231" }
+    ],
+    unknownQuery: [
+      { key: "foo", value: "bar" },
+      { key: "linkType", value: "all" }
+    ]
+  });
+  assert.deepEqual(result.warnings, [
+    {
+      code: "GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED",
+      message: "GS1 Digital Link URI contains non-GS1 query parameters preserved in unknownQuery.",
+      reason: "unknown-query-preserved",
+      count: 2
+    }
+  ]);
+  assert.deepEqual(QRCode.validateGs1DigitalLink(uri), result);
+});
+
+test("public GS1 Digital Link validation warns for http URIs", () => {
+  const result = validateGs1DigitalLink("http://example.com/01/04912345678904");
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.warnings, [
+    {
+      code: "GS1_DIGITAL_LINK_HTTP",
+      message: "GS1 Digital Link URI uses http. Use https when transport security is required.",
+      reason: "http-uri"
+    }
+  ]);
+});
+
+test("public GS1 Digital Link validation maps failures to detail errors", () => {
+  const cases = [
+    [
+      "ftp://example.com/01/04912345678904",
+      undefined,
+      {
+        code: "GS1_DIGITAL_LINK_INVALID_URI",
+        reason: "invalid-uri",
+        expected: "absolute http or https URL"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904#frag",
+      undefined,
+      {
+        code: "GS1_DIGITAL_LINK_FRAGMENT_NOT_ALLOWED",
+        reason: "fragment-not-allowed",
+        expected: "URI without fragment"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904?linkType=all",
+      { unknownQuery: "reject" },
+      {
+        code: "GS1_DIGITAL_LINK_UNKNOWN_QUERY",
+        key: "linkType",
+        reason: "unknown-query",
+        expected: "GS1 AI query parameter or unknownQuery: \"preserve\""
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904?9999=ABC",
+      undefined,
+      {
+        code: "GS1_UNSUPPORTED_AI",
+        ai: "9999",
+        reason: "unsupported-ai",
+        expected: "supported GS1 AI"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904?17=25123",
+      undefined,
+      {
+        code: "GS1_INVALID_LENGTH",
+        ai: "17",
+        reason: "invalid-length",
+        expected: "exactly 6 characters"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904?10=%F0%9F%98%80",
+      undefined,
+      {
+        code: "GS1_INVALID_CHARSET",
+        ai: "10",
+        reason: "invalid-charset",
+        expected: "printable ASCII"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678905",
+      undefined,
+      {
+        code: "GS1_INVALID_CHECK_DIGIT",
+        ai: "01",
+        reason: "invalid-check-digit",
+        expected: "valid GTIN check digit"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904/17/251231",
+      undefined,
+      {
+        code: "GS1_INVALID_DIGITAL_LINK_PLACEMENT",
+        ai: "17",
+        reason: "invalid-digital-link-placement"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904?01=04912345678904",
+      undefined,
+      {
+        code: "GS1_DUPLICATE_AI",
+        ai: "01",
+        reason: "duplicate-ai",
+        expected: "unique GS1 AI within the Digital Link URI"
+      }
+    ],
+    [
+      "https://example.com/01/%E0%A4%A",
+      undefined,
+      {
+        code: "GS1_INVALID_PERCENT_ENCODING",
+        reason: "invalid-percent-encoding",
+        expected: "percent escapes must use two hexadecimal digits"
+      }
+    ],
+    [
+      "https://example.com/01/04912345678904/10",
+      undefined,
+      {
+        code: "GS1_INVALID_INPUT",
+        reason: "malformed-path",
+        expected: "Digital Link path containing primary AI and AI/value pairs"
+      }
+    ]
+  ];
+
+  for (const [uri, options, expected] of cases) {
+    const result = validateGs1DigitalLink(uri, options);
+    assert.equal(result.ok, false, `Expected ${uri} to fail validation`);
+    const actual = {
+        code: result.errors[0].code,
+        ai: result.errors[0].ai,
+        key: result.errors[0].key,
+        value: result.errors[0].value,
+        reason: result.errors[0].reason,
+        expected: result.errors[0].expected
+      };
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(actual).filter(([, value]) => value !== undefined)),
+      expected
+    );
+    assert.equal(typeof result.errors[0].message, "string");
+    assert.deepEqual(result.warnings, []);
+  }
+});
+
+test("public GS1 Digital Link validation keeps throwing parser behavior separate", () => {
+  const uri = "https://example.com/01/04912345678904#frag";
+
+  assert.equal(validateGs1DigitalLink(uri).ok, false);
+  assert.throws(
+    () => parseGs1DigitalLink(uri),
+    (error) => error instanceof InvalidGs1Error && /fragment/u.test(error.message)
+  );
 });
 
 test("GS1 Digital Link helper supports explicit primary and path AI options", () => {

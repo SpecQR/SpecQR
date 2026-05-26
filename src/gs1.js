@@ -11,6 +11,7 @@ export {
   GS1_FNC1_SEPARATOR,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
+  validateGs1DigitalLink,
   validateGs1CheckDigit,
   validateGs1Elements,
   validateGs1ElementString,

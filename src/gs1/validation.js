@@ -145,7 +145,7 @@ function validationFailure(errors) {
   };
 }
 
-function toGs1ValidationError(error, context = {}) {
+export function toGs1ValidationError(error, context = {}) {
   if (!(error instanceof InvalidGs1Error)) {
     return createValidationError("GS1_INVALID_INPUT", getErrorMessage(error), { reason: "invalid-input" });
   }
@@ -201,6 +201,13 @@ function toGs1ValidationError(error, context = {}) {
       reason: "invalid-digital-link-placement"
     });
   }
+  if (/duplicate AI \d{2,4}/u.test(message)) {
+    return createValidationError("GS1_DUPLICATE_AI", message, {
+      ...base,
+      reason: "duplicate-ai",
+      expected: "unique GS1 AI within the Digital Link URI"
+    });
+  }
 
   return createValidationError("GS1_INVALID_INPUT", message, { ...base, reason: "invalid-input" });
 }
@@ -228,7 +235,7 @@ function extractCommonFields(message, context) {
   return fields;
 }
 
-function createValidationError(code, message, details = {}) {
+export function createValidationError(code, message, details = {}) {
   const error = { code, message };
   for (const [key, value] of Object.entries(details)) {
     if (value !== undefined) {
@@ -243,7 +250,9 @@ function getErrorMessage(error) {
 }
 
 function extractAi(message) {
-  return message.match(/GS1 AI (\d{2,4})/u)?.[1] ?? message.match(/Unsupported GS1 AI (\d{2,4})/u)?.[1];
+  return message.match(/GS1 AI (\d{2,4})/u)?.[1] ??
+    message.match(/Unsupported GS1 AI (\d{2,4})/u)?.[1] ??
+    message.match(/duplicate AI (\d{2,4})/u)?.[1];
 }
 
 function extractAiFromInputOffset(input, message) {

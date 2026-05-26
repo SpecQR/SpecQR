@@ -12,10 +12,12 @@ import {
   mergeStructuredAppendParts,
   parseGs1DigitalLink,
   parseGs1ElementString,
+  validateGs1DigitalLink,
   validateGs1Elements,
   validateGs1ElementString,
   type GS1AiInfo,
   type GS1DigitalLinkParseResult,
+  type GS1DigitalLinkValidationResult,
   type GS1ElementStringParseResult,
   type GS1ElementStringValidationResult,
   type GS1ValidationError,
@@ -100,6 +102,15 @@ expectType<string>(digitalLink);
 const parsedDigitalLink = parseGs1DigitalLink(digitalLink);
 expectType<GS1DigitalLinkParseResult>(parsedDigitalLink);
 expectType<string | null>(parsedDigitalLink.primary?.value ?? null);
+const digitalLinkValidation = validateGs1DigitalLink(digitalLink);
+expectType<GS1DigitalLinkValidationResult>(digitalLinkValidation);
+expectType<GS1DigitalLinkValidationResult>(QRCode.validateGs1DigitalLink(digitalLink, { unknownQuery: "preserve" }));
+if (digitalLinkValidation.ok) {
+  expectType<GS1DigitalLinkParseResult>(digitalLinkValidation.result);
+  expectType<string>(digitalLinkValidation.result.elements[0].ai);
+} else {
+  expectType<GS1ValidationError>(digitalLinkValidation.errors[0]);
+}
 
 const staticDigitalLink = QRCode.createGs1DigitalLink([{ ai: "01", value: "04912345678904" }], {
   baseUrl: new URL("https://example.com/base/")
@@ -176,5 +187,5 @@ expectType<ImageData>(toImageDataFromSegments([{ mode: "alphanumeric", data: "HE
 expectType<string>(toObjectURL("https://example.com"));
 expectType<string>(toObjectURLFromSegments([{ mode: "kanji", data: "漢字" }]));
 
-// @ts-expect-error validateGs1DigitalLink is intentionally not public in v2.x.
-specqr.validateGs1DigitalLink;
+// @ts-expect-error normalizeGs1DigitalLink is intentionally not public yet.
+specqr.normalizeGs1DigitalLink;

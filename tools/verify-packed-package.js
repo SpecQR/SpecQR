@@ -65,8 +65,36 @@ assert.equal(typeof specqr.validateGs1Elements, "function");
 assert.equal(typeof specqr.QRCode.validateGs1Elements, "function");
 assert.equal(typeof specqr.validateGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.validateGs1ElementString, "function");
-assert.equal(specqr.validateGs1DigitalLink, undefined);
-assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
+assert.equal(typeof specqr.validateGs1DigitalLink, "function");
+assert.equal(typeof specqr.QRCode.validateGs1DigitalLink, "function");
+assert.equal(specqr.normalizeGs1DigitalLink, undefined);
+assert.equal(specqr.QRCode.normalizeGs1DigitalLink, undefined);
+
+const validDigitalLink = specqr.validateGs1DigitalLink(
+  "https://example.com/01/04912345678904/10/LOT-A?17=251231"
+);
+assert.equal(validDigitalLink.ok, true);
+assert.deepEqual(validDigitalLink.result.elements, [
+  { ai: "01", value: "04912345678904" },
+  { ai: "10", value: "LOT-A" },
+  { ai: "17", value: "251231" }
+]);
+assert.deepEqual(specqr.QRCode.validateGs1DigitalLink(
+  "https://example.com/01/04912345678904?linkType=all",
+  { unknownQuery: "reject" }
+), {
+  ok: false,
+  errors: [
+    {
+      code: "GS1_DIGITAL_LINK_UNKNOWN_QUERY",
+      message: "GS1 Digital Link query parameter \\"linkType\\" is not a GS1 AI",
+      key: "linkType",
+      reason: "unknown-query",
+      expected: "GS1 AI query parameter or unknownQuery: \\"preserve\\""
+    }
+  ],
+  warnings: []
+});
 
 const fnc1Second = specqr.generate("AA1234BBB112", {
   fnc1Second: "37",
@@ -368,6 +396,10 @@ async function assertTypeDeclarations(directory) {
   );
   assert.match(
     declarations,
+    /export function validateGs1DigitalLink\(\s*uri: string \| URL,\s*options\?: GS1DigitalLinkValidationOptions\s*\): GS1DigitalLinkValidationResult;/
+  );
+  assert.match(
+    declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
   assert.match(declarations, /static getSupportedGs1Ais\(\): GS1AiInfo\[];/);
@@ -377,6 +409,7 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /static mergeStructuredAppendParts\(parts: QRStructuredAppendDecodedPart<string>\[]/);
   assert.match(declarations, /static createGs1DigitalLink\(/);
   assert.match(declarations, /static parseGs1DigitalLink\(/);
+  assert.match(declarations, /static validateGs1DigitalLink\(/);
 }
 
 function assertPackContents(packed) {

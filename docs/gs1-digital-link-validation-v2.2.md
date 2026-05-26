@@ -1,13 +1,13 @@
 # GS1 Digital Link Validation v2.2 Design
 
-この文書は、SpecQR v2.2.0 で公開候補にする GS1 Digital Link validation / normalization API の設計記録です。これは docs-only proposal であり、現在の runtime behavior、public API、package version は変更しません。
+この文書は、SpecQR v2.2.0 で公開する GS1 Digital Link validation API と、次 phase に回す deterministic normalization API の設計記録です。`validateGs1DigitalLink()` は実装済みです。`normalizeGs1DigitalLink()` はまだ実装・公開していません。
 
-既存の `createGs1DigitalLink()` / `parseGs1DigitalLink()` は v2.0.0 で実装済みです。v2.2.0 では、その上に UI / form validation 向けの non-throwing API と、SpecQR が扱う supported AI 範囲に限定した deterministic normalization API を追加する方針を固定します。
+既存の `createGs1DigitalLink()` / `parseGs1DigitalLink()` は v2.0.0 で実装済みです。v2.2.0 では、まず UI / form validation 向けの non-throwing API を追加しました。SpecQR が扱う supported AI 範囲に限定した deterministic normalization API は次 phase に分けます。
 
 ## Goals
 
 - `parseGs1DigitalLink()` の throwing behavior を維持しながら、失敗理由を機械的に扱える validation result API を用意する。
-- `createGs1DigitalLink()` の既存 output を silent に変えず、別 API として deterministic normalization を提供する。
+- `createGs1DigitalLink()` の既存 output を silent に変えず、deterministic normalization は別 API として後続実装に分ける。
 - Unknown query、percent encoding、path / query placement、duplicate AI、fragment、http / https の扱いを v2.2.0 実装前に固定する。
 - Full GS1 Digital Link canonicalizer、resolver、compression、web vocabulary helper ではないことを明確にする。
 - Current supported AI catalog だけを対象にし、full GS1 AI catalog 対応を主張しない。
@@ -24,7 +24,7 @@
 - Industry profile validation。
 - FNC1 second position、Structured Append、Micro QR、rMQR への追加変更。
 
-## Proposed Public API
+## Public API
 
 ### `validateGs1DigitalLink(uri, options?)`
 
@@ -36,14 +36,11 @@ type Gs1DigitalLinkUnknownQueryPolicy = "preserve" | "reject";
 type Gs1DigitalLinkValidationOptions = {
   primaryAi?: "00" | "01" | "414";
   unknownQuery?: Gs1DigitalLinkUnknownQueryPolicy;
-  normalize?: false | "specqr-deterministic";
 };
 
 type Gs1DigitalLinkValidationSuccess = {
   ok: true;
-  result: GS1DigitalLinkParseResult & {
-    normalized?: string;
-  };
+  result: GS1DigitalLinkParseResult;
   warnings: GS1ValidationWarning[];
 };
 
@@ -71,13 +68,11 @@ type GS1DigitalLinkParseResult = {
 };
 ```
 
-`options.normalize: "specqr-deterministic"` を指定した場合だけ、成功 result の `result.normalized` に `normalizeGs1DigitalLink(uri, options)` と同じ normalized URI string を入れます。Default では parse metadata だけを返し、余分な string allocation と policy surface を増やしません。
+`QRCode.validateGs1DigitalLink(uri, options?)` も root function と同じ動作の static method として公開します。
 
-`QRCode.validateGs1DigitalLink(uri, options?)` も root function と同じ動作の static method として追加する候補です。
+### `normalizeGs1DigitalLink(uri, options?)` deferred
 
-### `normalizeGs1DigitalLink(uri, options?)`
-
-GS1 Digital Link URI を SpecQR の deterministic policy で再構成し、string を返します。
+GS1 Digital Link URI を SpecQR の deterministic policy で再構成し、string を返す API は次 phase に回します。現時点では root export も `QRCode` static method もありません。
 
 ```ts
 type Gs1DigitalLinkNormalizeOptions = {
@@ -92,9 +87,7 @@ function normalizeGs1DigitalLink(
 ): string;
 ```
 
-`normalizeGs1DigitalLink()` の戻り値は metadata object ではなく string にします。理由は、normalization の主用途が storage、comparison、copy、QR payload generation であり、metadata が必要な場合は `parseGs1DigitalLink(normalizedUri)` または `validateGs1DigitalLink(uri, { normalize: "specqr-deterministic" })` で得られるためです。
-
-`QRCode.normalizeGs1DigitalLink(uri, options?)` も root function と同じ動作の static method として追加する候補です。
+将来実装時の戻り値は metadata object ではなく string にします。理由は、normalization の主用途が storage、comparison、copy、QR payload generation であり、metadata が必要な場合は `parseGs1DigitalLink(normalizedUri)` または `validateGs1DigitalLink(uri)` で得られるためです。
 
 ## Relationship to Existing APIs
 
@@ -102,8 +95,8 @@ function normalizeGs1DigitalLink(
 | --- | --- |
 | `createGs1DigitalLink(input, options)` | Element data から URI を作る throwing builder。既存 output は変えない。 |
 | `parseGs1DigitalLink(uri, options?)` | URI を element data に戻す throwing parser。既存 behavior は変えない。 |
-| `validateGs1DigitalLink(uri, options?)` | URI validation を non-throwing result として返す新 API 候補。 |
-| `normalizeGs1DigitalLink(uri, options?)` | URI を SpecQR deterministic policy で再構成する新 API 候補。 |
+| `validateGs1DigitalLink(uri, options?)` | URI validation を non-throwing result として返す実装済み API。 |
+| `normalizeGs1DigitalLink(uri, options?)` | URI を SpecQR deterministic policy で再構成する deferred API。 |
 
 `validateGs1DigitalLink()` は `parseGs1DigitalLink()` の replacement ではありません。Throwing API は scripts / tests / strict workflows に向いており、validation API は UI / form / batch import で複数 error を扱いやすくするためのものです。
 
@@ -124,7 +117,6 @@ function normalizeGs1DigitalLink(
     pathElements,
     queryElements,
     unknownQuery,
-    normalized // only when requested
   },
   warnings
 }
@@ -269,7 +261,7 @@ const uri = createGs1DigitalLink(elements, { baseUrl: "https://example.com" });
 const parsed = parseGs1DigitalLink(uri);
 ```
 
-### Proposed non-throwing validation
+### Non-throwing validation
 
 ```js
 import { validateGs1DigitalLink } from "specqr";
@@ -286,10 +278,11 @@ if (result.ok) {
 }
 ```
 
-### Proposed normalization
+### Deferred normalization
 
 ```js
-import { normalizeGs1DigitalLink } from "specqr";
+// Future API, not exported yet:
+// import { normalizeGs1DigitalLink } from "specqr";
 
 const normalized = normalizeGs1DigitalLink(
   "https://example.com/01/04912345678904?17=251231&10=ABC123",
@@ -322,8 +315,6 @@ v2.2.0 runtime implementation では、少なくとも次を追加します。
 - Root export と `QRCode` static method の existence / type tests。
 - `validateGs1DigitalLink()` success result shape。
 - `validateGs1DigitalLink()` failure result shape。
-- `normalizeGs1DigitalLink()` string return。
-- `normalizeGs1DigitalLink()` idempotency。
 - `parseGs1DigitalLink()` throwing behavior が変わらないこと。
 - `createGs1DigitalLink()` output が silent に変わらないこと。
 - `http:` warning。
@@ -338,6 +329,7 @@ v2.2.0 runtime implementation では、少なくとも次を追加します。
 - Invalid GTIN / SSCC check digit reject。
 - `validateGs1DigitalLink` packed package smoke。
 - TypeScript declaration consumer check。
+- `normalizeGs1DigitalLink()` が public export されていないこと。
 
 ## Rejected Alternatives
 
@@ -351,17 +343,17 @@ v2.2.0 runtime implementation では、少なくとも次を追加します。
 
 ## Implementation Order
 
-1. Internal helper で `parseGs1DigitalLink()` の throwing error を detail validation error に変換する。
-2. `validateGs1DigitalLink()` root export と `QRCode` static method を追加する。
-3. `normalizeGs1DigitalLink()` root export と `QRCode` static method を追加する。
-4. TypeScript declarations、unit tests、packed package smoke、docs examples を追加する。
-5. Existing `createGs1DigitalLink()` / `parseGs1DigitalLink()` output regression tests を追加する。
+1. Internal helper で `parseGs1DigitalLink()` の throwing error を detail validation error に変換する。done.
+2. `validateGs1DigitalLink()` root export と `QRCode` static method を追加する。done.
+3. TypeScript declarations、unit tests、packed package smoke、docs examples を追加する。done.
+4. Existing `createGs1DigitalLink()` / `parseGs1DigitalLink()` output regression tests を追加する。done.
+5. `normalizeGs1DigitalLink()` root export と `QRCode` static method を追加する。deferred.
 6. Full canonicalizer、resolver、compression は別 design に残す。
 
 ## Current Status
 
 - `createGs1DigitalLink()` implemented.
 - `parseGs1DigitalLink()` implemented.
-- `validateGs1DigitalLink()` not implemented / not exported.
+- `validateGs1DigitalLink()` implemented / exported.
 - `normalizeGs1DigitalLink()` not implemented / not exported.
-- This document defines the v2.2.0 proposal only.
+- This document records the v2.2.0 validation implementation and the deferred normalization policy.

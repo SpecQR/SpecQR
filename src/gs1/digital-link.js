@@ -1,6 +1,7 @@
 import { InvalidGs1Error } from "../errors.js";
 import { getGs1AiDictionaryEntry } from "./ai-dictionary.js";
 import { normalizeGs1Element } from "./ai.js";
+import { createValidationError, toGs1ValidationError } from "./validation.js";
 
 const DEFAULT_PRIMARY_AI = "01";
 const PRIMARY_KEY = "primary-key";
@@ -59,6 +60,41 @@ export function parseGs1DigitalLink(uri, options = {}) {
     queryElements,
     unknownQuery
   };
+}
+
+export function validateGs1DigitalLink(uri, options = undefined) {
+  const normalizedOptions = normalizeDigitalLinkValidationOptions(options);
+  if (!normalizedOptions.ok) {
+    return validationFailure([normalizedOptions.error]);
+  }
+
+  const urlResult = getDigitalLinkUrlForValidation(uri);
+  if (!urlResult.ok) {
+    return validationFailure([urlResult.error]);
+  }
+  if (hasInvalidPercentEncoding(urlResult.url.pathname) || hasInvalidPercentEncoding(urlResult.url.search)) {
+    return validationFailure([
+      createValidationError(
+        "GS1_INVALID_PERCENT_ENCODING",
+        "GS1 Digital Link URI must use valid percent-encoding",
+        {
+          reason: "invalid-percent-encoding",
+          expected: "percent escapes must use two hexadecimal digits"
+        }
+      )
+    ]);
+  }
+
+  try {
+    const result = parseGs1DigitalLink(urlResult.url, normalizedOptions.parseOptions);
+    return {
+      ok: true,
+      result,
+      warnings: getDigitalLinkValidationWarnings(urlResult.url, result)
+    };
+  } catch (error) {
+    return validationFailure([toGs1DigitalLinkValidationError(error)]);
+  }
 }
 
 function normalizeDigitalLinkInput(input) {
@@ -127,6 +163,43 @@ function normalizeUnknownQueryPolicy(unknownQuery) {
     throw new InvalidGs1Error("GS1 Digital Link unknownQuery must be \"preserve\" or \"reject\"");
   }
   return normalized;
+}
+
+function normalizeDigitalLinkValidationOptions(options) {
+  if (options === undefined) {
+    return { ok: true, parseOptions: {} };
+  }
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    return {
+      ok: false,
+      error: createValidationError("GS1_INVALID_INPUT", "GS1 Digital Link validation options must be an object", {
+        reason: "invalid-options",
+        expected: "object"
+      })
+    };
+  }
+  if ("normalize" in options && options.normalize !== undefined && options.normalize !== false) {
+    return {
+      ok: false,
+      error: createValidationError(
+        "GS1_INVALID_INPUT",
+        "GS1 Digital Link validation options.normalize is not implemented yet",
+        {
+          reason: "unsupported-option",
+          expected: false
+        }
+      )
+    };
+  }
+
+  const parseOptions = {};
+  if ("primaryAi" in options) {
+    parseOptions.primaryAi = options.primaryAi;
+  }
+  if ("unknownQuery" in options) {
+    parseOptions.unknownQuery = options.unknownQuery;
+  }
+  return { ok: true, parseOptions };
 }
 
 function normalizePathAis(pathAis, primaryAi) {
@@ -259,6 +332,138 @@ function decodePathSegment(segment, label) {
   } catch {
     throw new InvalidGs1Error(`GS1 Digital Link path ${label} must be valid percent-encoding`);
   }
+}
+
+function getDigitalLinkUrlForValidation(uri) {
+  try {
+    return {
+      ok: true,
+      url: uri instanceof URL ? new URL(uri.href) : new URL(String(uri))
+    };
+  } catch {
+    return {
+      ok: false,
+      error: createValidationError(
+        "GS1_DIGITAL_LINK_INVALID_URI",
+        "GS1 Digital Link URI must be an absolute http or https URL",
+        {
+          reason: "invalid-uri",
+          expected: "absolute http or https URL"
+        }
+      )
+    };
+  }
+}
+
+function hasInvalidPercentEncoding(value) {
+  return /%(?![0-9A-Fa-f]{2})/u.test(value);
+}
+
+function getDigitalLinkValidationWarnings(url, result) {
+  const warnings = [];
+  if (url.protocol === "http:") {
+    warnings.push(createValidationWarning(
+      "GS1_DIGITAL_LINK_HTTP",
+      "GS1 Digital Link URI uses http. Use https when transport security is required.",
+      { reason: "http-uri" }
+    ));
+  }
+  if (result.unknownQuery.length > 0) {
+    warnings.push(createValidationWarning(
+      "GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED",
+      "GS1 Digital Link URI contains non-GS1 query parameters preserved in unknownQuery.",
+      {
+        reason: "unknown-query-preserved",
+        count: result.unknownQuery.length
+      }
+    ));
+  }
+  return warnings;
+}
+
+function createValidationWarning(code, message, details = {}) {
+  const warning = { code, message };
+  for (const [key, value] of Object.entries(details)) {
+    if (value !== undefined) {
+      warning[key] = value;
+    }
+  }
+  return warning;
+}
+
+function validationFailure(errors) {
+  return {
+    ok: false,
+    errors,
+    warnings: []
+  };
+}
+
+function toGs1DigitalLinkValidationError(error) {
+  if (!(error instanceof InvalidGs1Error)) {
+    return createValidationError("GS1_INVALID_INPUT", getErrorMessage(error), { reason: "invalid-input" });
+  }
+
+  const message = error.message;
+  if (/absolute http or https URL|must use http or https/u.test(message)) {
+    return createValidationError("GS1_DIGITAL_LINK_INVALID_URI", message, {
+      reason: "invalid-uri",
+      expected: "absolute http or https URL"
+    });
+  }
+  if (/must not include a fragment/u.test(message)) {
+    return createValidationError("GS1_DIGITAL_LINK_FRAGMENT_NOT_ALLOWED", message, {
+      reason: "fragment-not-allowed",
+      expected: "URI without fragment"
+    });
+  }
+  if (/valid percent-encoding/u.test(message)) {
+    return createValidationError("GS1_INVALID_PERCENT_ENCODING", message, {
+      reason: "invalid-percent-encoding",
+      expected: "percent escapes must use two hexadecimal digits"
+    });
+  }
+  if (/query parameter .* is not a GS1 AI/u.test(message)) {
+    const key = extractQueryKey(message);
+    return createValidationError("GS1_DIGITAL_LINK_UNKNOWN_QUERY", message, {
+      key,
+      reason: "unknown-query",
+      expected: "GS1 AI query parameter or unknownQuery: \"preserve\""
+    });
+  }
+  if (/primaryAi must be one|unknownQuery must be/u.test(message)) {
+    return createValidationError("GS1_INVALID_INPUT", message, {
+      reason: "invalid-options",
+      expected: message.includes("primaryAi") ? "00, 01, or 414" : "preserve or reject"
+    });
+  }
+  if (
+    /path must include primary AI|path must contain AI\/value pairs|path segment \d+ must be a GS1 AI|path must not contain empty segments/u
+      .test(message)
+  ) {
+    return createValidationError("GS1_INVALID_INPUT", message, {
+      reason: "malformed-path",
+      expected: "Digital Link path containing primary AI and AI/value pairs"
+    });
+  }
+
+  return toGs1ValidationError(error);
+}
+
+function extractQueryKey(message) {
+  const raw = message.match(/query parameter ("(?:[^"\\]|\\.)*")/u)?.[1];
+  if (!raw) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function isGs1AiKey(key) {

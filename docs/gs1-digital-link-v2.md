@@ -73,11 +73,10 @@ function parseGs1DigitalLink(
 
 `unknownQuery` は GS1 AI として扱わない query parameter を `{ key, value }` で保持します。default は `"preserve"` です。`unknownQuery: "reject"` の場合は非 AI query parameter を `InvalidGs1Error` にします。SpecQR は resolver ではないため、linkType や custom extension parameter の意味付けは v2 初期 helper では行いません。
 
-### まだ公開しない API
+### v2 初期では公開しなかった API
 
-次は v2 初期 API には含めません。
+次は v2 初期 API には含めませんでした。`validateGs1DigitalLink(uri, options?)` は v2.2.0 で public API として追加済みです。
 
-- `validateGs1DigitalLink(uri)`
 - `normalizeGs1DigitalLink(uri)`
 - resolver client / network API
 - Digital Link compression / decompression
@@ -85,9 +84,7 @@ function parseGs1DigitalLink(
 - `linkType` helper
 - full GS1 AI catalog based canonicalizer
 
-`parseGs1DigitalLink()` が成功すれば validation 済みの parse result を返し、失敗時は `InvalidGs1Error` を throw するため、boolean-only validator は最初の公開 API には不要と判断します。現時点では `validateGs1DigitalLink()` は public export していません。
-
-v2.1.0 の GS1 validation release でも、Digital Link 専用の `validateGs1DigitalLink(uri, options?)` は deferred にしました。理由は、Digital Link canonicalization、resolver、unknown query、path placement policy が raw element string validation より広い surface を持つためです。v2.1.0 では `validateGs1Elements(elements, { context: "digital-link" })` で placement 誤用の一部を non-throwing validation result として検出します。v2.2.0 の候補 API と policy は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定します。
+`parseGs1DigitalLink()` が成功すれば validation 済みの parse result を返し、失敗時は `InvalidGs1Error` を throw します。v2.2.0 では UI / form validation 向けに `validateGs1DigitalLink(uri, options?)` を追加し、throwing parser の挙動は維持しています。Normalization、resolver、compression、full canonicalization は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) の deferred scope に残します。
 
 ## Supported v2 Scope
 
@@ -372,7 +369,6 @@ console.log(parsed.elements);
 
 ## Remaining Non-scope
 
-- `validateGs1DigitalLink()` public API
 - `normalizeGs1DigitalLink()` public API
 - Network resolver / redirect / linkset lookup
 - Resolver Description File lookup
@@ -411,13 +407,13 @@ console.log(parsed.elements);
 - `QRCode.generate(uri, { gs1: true })` misuse stays rejected through existing GS1 raw validator.
 - Full canonicalization remains out of scope for the current helper.
 
-次フェーズでは、AI metadata の拡張単位を決め、必要な範囲で Digital Link validation、deterministic normalization、canonicalization、resolver integration を検討します。Control segment model refactor、FNC1 second position、Structured Append low-level header の基本実装は完了済みです。
+次フェーズでは、AI metadata の拡張単位を決め、必要な範囲で deterministic normalization、canonicalization、resolver integration を検討します。Digital Link validation、Control segment model refactor、FNC1 second position、Structured Append low-level header の基本実装は完了済みです。
 
 ## Implementation Order
 
 1. Add dictionary metadata for Digital Link roles: primary key, key qualifier, data attribute. (done for currently supported AI)
 2. Document current canonical output policy and supported AI metadata expansion plan. (done)
 3. Refactor the control segment model so ECI / FNC1 first can share infrastructure with FNC1 second / Structured Append. (done for ECI / FNC1 first / FNC1 second / Structured Append low-level)
-4. Implement v2.2.0 `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` according to the validation design. (deferred)
+4. Implement v2.2.0 `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` according to the validation design. (`validateGs1DigitalLink()` done, `normalizeGs1DigitalLink()` deferred)
 5. Revisit supported AI expansion and full canonicalization after broader metadata exists.
 6. Consider resolver / linkset integrations outside the core QR generator.

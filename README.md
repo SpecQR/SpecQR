@@ -270,10 +270,16 @@ QRCode.generateSegmentsStructuredAppend([
 });
 ```
 
-GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。生成した URI は `parseGs1DigitalLink()` で element data に戻せます。
+GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。生成した URI は `parseGs1DigitalLink()` で element data に戻せます。UI / form validation では `validateGs1DigitalLink()` の non-throwing result を使えます。
 
 ```js
-import { QRCode, createGs1DigitalLink, parseGs1DigitalLink, parseGs1HumanReadable } from "specqr";
+import {
+  QRCode,
+  createGs1DigitalLink,
+  parseGs1DigitalLink,
+  parseGs1HumanReadable,
+  validateGs1DigitalLink
+} from "specqr";
 
 const elements = parseGs1HumanReadable("(01)04912345678904(10)ABC123(17)251231");
 const uri = createGs1DigitalLink(elements, {
@@ -282,6 +288,11 @@ const uri = createGs1DigitalLink(elements, {
 
 const parsed = parseGs1DigitalLink(uri);
 console.log(parsed.elements);
+
+const validation = validateGs1DigitalLink(uri);
+if (!validation.ok) {
+  console.log(validation.errors[0].code);
+}
 
 const svg = QRCode.generate(uri, { output: "svg" });
 ```

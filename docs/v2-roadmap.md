@@ -105,6 +105,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-25: v2.1.0 GS1 validation API implemented. `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` と対応する `QRCode` static methods を追加し、TypeScript surface、unit tests、packed package smoke に含めました。`validateGs1DigitalLink()`、Digital Link canonicalization、full GS1 AI catalog は未公開のままです。
 - 2026-05-25: v2.1.0 stable release package prepared. `package.json` / `package-lock.json` の version を `2.1.0` に揃え、CHANGELOG、README、API / release docs を stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.1.0` tag 作成は最終承認まで行いません。
 - 2026-05-26: v2.2.0 GS1 Digital Link validation / normalization design documented. Runtime behavior、public API、package version は変更せず、`validateGs1DigitalLink(uri, options?)`、`normalizeGs1DigitalLink(uri, options?)`、unknown query、percent encoding、http / https、fragment、duplicate AI、full canonicalizer との違いを [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に docs-only で固定しました。
+- 2026-05-26: v2.2.0 GS1 Digital Link validation API implemented. `validateGs1DigitalLink(uri, options?)` と `QRCode.validateGs1DigitalLink(uri, options?)` を追加し、throwing `parseGs1DigitalLink()` とは別に `{ ok, result, errors, warnings }` の non-throwing result を返すようにしました。`normalizeGs1DigitalLink()`、full canonicalizer、resolver、compression は未公開のままです。
 
 ## v2.1.0 GS1 Validation Release Scope
 
@@ -148,10 +149,10 @@ v2.2.0 は、新しい QR control mode や symbol family ではなく、v2.0 / v
 
 ### Proposed Public API
 
-- `validateGs1DigitalLink(uri, options?)`: URI を non-throwing validation result として検証する。
-- `normalizeGs1DigitalLink(uri, options?)`: URI を SpecQR deterministic policy で再構成し、string を返す。
-- `QRCode.validateGs1DigitalLink(uri, options?)`: root function と同じ static method。
-- `QRCode.normalizeGs1DigitalLink(uri, options?)`: root function と同じ static method。
+- `validateGs1DigitalLink(uri, options?)`: URI を non-throwing validation result として検証する。実装済み。
+- `QRCode.validateGs1DigitalLink(uri, options?)`: root function と同じ static method。実装済み。
+- `normalizeGs1DigitalLink(uri, options?)`: URI を SpecQR deterministic policy で再構成し、string を返す。次 phase。
+- `QRCode.normalizeGs1DigitalLink(uri, options?)`: root function と同じ static method。次 phase。
 
 ### Stable Policy
 

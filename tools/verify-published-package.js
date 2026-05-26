@@ -76,7 +76,19 @@ assert.equal(typeof specqr.validateGs1Elements, "function");
 assert.equal(typeof specqr.QRCode.validateGs1Elements, "function");
 assert.equal(typeof specqr.validateGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.validateGs1ElementString, "function");
-assert.equal(specqr.validateGs1DigitalLink, undefined);
+if (typeof specqr.validateGs1DigitalLink === "function") {
+  assert.equal(typeof specqr.QRCode.validateGs1DigitalLink, "function");
+  const digitalLinkValidation = specqr.validateGs1DigitalLink("https://example.com/01/04912345678904/10/ABC123");
+  assert.equal(digitalLinkValidation.ok, true);
+  assert.deepEqual(digitalLinkValidation.result.elements, [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" }
+  ]);
+  assert.equal(specqr.normalizeGs1DigitalLink, undefined);
+  assert.equal(specqr.QRCode.normalizeGs1DigitalLink, undefined);
+} else {
+  assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
+}
 
 if (typeof specqr.appendGtinCheckDigit === "function") {
   const gtin = specqr.appendGtinCheckDigit("0491234567890");

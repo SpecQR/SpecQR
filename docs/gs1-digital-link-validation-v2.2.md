@@ -321,11 +321,14 @@ v2.2.0 runtime implementation では、少なくとも次を確認します。
 - Invalid percent encoding reject。
 - Unknown query preserve / reject。
 - Unknown query order preservation。
+- Repeated unknown query key preservation。
+- Path AI と query AI の mixed placement。
 - GS1 AI query lexical sort。
 - Duplicate AI reject。
 - Invalid path placement reject。
 - Invalid GTIN / SSCC check digit reject。
 - `validateGs1DigitalLink` packed package smoke。
+- Digital Link validation / normalization example smoke。
 - TypeScript declaration consumer check。
 - `normalizeGs1DigitalLink` packed package smoke。
 - `normalizeGs1DigitalLink()` の idempotency。

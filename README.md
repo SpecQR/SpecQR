@@ -304,6 +304,8 @@ console.log(normalized);
 const svg = QRCode.generate(uri, { output: "svg" });
 ```
 
+実行可能な Digital Link validation / normalization 例は [examples/gs1-digital-link.mjs](examples/gs1-digital-link.mjs) にあります。
+
 GTIN や SSCC の check digit は helper で計算できます。
 
 ```js

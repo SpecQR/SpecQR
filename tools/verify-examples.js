@@ -18,7 +18,13 @@ try {
   assert.match(svg, /^<svg /);
 
   const digitalLinkSvgPath = join(directory, "gs1-digital-link.svg");
-  await run("node", ["examples/gs1-digital-link.mjs", digitalLinkSvgPath]);
+  const digitalLinkOutput = await runCapture("node", ["examples/gs1-digital-link.mjs", digitalLinkSvgPath]);
+  const digitalLinkSummary = JSON.parse(digitalLinkOutput);
+  assert.equal(
+    digitalLinkSummary.normalizedUri,
+    "https://example.com/01/04912345678904/10/LOT-A?17=251231&linkType=all"
+  );
+  assert.deepEqual(digitalLinkSummary.validationWarnings, ["GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED"]);
   const digitalLinkSvg = await readFile(digitalLinkSvgPath, "utf8");
   assert.match(digitalLinkSvg, /^<svg /);
 
@@ -75,6 +81,29 @@ function run(command, args) {
     child.on("exit", (code) => {
       if (code === 0) {
         resolve();
+      } else {
+        reject(new Error(`${command} ${args.join(" ")} exited with ${code}`));
+      }
+    });
+  });
+}
+
+function runCapture(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: process.cwd(),
+      stdio: ["ignore", "pipe", "inherit"]
+    });
+    let stdout = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve(stdout);
       } else {
         reject(new Error(`${command} ${args.join(" ")} exited with ${code}`));
       }

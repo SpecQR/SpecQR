@@ -79,6 +79,14 @@ assert.deepEqual(validDigitalLink.result.elements, [
   { ai: "10", value: "LOT-A" },
   { ai: "17", value: "251231" }
 ]);
+const digitalLinkWithUnknownQuery = specqr.validateGs1DigitalLink(
+  "https://example.com/01/04912345678904?foo=one&17=251231&foo=two"
+);
+assert.equal(digitalLinkWithUnknownQuery.ok, true);
+assert.deepEqual(digitalLinkWithUnknownQuery.result.unknownQuery, [
+  { key: "foo", value: "one" },
+  { key: "foo", value: "two" }
+]);
 assert.deepEqual(specqr.QRCode.validateGs1DigitalLink(
   "https://example.com/01/04912345678904?linkType=all",
   { unknownQuery: "reject" }
@@ -99,9 +107,13 @@ assert.equal(
   specqr.normalizeGs1DigitalLink("https://example.com/01/04912345678904?17=251231&10=LOT%2FA&foo=bar"),
   "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar"
 );
-assert.equal(
-  specqr.QRCode.normalizeGs1DigitalLink("https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar"),
-  "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar"
+const packedNormalizedDigitalLink =
+  "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar";
+assert.equal(specqr.QRCode.normalizeGs1DigitalLink(packedNormalizedDigitalLink), packedNormalizedDigitalLink);
+assert.equal(specqr.normalizeGs1DigitalLink(specqr.normalizeGs1DigitalLink(packedNormalizedDigitalLink)), packedNormalizedDigitalLink);
+assert.throws(
+  () => specqr.normalizeGs1DigitalLink("https://example.com/01/04912345678904?17=251231&17=251231"),
+  (error) => error instanceof specqr.InvalidGs1Error && /duplicate AI 17/.test(error.message)
 );
 
 const fnc1Second = specqr.generate("AA1234BBB112", {

@@ -879,6 +879,94 @@ test("public GS1 Digital Link validation keeps throwing parser behavior separate
   );
 });
 
+test("public GS1 Digital Link validation covers v2.2 edge fixtures", () => {
+  const percentEncoded = validateGs1DigitalLink(
+    "https://example.com/stem/01/04912345678904/21/SER%2F1?10=LOT%2FA&17=251231"
+  );
+  assert.equal(percentEncoded.ok, true);
+  assert.deepEqual(percentEncoded.result.elements, [
+    { ai: "01", value: "04912345678904" },
+    { ai: "21", value: "SER/1" },
+    { ai: "10", value: "LOT/A" },
+    { ai: "17", value: "251231" }
+  ]);
+
+  const repeatedUnknown = validateGs1DigitalLink(
+    "https://example.com/01/04912345678904?foo=one&17=251231&foo=two&linkType=all"
+  );
+  assert.equal(repeatedUnknown.ok, true);
+  assert.deepEqual(repeatedUnknown.result.unknownQuery, [
+    { key: "foo", value: "one" },
+    { key: "foo", value: "two" },
+    { key: "linkType", value: "all" }
+  ]);
+  assert.deepEqual(repeatedUnknown.warnings, [
+    {
+      code: "GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED",
+      message: "GS1 Digital Link URI contains non-GS1 query parameters preserved in unknownQuery.",
+      reason: "unknown-query-preserved",
+      count: 3
+    }
+  ]);
+
+  const http = validateGs1DigitalLink("http://example.com/01/04912345678904?17=251231");
+  assert.equal(http.ok, true);
+  assert.deepEqual(http.warnings, [
+    {
+      code: "GS1_DIGITAL_LINK_HTTP",
+      message: "GS1 Digital Link URI uses http. Use https when transport security is required.",
+      reason: "http-uri"
+    }
+  ]);
+
+  const cases = [
+    {
+      uri: "https://example.com/01/04912345678904?linkType=all",
+      options: { unknownQuery: "reject" },
+      code: "GS1_DIGITAL_LINK_UNKNOWN_QUERY",
+      reason: "unknown-query"
+    },
+    {
+      uri: "https://example.com/01/04912345678904?17=251231&17=251231",
+      code: "GS1_DUPLICATE_AI",
+      reason: "duplicate-ai"
+    },
+    {
+      uri: "https://example.com/01/%E0%A4%A",
+      code: "GS1_INVALID_PERCENT_ENCODING",
+      reason: "invalid-percent-encoding"
+    },
+    {
+      uri: "https://example.com/01/04912345678904#frag",
+      code: "GS1_DIGITAL_LINK_FRAGMENT_NOT_ALLOWED",
+      reason: "fragment-not-allowed"
+    },
+    {
+      uri: "https://example.com/01/04912345678904?01=04912345678904",
+      code: "GS1_DUPLICATE_AI",
+      reason: "duplicate-ai"
+    },
+    {
+      uri: "https://example.com/01/04912345678904/17/251231",
+      code: "GS1_INVALID_DIGITAL_LINK_PLACEMENT",
+      reason: "invalid-digital-link-placement"
+    },
+    {
+      uri: "https://example.com/01/04912345678905",
+      code: "GS1_INVALID_CHECK_DIGIT",
+      reason: "invalid-check-digit"
+    }
+  ];
+
+  for (const fixture of cases) {
+    const result = validateGs1DigitalLink(fixture.uri, fixture.options);
+    assert.equal(result.ok, false, `Expected ${fixture.uri} to fail`);
+    assert.equal(result.errors[0].code, fixture.code);
+    assert.equal(result.errors[0].reason, fixture.reason);
+    assert.deepEqual(result.warnings, []);
+  }
+});
+
 test("GS1 Digital Link normalizer applies SpecQR deterministic URI policy", () => {
   assert.equal(
     normalizeGs1DigitalLink(
@@ -894,6 +982,43 @@ test("GS1 Digital Link normalizer applies SpecQR deterministic URI policy", () =
     QRCode.normalizeGs1DigitalLink("https://example.com/stem%201/01/04912345678904?10=LOT%2FA&17=251231"),
     "https://example.com/stem%201/01/04912345678904/10/LOT%2FA?17=251231"
   );
+});
+
+test("GS1 Digital Link normalizer covers v2.2 edge fixtures and idempotency", () => {
+  const fixtures = [
+    {
+      input: "https://example.com/stem/01/04912345678904/21/SER%2F1?3102=001234&17=251231&foo=one&foo=two",
+      expected: "https://example.com/stem/01/04912345678904/21/SER%2F1?17=251231&3102=001234&foo=one&foo=two"
+    },
+    {
+      input: "https://example.com/01/04912345678904?17=251231&10=LOT%2FA&b=2&a=1",
+      expected: "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&b=2&a=1"
+    },
+    {
+      input: "http://example.com/01/04912345678904?10=ABC123&17=251231",
+      expected: "http://example.com/01/04912345678904/10/ABC123?17=251231"
+    }
+  ];
+
+  for (const fixture of fixtures) {
+    const normalized = normalizeGs1DigitalLink(fixture.input);
+    assert.equal(normalized, fixture.expected);
+    assert.equal(normalizeGs1DigitalLink(normalized), normalized);
+    assert.deepEqual(parseGs1DigitalLink(normalized), parseGs1DigitalLink(fixture.expected));
+  }
+
+  const created = createGs1DigitalLink([
+    { ai: "01", value: "04912345678904" },
+    { ai: "21", value: "SER/1" },
+    { ai: "10", value: "LOT/A" },
+    { ai: "17", value: "251231" }
+  ], {
+    baseUrl: "https://example.com/stem"
+  });
+
+  assert.equal(created, "https://example.com/stem/01/04912345678904/21/SER%2F1/10/LOT%2FA?17=251231");
+  assert.equal(normalizeGs1DigitalLink(created), created);
+  assert.deepEqual(parseGs1DigitalLink(normalizeGs1DigitalLink(created)), parseGs1DigitalLink(created));
 });
 
 test("GS1 Digital Link normalizer is idempotent with builder and parser output", () => {

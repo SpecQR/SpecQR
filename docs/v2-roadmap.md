@@ -166,6 +166,7 @@ v2.2.0 は、新しい QR control mode や symbol family ではなく、v2.0 / v
 - Percent-encoded GS1 AI values は decode / validate / re-encode する。
 - `http:` は warning、`https:` は通常成功、他 scheme と fragment は reject する。
 - Duplicate AI、invalid Digital Link placement、invalid GTIN / SSCC check digit は detail error code で区別する。
+- Release 前 polish では、percent-encoded AI value、unknown query preserve / reject、repeated query key、path/query mixed placement、normalization idempotency、packed package smoke、examples smoke を edge fixture として固定する。
 
 ### Non-scope
 

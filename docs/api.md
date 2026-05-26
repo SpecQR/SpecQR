@@ -400,7 +400,7 @@ const regenerated = createGs1DigitalLink(parsed, {
 });
 ```
 
-`unknownQuery` には GS1 AI として扱わない query parameter を `{ key, value }` で保持します。数字 2-4 桁の query key は GS1 AI として validation されるため、unsupported AI や invalid value は `InvalidGs1Error` になります。`options.unknownQuery: "reject"` を指定すると、GS1 AI ではない query parameter も reject します。
+`unknownQuery` には GS1 AI として扱わない query parameter を `{ key, value }` で保持します。未知 query は duplicate key も含めて元の相対順序を保ちます。数字 2-4 桁の query key は GS1 AI として validation されるため、unsupported AI、invalid value、同じ AI の重複は `InvalidGs1Error` になります。`options.unknownQuery: "reject"` を指定すると、GS1 AI ではない query parameter も reject します。
 
 `options.primaryAi` は `"00" | "01" | "414"` を指定できます。指定しない場合は path 内の最初の supported primary AI を探します。path 上で primary AI より前にある segment は URI stem として扱い、返り値には含めません。
 
@@ -472,7 +472,7 @@ Normalization policy は次です。
 - URI stem、scheme、host、port は WHATWG `URL` の処理に従って保持します。
 - Primary key と path eligible key qualifier は dictionary role metadata に従って path に置きます。
 - Query に置く GS1 AI は `ai`、同一 AI 内では `value` の lexical order で並べます。
-- Unknown query は default で preserve し、GS1 AI query の後ろへ元の相対順序で追加します。`unknownQuery: "reject"` では reject します。
+- Unknown query は default で preserve し、duplicate key を含めて GS1 AI query の後ろへ元の相対順序で追加します。`unknownQuery: "reject"` では reject します。
 - GS1 AI values は decode / validation 後に path は `encodeURIComponent()` 相当、query は `URLSearchParams` 相当で再 encode します。
 
 `normalizeGs1DigitalLink(normalizeGs1DigitalLink(uri))` は同じ string を返すようにテストしています。ただしこれは SpecQR deterministic policy に対する idempotency であり、GS1 Digital Link 標準全体の canonical URI との一致を主張するものではありません。

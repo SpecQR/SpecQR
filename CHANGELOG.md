@@ -4,6 +4,32 @@
 
 まだありません。
 
+## 2.2.0 - 2026-05-27
+
+SpecQR 2.2.0 is the stable GS1 Digital Link validation and deterministic normalization release.
+
+SpecQR 2.2.0 は、v2.0 / v2.1 の QR / GS1 / Structured Append API を保ったまま、GS1 Digital Link URI を実務で検証・安定再出力しやすくする polish release です。QR generation runtime、package exports、runtime dependency-free policy、`createGs1DigitalLink()` の既存 output 方針は維持しています。
+
+### 追加
+
+- GS1 Digital Link URI 向けの non-throwing validation API として `validateGs1DigitalLink(uri, options?)` と `QRCode.validateGs1DigitalLink(uri, options?)` を追加しました。
+- GS1 Digital Link URI 向けの deterministic normalization API として `normalizeGs1DigitalLink(uri, options?)` と `QRCode.normalizeGs1DigitalLink(uri, options?)` を追加しました。
+- `validateGs1DigitalLink()` は成功時 `{ ok: true, result, warnings }`、失敗時 `{ ok: false, errors, warnings }` を返し、unknown query、`http:` URI、fragment、invalid percent encoding、duplicate AI、invalid placement、invalid check digit を機械的に扱えるようにしました。
+- `normalizeGs1DigitalLink()` は metadata object ではなく URI string を返し、SpecQR deterministic policy に基づいて path/query placement、GS1 AI query sort、unknown query preservation、percent-encoded AI value の decode / validate / re-encode を行います。
+
+### 検証・公開準備
+
+- Digital Link edge fixture として percent-encoded AI value、unknown query preserve / reject、path AI と query AI の組み合わせ、repeated query key、invalid percent encoding、`http:` warning と normalization、fragment / duplicate AI / invalid placement / invalid check digit rejection を追加しました。
+- `normalizeGs1DigitalLink()` の idempotency、`createGs1DigitalLink()` output の維持、`parse -> normalize -> parse` の result consistency を追加で確認しました。
+- packed package smoke、TypeScript declarations、examples smoke、README / API docs / conformance matrix / test plan / release checklist を v2.2.0 stable publish 前提に更新しました。
+- `package.json` / `package-lock.json` の version を `2.2.0` に更新しました。
+
+### 意図的な制限
+
+- `normalizeGs1DigitalLink()` は full GS1 Digital Link canonicalizer ではなく、SpecQR supported AI 範囲に限定した deterministic normalization helper です。
+- Resolver、compression / decompression、web vocabulary helper、full GS1 AI catalog、industry profile validation は v2.2.0 の対象外です。
+- npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.2.0` tag 作成はこの準備 commit では行いません。
+
 ## 2.1.0 - 2026-05-25
 
 SpecQR 2.1.0 is the stable GS1 validation release for dependency-free QR Code Model 2 generation.

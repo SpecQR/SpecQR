@@ -336,7 +336,7 @@ if (!result.ok) {
 }
 ```
 
-`validateGs1DigitalLink(uri, options?)` と `normalizeGs1DigitalLink(uri, options?)` は v2.2.0 の Digital Link polish API として公開しています。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API でも扱えます。Normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy による安定再出力 helper です。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
+`validateGs1DigitalLink(uri, options?)` と `normalizeGs1DigitalLink(uri, options?)` は 2.2.0 stable の Digital Link polish API として公開しています。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API でも扱えます。Normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy による安定再出力 helper です。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
 
 ### `createGs1DigitalLink(input, options)`
 

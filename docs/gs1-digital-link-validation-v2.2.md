@@ -8,7 +8,7 @@
 
 - `parseGs1DigitalLink()` の throwing behavior を維持しながら、失敗理由を機械的に扱える validation result API を用意する。
 - `createGs1DigitalLink()` の既存 output を silent に変えず、deterministic normalization は別 API として提供する。
-- Unknown query、percent encoding、path / query placement、duplicate AI、fragment、http / https の扱いを v2.2.0 実装前に固定する。
+- Unknown query、percent encoding、path / query placement、duplicate AI、fragment、http / https の扱いを v2.2.0 release 前に固定する。
 - Full GS1 Digital Link canonicalizer、resolver、compression、web vocabulary helper ではないことを明確にする。
 - Current supported AI catalog だけを対象にし、full GS1 AI catalog 対応を主張しない。
 

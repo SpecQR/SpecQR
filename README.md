@@ -73,6 +73,8 @@ v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Stru
 
 2.1.0 では GS1 validation layer を stable API として強化しました。Supported AI metadata は `getSupportedGs1Ais()` / `getGs1AiInfo(ai)` で確認でき、UI / form validation では throwing API の代わりに `validateGs1Elements()` / `validateGs1ElementString()` の non-throwing result を使えます。詳細は [GS1 Validation v2.1 Design](docs/gs1-validation-v2.1.md) を参照してください。
 
+2.2.0 では GS1 Digital Link URI 向けに `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` を stable API として追加しました。Normalization は full canonicalizer ではなく、SpecQR deterministic policy に基づく安定再出力 helper です。
+
 ## 基本的な使い方
 
 ```js

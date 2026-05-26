@@ -92,10 +92,10 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 ## v2 系 Backlog
 
-v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定します。2.1.0 stable では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer と GS1 validation API を揃えています。以後は次を優先します。
+v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定します。2.2.0 stable では、通常 QR Code Model 2 core を維持したまま GS1 / control segment / Structured Append の実用 layer、GS1 validation API、GS1 Digital Link validation / deterministic normalization API を揃えています。以後は次を優先します。
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
-- GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。次は supported AI catalog の拡張、Digital Link 専用 validation、業界別 rule の扱いを個別に設計する。
+- GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()` は実装済みです。次は supported AI catalog の拡張、業界別 rule、Digital Link full canonicalization の扱いを個別に設計する。
 - GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` / `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` の round-trip、validation result、deterministic normalization を起点に、Full AI catalog metadata、full canonicalization、resolver 周辺はその後に検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。

@@ -1,6 +1,6 @@
 # GS1 Digital Link v2 Design
 
-この文書は、SpecQR v2 系で追加する GS1 Digital Link helper の設計記録です。`createGs1DigitalLink(input, options)` と `parseGs1DigitalLink(uri, options?)` は実装済みです。resolver、compression、full canonicalizer はまだ実装していません。v2.2.0 で公開候補にする non-throwing validation と deterministic normalization の設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に分けます。
+この文書は、SpecQR v2 系で追加した GS1 Digital Link helper の設計記録です。`createGs1DigitalLink(input, options)` と `parseGs1DigitalLink(uri, options?)` は v2.0.0 で実装済みです。`validateGs1DigitalLink(uri, options?)` と `normalizeGs1DigitalLink(uri, options?)` は v2.2.0 で stable API として追加しました。resolver、compression、full canonicalizer はまだ実装していません。v2.2.0 の non-throwing validation と deterministic normalization の設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に分けます。
 
 参考にする外部仕様は [GS1 Digital Link Standard: URI Syntax 1.6.0](https://ref.gs1.org/standards/digital-link/uri-syntax/) と [GS1 Digital Link overview](https://www.gs1.org/standards/gs1-digital-link) です。SpecQR の v2 helper はこの仕様全体の完全実装ではなく、既存 GS1 element data から安全に URL QR を作るための小さな API layer として始めます。
 
@@ -75,7 +75,7 @@ function parseGs1DigitalLink(
 
 ### v2 初期では公開しなかった API
 
-次は v2 初期 API には含めませんでした。`validateGs1DigitalLink(uri, options?)` と `normalizeGs1DigitalLink(uri, options?)` は v2.2.0 で public API として追加済みです。
+次は v2 初期 API には含めませんでした。`validateGs1DigitalLink(uri, options?)` と `normalizeGs1DigitalLink(uri, options?)` は v2.2.0 で public stable API として追加済みです。
 
 - resolver client / network API
 - Digital Link compression / decompression

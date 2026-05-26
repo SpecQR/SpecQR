@@ -118,7 +118,7 @@ Digital Link full canonicalization と resolver は v2.2.0 以降の design と�
 
 ## v2.2.0 GS1 Digital Link Validation / Normalization
 
-v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定した方針を release gate にします。`validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` は実装済みです。
+v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定した方針を release gate にします。`validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` は実装済みで、2.2.0 stable package の public API として扱います。
 
 - Public export: `validateGs1DigitalLink()` / `QRCode.validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` / `QRCode.normalizeGs1DigitalLink()` が root package と TypeScript declarations で一致すること。
 - Validation result: 成功時 `{ ok: true, result, warnings }`、失敗時 `{ ok: false, errors, warnings }` の shape を固定すること。
@@ -240,7 +240,7 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、deterministic normalization result、同梱 `src/index.d.ts` の v2 / v2.2 API surface、npm package contents policy も確認します。
+この check は一時ディレクトリに `npm pack` した未公開 tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、deterministic normalization result、同梱 `src/index.d.ts` の v2 / v2.2 API surface、npm package contents policy も確認します。
 
 TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は `tests/types/consumer.ts` を TypeScript compiler で `noEmit` 検査し、root / node / browser subpath import、`QRCode.generate()`、`generateSegments()`、GS1 raw parser、GS1 Digital Link helper、Structured Append helpers、FNC1 second option、low-level `structuredAppend` option、Node PNG helper、browser Blob/ImageData/Object URL helper の public type surface を consumer 目線で固定します。
 

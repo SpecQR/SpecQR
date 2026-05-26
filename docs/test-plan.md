@@ -118,16 +118,16 @@ Digital Link full canonicalization と resolver は v2.2.0 以降の design と�
 
 ## v2.2.0 GS1 Digital Link Validation / Normalization
 
-v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定した方針を release gate にします。`validateGs1DigitalLink()` は実装済みで、`normalizeGs1DigitalLink()` は次 phase です。
+v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定した方針を release gate にします。`validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` は実装済みです。
 
-- Public export: `validateGs1DigitalLink()` と `QRCode.validateGs1DigitalLink()` が root package と TypeScript declarations で一致すること。`normalizeGs1DigitalLink()` は public export されていないこと。
+- Public export: `validateGs1DigitalLink()` / `QRCode.validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` / `QRCode.normalizeGs1DigitalLink()` が root package と TypeScript declarations で一致すること。
 - Validation result: 成功時 `{ ok: true, result, warnings }`、失敗時 `{ ok: false, errors, warnings }` の shape を固定すること。
 - Throwing compatibility: `createGs1DigitalLink()` / `parseGs1DigitalLink()` の existing throw behavior と output が変わらないこと。
 - Unknown query: default preserve、`unknownQuery: "reject"`、unknown query relative order preservation を確認すること。
 - Percent encoding: GS1 AI path / query value の decode / validation / re-encode、invalid percent escape rejection を確認すること。
 - URI policy: `http:` warning、`https:` success、other scheme rejection、fragment rejection を確認すること。
 - Placement / duplicates: duplicate AI、path に置けない AI、invalid GTIN / SSCC check digit を detail error code で確認すること。
-- Deferred normalization: string return、idempotency、GS1 AI query lexical sort、unknown query の non-sorting policy、SpecQR deterministic policy と full canonicalizer の違いは docs に残し、runtime 実装は次 phase に回すこと。
+- Normalization: string return、idempotency、GS1 AI query lexical sort、unknown query の non-sorting policy、SpecQR deterministic policy と full canonicalizer の違いを unit / packed package smoke / docs で確認すること。
 - Packed package smoke: installed package から new API と `QRCode` static method が動き、docs examples と TypeScript consumer check が通ること。
 
 ## Decoder Validation
@@ -240,7 +240,7 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`normalizeGs1DigitalLink()` が public export されていないこと、`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、同梱 `src/index.d.ts` の v2 / v2.2 API surface、npm package contents policy も確認します。
+この check は一時ディレクトリに `npm pack` した tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、deterministic normalization result、同梱 `src/index.d.ts` の v2 / v2.2 API surface、npm package contents policy も確認します。
 
 TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は `tests/types/consumer.ts` を TypeScript compiler で `noEmit` 検査し、root / node / browser subpath import、`QRCode.generate()`、`generateSegments()`、GS1 raw parser、GS1 Digital Link helper、Structured Append helpers、FNC1 second option、low-level `structuredAppend` option、Node PNG helper、browser Blob/ImageData/Object URL helper の public type surface を consumer 目線で固定します。
 

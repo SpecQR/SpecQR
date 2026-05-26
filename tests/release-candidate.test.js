@@ -14,6 +14,7 @@ import {
   InvalidOutputError,
   InvalidVersionError,
   mergeStructuredAppendParts,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
@@ -46,6 +47,10 @@ test("stable release public API examples execute", () => {
   const gs1Data = createGs1ElementString(gs1Elements);
   assert.equal(
     createGs1DigitalLink(gs1Elements, { baseUrl: "https://example.com/" }),
+    `https://example.com/01/${gtin}/10/ABC123?17=251231`
+  );
+  assert.equal(
+    normalizeGs1DigitalLink(`https://example.com/01/${gtin}?17=251231&10=ABC123`),
     `https://example.com/01/${gtin}/10/ABC123?17=251231`
   );
   assert.deepEqual(parseGs1DigitalLink(`https://example.com/01/${gtin}/10/ABC123?17=251231`), {

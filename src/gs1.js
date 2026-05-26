@@ -9,6 +9,7 @@ export {
   getGs1AiInfo,
   getSupportedGs1Ais,
   GS1_FNC1_SEPARATOR,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
   validateGs1DigitalLink,

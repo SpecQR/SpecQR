@@ -67,8 +67,8 @@ assert.equal(typeof specqr.validateGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.validateGs1ElementString, "function");
 assert.equal(typeof specqr.validateGs1DigitalLink, "function");
 assert.equal(typeof specqr.QRCode.validateGs1DigitalLink, "function");
-assert.equal(specqr.normalizeGs1DigitalLink, undefined);
-assert.equal(specqr.QRCode.normalizeGs1DigitalLink, undefined);
+assert.equal(typeof specqr.normalizeGs1DigitalLink, "function");
+assert.equal(typeof specqr.QRCode.normalizeGs1DigitalLink, "function");
 
 const validDigitalLink = specqr.validateGs1DigitalLink(
   "https://example.com/01/04912345678904/10/LOT-A?17=251231"
@@ -95,6 +95,14 @@ assert.deepEqual(specqr.QRCode.validateGs1DigitalLink(
   ],
   warnings: []
 });
+assert.equal(
+  specqr.normalizeGs1DigitalLink("https://example.com/01/04912345678904?17=251231&10=LOT%2FA&foo=bar"),
+  "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar"
+);
+assert.equal(
+  specqr.QRCode.normalizeGs1DigitalLink("https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar"),
+  "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar"
+);
 
 const fnc1Second = specqr.generate("AA1234BBB112", {
   fnc1Second: "37",
@@ -400,6 +408,10 @@ async function assertTypeDeclarations(directory) {
   );
   assert.match(
     declarations,
+    /export function normalizeGs1DigitalLink\(\s*uri: string \| URL,\s*options\?: GS1DigitalLinkNormalizeOptions\s*\): string;/
+  );
+  assert.match(
+    declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
   assert.match(declarations, /static getSupportedGs1Ais\(\): GS1AiInfo\[];/);
@@ -410,6 +422,7 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /static createGs1DigitalLink\(/);
   assert.match(declarations, /static parseGs1DigitalLink\(/);
   assert.match(declarations, /static validateGs1DigitalLink\(/);
+  assert.match(declarations, /static normalizeGs1DigitalLink\(/);
 }
 
 function assertPackContents(packed) {

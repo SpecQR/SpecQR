@@ -276,6 +276,7 @@ GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は
 import {
   QRCode,
   createGs1DigitalLink,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
   validateGs1DigitalLink
@@ -293,6 +294,12 @@ const validation = validateGs1DigitalLink(uri);
 if (!validation.ok) {
   console.log(validation.errors[0].code);
 }
+
+const normalized = normalizeGs1DigitalLink(
+  "https://example.com/01/04912345678904?17=251231&10=ABC123"
+);
+console.log(normalized);
+// "https://example.com/01/04912345678904/10/ABC123?17=251231"
 
 const svg = QRCode.generate(uri, { output: "svg" });
 ```

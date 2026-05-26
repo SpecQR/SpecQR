@@ -518,6 +518,12 @@ export interface GS1DigitalLinkValidationOptions {
   unknownQuery?: "preserve" | "reject";
 }
 
+export interface GS1DigitalLinkNormalizeOptions {
+  primaryAi?: "00" | "01" | "414";
+  unknownQuery?: "preserve" | "reject";
+  mode?: "specqr-deterministic";
+}
+
 export interface GS1DigitalLinkValidationSuccess {
   ok: true;
   result: GS1DigitalLinkParseResult;
@@ -543,6 +549,10 @@ export function validateGs1DigitalLink(
   uri: string | URL,
   options?: GS1DigitalLinkValidationOptions
 ): GS1DigitalLinkValidationResult;
+export function normalizeGs1DigitalLink(
+  uri: string | URL,
+  options?: GS1DigitalLinkNormalizeOptions
+): string;
 export function parseGs1HumanReadable(input: string): GS1Element[];
 export function parseGs1ElementString(input: string): GS1ElementStringParseResult;
 export function getSupportedGs1Ais(): GS1AiInfo[];
@@ -635,6 +645,10 @@ export class QRCode {
     uri: string | URL,
     options?: GS1DigitalLinkValidationOptions
   ): GS1DigitalLinkValidationResult;
+  static normalizeGs1DigitalLink(
+    uri: string | URL,
+    options?: GS1DigitalLinkNormalizeOptions
+  ): string;
   static parseGs1HumanReadable(input: string): GS1Element[];
   static parseGs1ElementString(input: string): GS1ElementStringParseResult;
   static getSupportedGs1Ais(): GS1AiInfo[];

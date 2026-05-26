@@ -41,6 +41,7 @@ import {
   getGs1AiInfo,
   getSupportedGs1Ais,
   GS1_FNC1_SEPARATOR,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
   validateGs1DigitalLink,
@@ -72,6 +73,7 @@ export {
   getGs1AiInfo,
   getSupportedGs1Ais,
   GS1_FNC1_SEPARATOR,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1HumanReadable,
   validateGs1DigitalLink,
@@ -136,6 +138,10 @@ export class QRCode {
 
   static validateGs1DigitalLink(uri, options = undefined) {
     return validateGs1DigitalLink(uri, options);
+  }
+
+  static normalizeGs1DigitalLink(uri, options = {}) {
+    return normalizeGs1DigitalLink(uri, options);
   }
 
   static parseGs1HumanReadable(input) {

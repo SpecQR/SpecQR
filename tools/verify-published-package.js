@@ -84,8 +84,15 @@ if (typeof specqr.validateGs1DigitalLink === "function") {
     { ai: "01", value: "04912345678904" },
     { ai: "10", value: "ABC123" }
   ]);
-  assert.equal(specqr.normalizeGs1DigitalLink, undefined);
-  assert.equal(specqr.QRCode.normalizeGs1DigitalLink, undefined);
+  if (typeof specqr.normalizeGs1DigitalLink === "function") {
+    assert.equal(typeof specqr.QRCode.normalizeGs1DigitalLink, "function");
+    assert.equal(
+      specqr.normalizeGs1DigitalLink("https://example.com/01/04912345678904?17=251231&10=ABC123"),
+      "https://example.com/01/04912345678904/10/ABC123?17=251231"
+    );
+  } else {
+    assert.equal(specqr.QRCode.normalizeGs1DigitalLink, undefined);
+  }
 } else {
   assert.equal(specqr.QRCode.validateGs1DigitalLink, undefined);
 }

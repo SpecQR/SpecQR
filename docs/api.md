@@ -275,6 +275,7 @@ QRCode.generateSegments([
 - `createGs1DigitalLink(input, options)`: 対応 AI の element data から GS1 Digital Link URI を返します。これは通常 URL QR 用の helper であり、`gs1: true` は使いません。
 - `parseGs1DigitalLink(uri, options?)`: GS1 Digital Link URI から `{ elements, primary, pathElements, queryElements, unknownQuery }` を返します。
 - `validateGs1DigitalLink(uri, options?)`: GS1 Digital Link URI を non-throwing validation result として検証します。
+- `normalizeGs1DigitalLink(uri, options?)`: GS1 Digital Link URI を SpecQR deterministic policy で再出力します。
 - `GS1_FNC1_SEPARATOR`: 可変長 AI の後に別の element が続く場合に挿入される ASCII GS separator `"\x1D"` です。
 - `calculateGs1CheckDigit(digits)`: GS1 mod-10 check digit を計算します。
 - `validateGs1CheckDigit(digitsWithCheckDigit)`: 末尾 check digit を検証します。
@@ -335,7 +336,7 @@ if (!result.ok) {
 }
 ```
 
-`validateGs1DigitalLink(uri, options?)` は v2.2.0 の Digital Link polish API として公開しています。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API でも扱えます。`normalizeGs1DigitalLink()` はまだ公開していません。Normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy として次 phase に分けます。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
+`validateGs1DigitalLink(uri, options?)` と `normalizeGs1DigitalLink(uri, options?)` は v2.2.0 の Digital Link polish API として公開しています。Digital Link URI は引き続き `parseGs1DigitalLink()` / `createGs1DigitalLink()` の throwing API でも扱えます。Normalization は full GS1 canonicalizer ではなく SpecQR deterministic policy による安定再出力 helper です。詳細は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) と [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
 
 ### `createGs1DigitalLink(input, options)`
 
@@ -446,6 +447,35 @@ if (result.ok) {
 - `GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED`
 
 `http:` URI は validation failure にはせず、`GS1_DIGITAL_LINK_HTTP` warning を返します。Fragment、非 `http` / `https` scheme、malformed path、invalid percent encoding は `ok: false` です。
+
+### `normalizeGs1DigitalLink(uri, options?)`
+
+GS1 Digital Link URI を parse / validate し、SpecQR deterministic policy で再出力します。戻り値は metadata object ではなく URI string です。`normalizeGs1DigitalLink()` は throwing API で、invalid URI、fragment、unsupported AI、invalid check digit、duplicate AI、invalid path placement などは `InvalidGs1Error` になります。
+
+```js
+import { normalizeGs1DigitalLink } from "specqr";
+
+const normalized = normalizeGs1DigitalLink(
+  "https://example.com/01/04912345678904?3102=001234&17=251231&10=LOT%2FA&linkType=all"
+);
+
+console.log(normalized);
+// "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&3102=001234&linkType=all"
+```
+
+`options` は `primaryAi?: "00" | "01" | "414"`、`unknownQuery?: "preserve" | "reject"`、`mode?: "specqr-deterministic"` を受け付けます。Default は `unknownQuery: "preserve"` です。
+
+Normalization policy は次です。
+
+- `http:` と `https:` の absolute URI を対象にし、`http:` は `https:` に変換しません。
+- Fragment と non-HTTP scheme は reject します。
+- URI stem、scheme、host、port は WHATWG `URL` の処理に従って保持します。
+- Primary key と path eligible key qualifier は dictionary role metadata に従って path に置きます。
+- Query に置く GS1 AI は `ai`、同一 AI 内では `value` の lexical order で並べます。
+- Unknown query は default で preserve し、GS1 AI query の後ろへ元の相対順序で追加します。`unknownQuery: "reject"` では reject します。
+- GS1 AI values は decode / validation 後に path は `encodeURIComponent()` 相当、query は `URLSearchParams` 相当で再 encode します。
+
+`normalizeGs1DigitalLink(normalizeGs1DigitalLink(uri))` は同じ string を返すようにテストしています。ただしこれは SpecQR deterministic policy に対する idempotency であり、GS1 Digital Link 標準全体の canonical URI との一致を主張するものではありません。
 
 helper が対応する代表 AI は次の範囲です。
 

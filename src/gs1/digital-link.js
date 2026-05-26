@@ -97,6 +97,27 @@ export function validateGs1DigitalLink(uri, options = undefined) {
   }
 }
 
+export function normalizeGs1DigitalLink(uri, options = {}) {
+  const normalizedOptions = normalizeDigitalLinkNormalizeOptions(options);
+  const url = normalizeDigitalLinkUri(uri);
+  if (hasInvalidPercentEncoding(url.pathname) || hasInvalidPercentEncoding(url.search)) {
+    throw new InvalidGs1Error("GS1 Digital Link URI must use valid percent-encoding");
+  }
+
+  const parsed = parseGs1DigitalLink(url, normalizedOptions.parseOptions);
+  const baseUrl = getDigitalLinkStemUrl(url, normalizedOptions.parseOptions.primaryAi);
+  const normalized = new URL(createGs1DigitalLink(parsed.elements, {
+    baseUrl,
+    primaryAi: parsed.primary.ai
+  }));
+
+  for (const query of parsed.unknownQuery) {
+    normalized.searchParams.append(query.key, query.value);
+  }
+
+  return normalized.toString();
+}
+
 function normalizeDigitalLinkInput(input) {
   if (Array.isArray(input)) {
     return input;
@@ -200,6 +221,27 @@ function normalizeDigitalLinkValidationOptions(options) {
     parseOptions.unknownQuery = options.unknownQuery;
   }
   return { ok: true, parseOptions };
+}
+
+function normalizeDigitalLinkNormalizeOptions(options) {
+  if (options === undefined) {
+    return { parseOptions: {} };
+  }
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    throw new InvalidGs1Error("GS1 Digital Link normalization options must be an object");
+  }
+  if ("mode" in options && options.mode !== undefined && options.mode !== "specqr-deterministic") {
+    throw new InvalidGs1Error("GS1 Digital Link normalization mode must be \"specqr-deterministic\"");
+  }
+
+  const parseOptions = {};
+  if ("primaryAi" in options) {
+    parseOptions.primaryAi = options.primaryAi;
+  }
+  if ("unknownQuery" in options) {
+    parseOptions.unknownQuery = options.unknownQuery;
+  }
+  return { parseOptions };
 }
 
 function normalizePathAis(pathAis, primaryAi) {
@@ -332,6 +374,26 @@ function decodePathSegment(segment, label) {
   } catch {
     throw new InvalidGs1Error(`GS1 Digital Link path ${label} must be valid percent-encoding`);
   }
+}
+
+function getDigitalLinkStemUrl(url, primaryAi) {
+  const segments = getPathSegments(url.pathname);
+  const firstAiIndex = segments.findIndex((segment) => {
+    if (primaryAi) {
+      return segment === primaryAi;
+    }
+    return isPrimaryAi(segment);
+  });
+
+  if (firstAiIndex === -1) {
+    throw new InvalidGs1Error("GS1 Digital Link path must include primary AI 00, 01, or 414");
+  }
+
+  const stem = new URL(url.href);
+  stem.pathname = segments.slice(0, firstAiIndex).join("/");
+  stem.search = "";
+  stem.hash = "";
+  return stem;
 }
 
 function getDigitalLinkUrlForValidation(uri) {

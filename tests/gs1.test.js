@@ -16,6 +16,7 @@ import {
   QRCode,
   generate,
   generateSegments,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
@@ -44,6 +45,7 @@ test("GS1 compatibility entrypoint preserves public helper exports", () => {
   assert.equal(typeof gs1Entrypoint.createGs1ElementString, "function");
   assert.equal(typeof gs1Entrypoint.createGs1DigitalLink, "function");
   assert.equal(typeof gs1Entrypoint.parseGs1DigitalLink, "function");
+  assert.equal(typeof gs1Entrypoint.normalizeGs1DigitalLink, "function");
   assert.equal(typeof gs1Entrypoint.parseGs1HumanReadable, "function");
   assert.equal(typeof gs1Entrypoint.getSupportedGs1Ais, "function");
   assert.equal(typeof gs1Entrypoint.getGs1AiInfo, "function");
@@ -875,6 +877,89 @@ test("public GS1 Digital Link validation keeps throwing parser behavior separate
     () => parseGs1DigitalLink(uri),
     (error) => error instanceof InvalidGs1Error && /fragment/u.test(error.message)
   );
+});
+
+test("GS1 Digital Link normalizer applies SpecQR deterministic URI policy", () => {
+  assert.equal(
+    normalizeGs1DigitalLink(
+      "https://example.com/stem/01/04912345678904?3102=001234&17=251231&10=LOT%2FA&foo=bar&linkType=all"
+    ),
+    "https://example.com/stem/01/04912345678904/10/LOT%2FA?17=251231&3102=001234&foo=bar&linkType=all"
+  );
+  assert.equal(
+    normalizeGs1DigitalLink("http://example.com/01/04912345678904?17=251231&10=ABC"),
+    "http://example.com/01/04912345678904/10/ABC?17=251231"
+  );
+  assert.equal(
+    QRCode.normalizeGs1DigitalLink("https://example.com/stem%201/01/04912345678904?10=LOT%2FA&17=251231"),
+    "https://example.com/stem%201/01/04912345678904/10/LOT%2FA?17=251231"
+  );
+});
+
+test("GS1 Digital Link normalizer is idempotent with builder and parser output", () => {
+  const elements = [
+    { ai: "01", value: "04912345678904" },
+    { ai: "10", value: "ABC123" },
+    { ai: "17", value: "251231" }
+  ];
+  const created = createGs1DigitalLink(elements, { baseUrl: "https://example.com/stem" });
+  const normalized = normalizeGs1DigitalLink(created);
+
+  assert.equal(normalized, created);
+  assert.equal(normalizeGs1DigitalLink(normalized), normalized);
+  assert.deepEqual(parseGs1DigitalLink(normalizeGs1DigitalLink(created)), parseGs1DigitalLink(created));
+});
+
+test("GS1 Digital Link normalizer handles unknown query policy and rejects invalid input", () => {
+  assert.equal(
+    normalizeGs1DigitalLink("https://example.com/01/04912345678904?b=2&10=ABC&a=1"),
+    "https://example.com/01/04912345678904/10/ABC?b=2&a=1"
+  );
+
+  const cases = [
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/04912345678904?linkType=all", {
+        unknownQuery: "reject"
+      }),
+      /not a GS1 AI/
+    ],
+    [
+      () => normalizeGs1DigitalLink("ftp://example.com/01/04912345678904"),
+      /http or https/
+    ],
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/04912345678904#frag"),
+      /fragment/
+    ],
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/%E0%A4%A"),
+      /valid percent-encoding/
+    ],
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/04912345678904?01=04912345678904"),
+      /duplicate AI 01/
+    ],
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/04912345678904/17/251231"),
+      /cannot be placed in the Digital Link path/
+    ],
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/04912345678905"),
+      /invalid GTIN check digit/
+    ],
+    [
+      () => normalizeGs1DigitalLink("https://example.com/01/04912345678904", { mode: "canonical" }),
+      /mode must be "specqr-deterministic"/
+    ]
+  ];
+
+  for (const [fn, message] of cases) {
+    assert.throws(
+      fn,
+      (error) => error instanceof InvalidGs1Error && message.test(error.message),
+      `Expected InvalidGs1Error matching ${message}`
+    );
+  }
 });
 
 test("GS1 Digital Link helper supports explicit primary and path AI options", () => {

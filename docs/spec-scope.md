@@ -2,13 +2,13 @@
 
 ## Target
 
-SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。現在の v2 系 main branch は、GS1 strict parser、GS1 validation API、GS1 Digital Link、GS1 Digital Link validation API、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む stable scope です。別系統の QR family や装飾機能は core に混ぜません。
+SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。現在の v2 系 main branch は、GS1 strict parser、GS1 validation API、GS1 Digital Link、GS1 Digital Link validation / deterministic normalization API、FNC1 second position、Structured Append generation / manual segments / merge helper まで含む stable scope です。別系統の QR family や装飾機能は core に混ぜません。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
 v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2.0.0 は Micro QR や rMQR のような別 symbol family ではなく、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Structured Append、control segment model、検証体系の強化を中心にします。FNC1 second position、Structured Append low-level header encoding、Structured Append high-level splitting、manual segments splitting、`mergeStructuredAppendParts()` は実装済みです。Structured Append の string / binary 分割方針は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と merge helper の境界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分けています。GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に分けています。
 
-v2.1 系は GS1 validation release として、supported AI catalog introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱います。`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。今後の catalog expansion 方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。v2.2.0 では Digital Link 専用 `validateGs1DigitalLink()` を追加し、`normalizeGs1DigitalLink()` は次 phase に分けています。詳細は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定しています。
+v2.1 系は GS1 validation release として、supported AI catalog introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱います。`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。今後の catalog expansion 方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。v2.2.0 では Digital Link 専用 `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` を追加しました。詳細は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定しています。
 
 ## 実装済み範囲
 
@@ -29,7 +29,7 @@ v2.1 系は GS1 validation release として、supported AI catalog introspectio
 - Structured Append low-level header mode
 - Structured Append high-level automatic splitting API
 - Structured Append manual segments high-level splitting API
-- 代表的な fixed-length / variable-length AI 向けの GS1 element string helper、human-readable parser、Digital Link URI builder / parser / validator
+- 代表的な fixed-length / variable-length AI 向けの GS1 element string helper、human-readable parser、Digital Link URI builder / parser / validator / deterministic normalizer
 - GTIN / SSCC check digit helper と、AI `00`/`01`/`02` の check digit validation
 - 選択 Version を増やさない optional error correction boosting
 - Automatic version selection
@@ -58,7 +58,7 @@ Kanji mode は、platform の `TextDecoder("shift_jis")` 実装を使って Unic
 
 `structuredAppend` は Structured Append mode indicator `0011`、4-bit 0-based index、4-bit 0-based total count、8-bit parity data を先頭に挿入します。public API では `index` を 1-based とし、`total` は `2..16`、`index` は `1..total`、`parity` は `0..255` integer です。`generateStructuredAppend()` は string / binary input を deterministic greedy largest-fitting で最大 16 symbols に分割し、元 payload bytes の XOR parity を各 symbol の low-level header に設定します。`generateSegmentsStructuredAppend()` は manual data segments を segment boundary first で分割し、byte segment だけを byte / Unicode code point boundary で safe chunking します。numeric / alphanumeric / kanji segment の途中分割は行いません。`mergeStructuredAppendParts()` は decoder が返した `{ index, total, parity, data }` parts だけを対象に、欠落、重複、metadata mismatch、payload byte parity を検証して結合します。public parity helper、QR decoder、scanner integration は提供しません。scanner が自動 merge することや Structured Append metadata を露出することも保証しません。読み取り workflow は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に整理しています。ECI / FNC1 first / FNC1 second / `gs1: true` との併用は安全側で reject します。
 
-GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱います。`createGs1DigitalLink()` は supported AI から Digital Link URI を作り、`parseGs1DigitalLink()` は URI を `{ elements, primary, pathElements, queryElements, unknownQuery }` に戻します。Digital Link URI は通常 URL QR として `QRCode.generate(uri)` で生成し、`gs1: true` は指定しません。
+GS1 human-readable 表記は、`(01)04912345678904(10)ABC123` のような入力補助形式です。QR に encode する payload は parentheses を含まない raw GS1 element string です。可変長 AI の後に別の AI が続く場合は ASCII GS separator を挿入します。GS1 Digital Link は URL を使う別表現として扱います。`createGs1DigitalLink()` は supported AI から Digital Link URI を作り、`parseGs1DigitalLink()` は URI を `{ elements, primary, pathElements, queryElements, unknownQuery }` に戻します。`validateGs1DigitalLink()` は non-throwing validation result を返し、`normalizeGs1DigitalLink()` は SpecQR deterministic policy に基づく URI string を返します。Digital Link URI は通常 URL QR として `QRCode.generate(uri)` で生成し、`gs1: true` は指定しません。
 
 GS1 AI metadata は、現時点では SpecQR が対応する代表 AI だけを小さな internal dictionary として手書き管理しています。これは supported AI の length、numeric/text constraint、GTIN / SSCC check digit rule、separator behavior、Digital Link role (`primary-key` / `key-qualifier` / `data-attribute`) を validation から参照しやすくするための内部構造であり、full GS1 AI catalog の取り込みではありません。現在の supported AI は [Supported GS1 AIs](./gs1-supported-ai.md) にまとめています。Digital Link の default path/query placement と path placement validation もこの metadata を使います。将来 GS1 Barcode Syntax Dictionary などの外部資料を参照して catalog を広げる場合は、出典、license / usage terms、NOTICE の要否を確認し、仕様本文や大きな表を repository に無断コピーしない方針です。
 
@@ -80,7 +80,6 @@ SpecQR は通常 QR Code Model 2 generation の実装・検証を進めていま
 
 - Full GS1 AI catalog validation
 - Industry-specific GS1 AI rules
-- GS1 Digital Link 専用 normalizer の runtime 実装。`normalizeGs1DigitalLink()` は未公開です。
 - GS1 Digital Link full canonicalizer
 - Structured Append public parity helper
 - QR decoder / scanner integration
@@ -97,7 +96,7 @@ v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定しま
 
 - GS1 syntax layer: full AI catalog に近い parser / validator、strict element string handling、check digit validation の拡張。
 - GS1 validation API: `getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。次は supported AI catalog の拡張、Digital Link 専用 validation、業界別 rule の扱いを個別に設計する。
-- GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` / `validateGs1DigitalLink()` の round-trip と validation result を起点に、次に `normalizeGs1DigitalLink()` を v2.2.0 design に従って実装する。Full AI catalog metadata、full canonicalization、resolver 周辺はその後に検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
+- GS1 Digital Link helper: `createGs1DigitalLink()` / `parseGs1DigitalLink()` / `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` の round-trip、validation result、deterministic normalization を起点に、Full AI catalog metadata、full canonicalization、resolver 周辺はその後に検討する。URL-based Digital Link と FNC1 first の GS1 element string QR は API と docs で分ける。
 - Control segment model: ECI、FNC1 first、FNC1 second、Structured Append low-level header の ordering / capacity / diagnostics は実装済み。
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
 - Structured Append: low-level header encoding、string / binary high-level automatic splitting API、manual segments high-level splitting API、decoded parts 向け `mergeStructuredAppendParts()` は実装済み。manual segments の分割方針は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 helper の前提は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に固定済み。public parity helper と QR decoder / scanner integration は未対応。

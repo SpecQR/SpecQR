@@ -10,12 +10,14 @@ import {
   getGs1AiInfo,
   getSupportedGs1Ais,
   mergeStructuredAppendParts,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1ElementString,
   validateGs1DigitalLink,
   validateGs1Elements,
   validateGs1ElementString,
   type GS1AiInfo,
+  type GS1DigitalLinkNormalizeOptions,
   type GS1DigitalLinkParseResult,
   type GS1DigitalLinkValidationResult,
   type GS1ElementStringParseResult,
@@ -105,6 +107,10 @@ expectType<string | null>(parsedDigitalLink.primary?.value ?? null);
 const digitalLinkValidation = validateGs1DigitalLink(digitalLink);
 expectType<GS1DigitalLinkValidationResult>(digitalLinkValidation);
 expectType<GS1DigitalLinkValidationResult>(QRCode.validateGs1DigitalLink(digitalLink, { unknownQuery: "preserve" }));
+const digitalLinkNormalizeOptions: GS1DigitalLinkNormalizeOptions = { mode: "specqr-deterministic" };
+expectType<string>(normalizeGs1DigitalLink(digitalLink, digitalLinkNormalizeOptions));
+expectType<string>(QRCode.normalizeGs1DigitalLink(digitalLink, { unknownQuery: "reject" }));
+expectType<string>(specqr.normalizeGs1DigitalLink(digitalLink));
 if (digitalLinkValidation.ok) {
   expectType<GS1DigitalLinkParseResult>(digitalLinkValidation.result);
   expectType<string>(digitalLinkValidation.result.elements[0].ai);
@@ -187,5 +193,5 @@ expectType<ImageData>(toImageDataFromSegments([{ mode: "alphanumeric", data: "HE
 expectType<string>(toObjectURL("https://example.com"));
 expectType<string>(toObjectURLFromSegments([{ mode: "kanji", data: "漢字" }]));
 
-// @ts-expect-error normalizeGs1DigitalLink is intentionally not public yet.
-specqr.normalizeGs1DigitalLink;
+// @ts-expect-error validateGs1DigitalLink does not expose normalization options.
+validateGs1DigitalLink(digitalLink, { mode: "specqr-deterministic" });

@@ -35,7 +35,7 @@ Digital Link helper は internal AI metadata の role を使い、default path/q
 - `key-qualifier`: primary key に紐づく path qualifier 候補。
 - `data-attribute`: query parameter 側に置く属性。
 
-`createGs1DigitalLink()` / `parseGs1DigitalLink()` は minimal create/parse helper です。Resolver、compression、full canonicalizer、full AI catalog validation は未対応です。
+`createGs1DigitalLink()` / `parseGs1DigitalLink()` / `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` は supported AI 範囲に限定した helper です。Resolver、compression、full canonicalizer、full AI catalog validation は未対応です。
 
 ## Exact AI Entries
 

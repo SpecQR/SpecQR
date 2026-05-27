@@ -1,6 +1,6 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.2.0` stable release package を準備できる状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.2.0` tag 作成は人間の最終判断後にだけ実行します。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.2.1` stable patch package を準備できる状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.2.1` tag 作成は release gate が green になった main commit に対してだけ実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
@@ -106,25 +106,25 @@ npm run verify:types
 
 ## Published Package Smoke
 
-npm registry smoke は公開済み package を確認する gate です。2.2.0 publish 前は `latest` が 2.1.0 を指すため、現在の published state sanity check として次を使います。
+npm registry smoke は公開済み package を確認する gate です。publish 前は `latest` が直前 stable を指すため、現在の published state sanity check として次を使います。
 
 ```sh
-node tools/verify-published-package.js specqr@2.1.0 specqr@latest
+node tools/verify-published-package.js specqr@latest
 ```
 
-stable 2.2.0 を publish した後は、npm registry から 2.2.0 を install できることを確認します。
+stable patch を publish した後は、npm registry から公開 version を install できることを確認します。
 
 ```sh
-node tools/verify-published-package.js specqr@2.2.0 specqr@latest
+node tools/verify-published-package.js specqr@X.Y.Z specqr@latest
 ```
 
 `next` tag の状態も同時に確認したい場合:
 
 ```sh
-node tools/verify-published-package.js specqr@2.2.0 specqr@latest specqr@next
+node tools/verify-published-package.js specqr@X.Y.Z specqr@latest specqr@next
 ```
 
-`npm run verify:published` は既定で `specqr` と `specqr@next` を確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。2.2.0 publish 前は registry 上の `latest` がまだ 2.1.0 を指す可能性があるため、未公開 2.2.0 の確認には `npm run verify:pack` と `npm publish --dry-run` を使い、registry smoke と local pack smoke を混同しないでください。
+`npm run verify:published` は既定で `specqr` と `specqr@next` を確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。未公開 version の確認には `npm run verify:pack` と `npm publish --dry-run` を使い、registry smoke と local pack smoke を混同しないでください。
 
 ## Node Engine Matrix
 
@@ -184,7 +184,7 @@ stable version を npm `latest` で publish し、published package smoke が成
   npm install specqr
   ```
 - 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 validation / supported AI introspection API、GS1 Digital Link create/parse/validate/normalize helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
-- v2.2.0 release note では、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、Digital Link edge fixture / idempotency / packed smoke 強化、full canonicalizer / resolver / compression が非スコープであることを明記する。
+- v2.2 系 release note では、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、Digital Link edge fixture / idempotency / packed smoke 強化、full canonicalizer / resolver / compression が非スコープであることを明記する。
 - 検証: Node 18 / 20 / 22 / 24 matrix、golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison、local pack smoke、npm publish dry-run。
 - 非対応: Micro QR、rMQR、Structured Append public parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。

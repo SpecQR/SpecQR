@@ -4,6 +4,24 @@
 
 まだありません。
 
+## 2.2.1 - 2026-05-27
+
+SpecQR 2.2.1 is a documentation, examples, and playground polish patch for the GS1 Digital Link v2.2 APIs.
+
+SpecQR 2.2.1 は、2.2.0 の runtime behavior、public API、package exports、runtime dependency-free policy を維持したまま、GS1 Digital Link v2.2 API の利用導線を整える patch release です。
+
+### 改善
+
+- README から `createGs1DigitalLink()` / `parseGs1DigitalLink()` / `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` の関係と詳細 docs に辿りやすい導線を追加しました。
+- `docs/api.md`、`docs/gs1-digital-link-v2.md`、`docs/gs1-digital-link-validation-v2.2.md`、`docs/gs1-supported-ai.md`、`docs/spec-scope.md`、`docs/conformance.md`、`docs/v2-roadmap.md`、`docs/release.md` を Digital Link validation / normalization の説明に合わせて整理しました。
+- Playground に `GS1 Digital Link URI` 入力形式と unknown query `preserve` / `reject` の表示を追加し、validation、warnings、normalized URI を確認しやすくしました。
+- `examples/gs1-digital-link.mjs` と TypeScript usage example を補強し、parse / validate / normalize と unknown query policy の使い分けを example smoke で確認するようにしました。
+
+### 変更なし
+
+- QR generation runtime、public API、package exports、runtime dependencies は変更していません。
+- GS1 Digital Link resolver、compression / decompression、full canonicalization、GS1 full AI catalog、Micro QR、rMQR、logo overlay、styled modules は引き続き非スコープです。
+
 ## 2.2.0 - 2026-05-27
 
 SpecQR 2.2.0 is the stable GS1 Digital Link validation and deterministic normalization release.

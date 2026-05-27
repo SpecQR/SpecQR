@@ -43,7 +43,7 @@ v2.1 系は GS1 validation release として、supported AI catalog introspectio
 - Node PNG buffer/file helpers
 - Browser Blob/ImageData/Object URL helpers
 - 実利用向け examples。Node PNG、GS1 QR、GS1 Digital Link、Structured Append SVG/PNG symbol output を含みます。
-- 小さな browser playground。通常 QR / GS1 / Structured Append mode、複数 symbol preview、diagnostics / warnings を確認できます。
+- 小さな browser playground。通常 QR / GS1 / GS1 Digital Link URI / Structured Append mode、Digital Link validation / normalization 表示、複数 symbol preview、diagnostics / warnings を確認できます。
 - quiet zone、contrast、capacity、mask/version selection、scan risk、print DPI の diagnostics / warnings
 
 ## Compatibility Notes

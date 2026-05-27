@@ -37,6 +37,8 @@ Digital Link helper は internal AI metadata の role を使い、default path/q
 
 `createGs1DigitalLink()` / `parseGs1DigitalLink()` / `validateGs1DigitalLink()` / `normalizeGs1DigitalLink()` は supported AI 範囲に限定した helper です。Resolver、compression、full canonicalizer、full AI catalog validation は未対応です。
 
+Digital Link role は URL 内で AI を path に置けるか、query に置くかを決めるための SpecQR metadata です。GS1 QR Code / FNC1 first position の raw element string 生成とは別の判断軸なので、GS1 QR Code を作る場合は `createGs1ElementString()` と `QRCode.generate(data, { gs1: true })` を使い、Digital Link URI QR を作る場合は `createGs1DigitalLink()` と通常の `QRCode.generate(uri)` を使ってください。API の流れは [API: GS1 Helpers](./api.md#gs1-helpers) にまとめています。
+
 ## Exact AI Entries
 
 | AI | 内容 | Length | Value | Check digit | Digital Link role | Separator |

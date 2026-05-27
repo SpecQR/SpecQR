@@ -75,6 +75,16 @@ v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Stru
 
 2.2.0 では GS1 Digital Link URI 向けに `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` を stable API として追加しました。Normalization は full canonicalizer ではなく、SpecQR deterministic policy に基づく安定再出力 helper です。
 
+Digital Link 周りの導線は次の順に読むと迷いにくいです。
+
+| 知りたいこと | 入口 |
+| --- | --- |
+| GS1 QR Code と GS1 Digital Link URI QR の違い | [GS1 Digital Link v2 Design](docs/gs1-digital-link-v2.md#一番大事な区別) |
+| `create` / `parse` / `validate` / `normalize` の使い分け | [API: GS1 Helpers](docs/api.md#gs1-helpers) |
+| unknown query、`http:` warning、deterministic normalization policy | [GS1 Digital Link Validation v2.2 Design](docs/gs1-digital-link-validation-v2.2.md) |
+| 対応 AI と path/query placement | [Supported GS1 AIs](docs/gs1-supported-ai.md) |
+| ブラウザで動きを確認する | [Playground](https://specqr.github.io/SpecQR/playground/) |
+
 ## 基本的な使い方
 
 ```js
@@ -272,7 +282,16 @@ QRCode.generateSegmentsStructuredAppend([
 });
 ```
 
+## GS1 Digital Link URI QR
+
 GS1 Digital Link URI は通常 URL QR として生成します。`gs1: true` は指定しません。生成した URI は `parseGs1DigitalLink()` で element data に戻せます。UI / form validation では `validateGs1DigitalLink()` の non-throwing result を使えます。
+
+| API | 役割 |
+| --- | --- |
+| `createGs1DigitalLink(elements, options)` | `{ ai, value }[]` から URI を作る throwing builder。 |
+| `parseGs1DigitalLink(uri, options?)` | URI を `{ elements, primary, pathElements, queryElements, unknownQuery }` に戻す throwing parser。 |
+| `validateGs1DigitalLink(uri, options?)` | UI / form 向けに `{ ok, result/errors, warnings }` を返す non-throwing validator。 |
+| `normalizeGs1DigitalLink(uri, options?)` | SpecQR deterministic policy で URI string を安定再出力する helper。full canonicalizer ではありません。 |
 
 ```js
 import {

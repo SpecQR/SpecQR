@@ -17,6 +17,17 @@ Digital Link URI は URL なので、`QRCode.generate(uri)` で通常 QR とし�
 
 ## Public API
 
+v2.2.0 時点の Digital Link helper は、throwing create/parse と non-throwing validation、deterministic normalization を分けて公開しています。
+
+| API | 位置づけ |
+| --- | --- |
+| `createGs1DigitalLink(input, options)` | element data から Digital Link URI を作る builder。既存 output は silent に変えません。 |
+| `parseGs1DigitalLink(uri, options?)` | Digital Link URI を element data に戻す parser。strict workflow / tests 向けの throwing API です。 |
+| `validateGs1DigitalLink(uri, options?)` | UI / form validation 向けの non-throwing API。unknown query preserve / reject と warnings を扱います。 |
+| `normalizeGs1DigitalLink(uri, options?)` | SpecQR deterministic policy で URI string を再出力します。full canonicalizer ではありません。 |
+
+v2.2.0 の validation result、unknown query policy、normalization policy は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に分けています。
+
 ### `createGs1DigitalLink(input, options)` implemented
 
 GS1 element data から GS1 Digital Link URI string を作ります。

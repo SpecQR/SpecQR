@@ -4,11 +4,14 @@ import {
   createGs1ElementString,
   generateStructuredAppend,
   mergeStructuredAppendParts,
+  normalizeGs1DigitalLink,
   parseGs1DigitalLink,
   parseGs1ElementString,
   parseGs1HumanReadable,
   QRCode,
+  validateGs1DigitalLink,
   type GS1DigitalLinkParseResult,
+  type GS1DigitalLinkValidationResult,
   type GS1ElementStringParseResult,
   type QRCodeDiagnosticResult,
   type QRStructuredAppendResult
@@ -31,6 +34,8 @@ const gs1Data = createGs1ElementString(elements);
 const parsedGs1: GS1ElementStringParseResult = parseGs1ElementString(gs1Data);
 const gs1DigitalLink = createGs1DigitalLink(parsedGs1, { baseUrl: "https://example.com" });
 const parsedDigitalLink: GS1DigitalLinkParseResult = parseGs1DigitalLink(gs1DigitalLink);
+const validatedDigitalLink: GS1DigitalLinkValidationResult = validateGs1DigitalLink(gs1DigitalLink);
+const normalizedDigitalLink: string = normalizeGs1DigitalLink(gs1DigitalLink);
 
 const gs1Svg: string = QRCode.generate(gs1Data, {
   gs1: true,
@@ -60,6 +65,8 @@ console.log(
   gs1Svg.length,
   parsedGs1.elements.length,
   parsedDigitalLink.elements.length,
+  validatedDigitalLink.ok,
+  normalizedDigitalLink.length,
   structured.total,
   merged.data.length
 );

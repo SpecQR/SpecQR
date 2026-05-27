@@ -1,9 +1,18 @@
-import { createGs1ElementString, parseGs1HumanReadable, QRCode } from "../src/index.js";
+import {
+  createGs1ElementString,
+  normalizeGs1DigitalLink,
+  parseGs1DigitalLink,
+  parseGs1HumanReadable,
+  QRCode,
+  validateGs1DigitalLink
+} from "../src/index.js";
 import { toObjectURL } from "../src/browser.js";
 
 const input = document.querySelector("#qr-input");
 const workflow = document.querySelector("#qr-workflow");
 const kind = document.querySelector("#qr-kind");
+const digitalLinkPolicy = document.querySelector("#qr-digital-link-policy");
+const digitalLinkPolicyControl = document.querySelector("#qr-digital-link-policy-control");
 const ecc = document.querySelector("#qr-ecc");
 const version = document.querySelector("#qr-version");
 const maxSymbols = document.querySelector("#qr-max-symbols");
@@ -21,7 +30,7 @@ let objectUrls = [];
 
 populateVersionOptions();
 
-for (const element of [input, ecc, version, maxSymbols, scale, margin]) {
+for (const element of [input, digitalLinkPolicy, ecc, version, maxSymbols, scale, margin]) {
   element.addEventListener("input", render);
   element.addEventListener("change", render);
 }
@@ -29,6 +38,11 @@ for (const element of [input, ecc, version, maxSymbols, scale, margin]) {
 kind.addEventListener("change", () => {
   if (kind.value === "gs1" && input.value === "https://github.com/SpecQR/SpecQR") {
     input.value = "(01)04912345678904(17)251231(10)LOT-A";
+  } else if (kind.value === "digital-link" && (
+    input.value === "https://github.com/SpecQR/SpecQR" ||
+    input.value === "(01)04912345678904(17)251231(10)LOT-A"
+  )) {
+    input.value = "https://example.com/01/04912345678904?17=251231&10=LOT-A&linkType=all";
   }
   render();
 });
@@ -68,6 +82,7 @@ function render() {
 
 function renderSingleSymbol() {
   const data = getInputData();
+  const digitalLinkSummary = kind.value === "digital-link" ? getDigitalLinkSummary(data) : null;
   const options = {
     ...getBaseOptions(),
     output: "matrix",
@@ -82,8 +97,9 @@ function renderSingleSymbol() {
 
   preview.classList.remove("preview--set");
   preview.innerHTML = result.svg;
-  renderDiagnostics([
+  const rows = [
     ["Mode", "Single QR"],
+    ["Input kind", getInputKindLabel()],
     ["Version", result.diagnostics.version],
     ["Size", `${result.diagnostics.size} x ${result.diagnostics.size}`],
     ["ECC", result.diagnostics.errorCorrectionLevel],
@@ -92,7 +108,20 @@ function renderSingleSymbol() {
     ["Capacity", `${result.diagnostics.dataBitLength} / ${result.diagnostics.capacityBits} bits`],
     ["Remaining", `${result.diagnostics.remainingBits} bits`],
     ["GS1", result.diagnostics.gs1 ? "yes" : "no"]
-  ]);
+  ];
+  if (digitalLinkSummary) {
+    rows.push(
+      ["Digital Link validation", "ok"],
+      ["Digital Link primary", formatElement(digitalLinkSummary.parsed.primary)],
+      ["Digital Link path AIs", formatAiList(digitalLinkSummary.parsed.pathElements)],
+      ["Digital Link query AIs", formatAiList(digitalLinkSummary.parsed.queryElements)],
+      ["Unknown query", digitalLinkSummary.parsed.unknownQuery.length],
+      ["Unknown query policy", digitalLinkPolicy.value],
+      ["Normalized URI", digitalLinkSummary.normalized],
+      ["Normalization policy", "SpecQR deterministic, not full canonicalization"]
+    );
+  }
+  renderDiagnostics(rows);
   renderWarnings(result.diagnostics.warnings);
   updateSingleDownloads(result.svg, data, downloadOptions);
 }
@@ -141,6 +170,23 @@ function getInputData() {
   }
 
   return createGs1ElementString(parseGs1HumanReadable(input.value));
+}
+
+function getDigitalLinkSummary(uri) {
+  const options = {
+    unknownQuery: digitalLinkPolicy.value
+  };
+  const validation = validateGs1DigitalLink(uri, options);
+  if (!validation.ok) {
+    const [first] = validation.errors;
+    throw new Error(`${first.code}: ${first.message}`);
+  }
+
+  return {
+    parsed: parseGs1DigitalLink(uri, options),
+    normalized: normalizeGs1DigitalLink(uri, options),
+    warnings: validation.warnings
+  };
 }
 
 function getBaseOptions() {
@@ -200,6 +246,15 @@ function renderDiagnostics(rows) {
 }
 
 function renderWarnings(items) {
+  if (kind.value === "digital-link") {
+    const validation = validateGs1DigitalLink(input.value, {
+      unknownQuery: digitalLinkPolicy.value
+    });
+    if (validation.ok) {
+      items = [...validation.warnings, ...items];
+    }
+  }
+
   if (items.length === 0) {
     warnings.innerHTML = "<li>No warnings</li>";
     return;
@@ -259,6 +314,25 @@ function revokeDownloads() {
 
 function syncModeControls() {
   maxSymbolsControl.hidden = workflow.value !== "structured";
+  digitalLinkPolicyControl.hidden = kind.value !== "digital-link";
+}
+
+function getInputKindLabel() {
+  if (kind.value === "gs1") {
+    return "GS1 QR Code / FNC1 first";
+  }
+  if (kind.value === "digital-link") {
+    return "GS1 Digital Link URI / normal URL QR";
+  }
+  return "Text / URL";
+}
+
+function formatElement(element) {
+  return element ? `${element.ai}=${element.value}` : "-";
+}
+
+function formatAiList(elements) {
+  return elements.length === 0 ? "-" : elements.map((element) => element.ai).join(", ");
 }
 
 function populateVersionOptions() {

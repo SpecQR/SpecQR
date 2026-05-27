@@ -5,6 +5,7 @@ import {
   appendGtinCheckDigit,
   createGs1DigitalLink,
   normalizeGs1DigitalLink,
+  parseGs1DigitalLink,
   parseGs1HumanReadable,
   QRCode,
   validateGs1DigitalLink
@@ -20,7 +21,11 @@ const validation = validateGs1DigitalLink(inboundUri);
 if (!validation.ok) {
   throw new Error(`Unexpected invalid GS1 Digital Link: ${validation.errors[0].code}`);
 }
+const parsedInbound = parseGs1DigitalLink(inboundUri);
 const normalizedUri = normalizeGs1DigitalLink(inboundUri);
+const strictValidation = validateGs1DigitalLink(inboundUri, {
+  unknownQuery: "reject"
+});
 const outputPath = process.argv[2] ?? join(tmpdir(), "specqr-gs1-digital-link-example.svg");
 
 const result = QRCode.generate(uri, {
@@ -34,8 +39,12 @@ await writeFileEnsured(outputPath, result.svg);
 console.log(JSON.stringify({
   outputPath,
   uri,
+  parsedElements: parsedInbound.elements,
+  parsedUnknownQuery: parsedInbound.unknownQuery,
   normalizedUri,
+  normalizedIdempotent: normalizeGs1DigitalLink(normalizedUri) === normalizedUri,
   validationWarnings: validation.warnings.map((warning) => warning.code),
+  strictRejectError: strictValidation.ok ? null : strictValidation.errors[0].code,
   version: result.diagnostics.version,
   maskPattern: result.diagnostics.maskPattern,
   warnings: result.diagnostics.warnings.map((warning) => warning.code)

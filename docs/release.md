@@ -163,6 +163,16 @@ Manual deploy:
 
 この workflow は `workflow_dispatch` のみで起動します。push だけでは deploy しません。
 
+### v2.2 系 patch の Digital Link 確認
+
+Digital Link docs / playground だけを直す patch でも、少なくとも次を確認します。
+
+- README から `docs/api.md`、`docs/gs1-digital-link-v2.md`、`docs/gs1-digital-link-validation-v2.2.md`、`docs/gs1-supported-ai.md` へ自然に辿れる。
+- Playground の `GS1 Digital Link URI` 入力形式で `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` の結果が見える。
+- Unknown query は default `preserve` で warning、`reject` で validation error として表示される。
+- Digital Link URI QR は通常 URL QR として扱い、`gs1: true` / FNC1 first position と混同する説明が残っていない。
+- `normalizeGs1DigitalLink()` を full canonicalizer と表現していない。
+
 ## GitHub Stable Release
 
 stable version を npm `latest` で publish し、published package smoke が成功した後に GitHub Release を作成します。

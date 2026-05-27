@@ -28,7 +28,7 @@ Human-readable parser、GTIN check digit helper、FNC1 first position を使っ�
 npm run examples:gs1-digital-link
 ```
 
-GS1 Digital Link URI から通常 URL QR SVG を作ります。Validation result と deterministic normalization も実行し、Digital Link は FNC1 first position ではないため、意図的に `gs1: true` は使いません。
+GS1 Digital Link URI から通常 URL QR SVG を作ります。`parseGs1DigitalLink()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()` を実行し、unknown query の default preserve と strict reject の違いも summary に出します。Digital Link は FNC1 first position ではないため、意図的に `gs1: true` は使いません。
 
 ## Structured Append
 

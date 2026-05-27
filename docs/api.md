@@ -284,6 +284,22 @@ QRCode.generateSegments([
 
 Human-readable input は、表示・入力しやすさのための `(01)04912345678904(10)ABC123` 形式です。実際に GS1 QR Code として encode する raw GS1 element string は parentheses を含みません。GS1 Digital Link は URL ベースの別表現であり、通常 URL QR として生成します。
 
+| 用途 | QR payload | QR 生成時の option |
+| --- | --- | --- |
+| GS1 QR Code / FNC1 first position | raw GS1 element string。例: `010491234567890410ABC123` | `QRCode.generate(data, { gs1: true })` |
+| GS1 Digital Link URI QR | URL。例: `https://example.com/01/04912345678904/10/ABC123` | `QRCode.generate(uri)`。`gs1: true` は指定しない |
+
+Digital Link API は次の責務に分けています。
+
+| API | 使う場面 | 失敗時 |
+| --- | --- | --- |
+| `createGs1DigitalLink(input, options)` | element data から URI を作る | `InvalidGs1Error` |
+| `parseGs1DigitalLink(uri, options?)` | 既存 URI を element data に戻す | `InvalidGs1Error` |
+| `validateGs1DigitalLink(uri, options?)` | UI / form / batch import で複数 error や warnings を扱う | throw せず `{ ok: false, errors, warnings }` |
+| `normalizeGs1DigitalLink(uri, options?)` | SpecQR deterministic policy で保存・比較しやすい URI string にする | `InvalidGs1Error` |
+
+`normalizeGs1DigitalLink()` は full GS1 Digital Link canonicalizer ではありません。未知 query parameter は default で preserve し、`unknownQuery: "reject"` の場合だけ reject します。詳細な policy は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) を参照してください。
+
 Human-readable input を直接 `QRCode.generate(input, { gs1: true })` に渡すと `InvalidGs1Error` になります。`parseGs1HumanReadable()` で `{ ai, value }[]` に変換し、`createGs1ElementString()` で raw GS1 element string を作ってから `gs1: true` に渡してください。
 
 現在 supported AI の一覧、fixed / variable length、check digit validation、Digital Link role、separator behavior は [Supported GS1 AIs](./gs1-supported-ai.md) にまとめています。SpecQR は full GS1 AI catalog や業界別 validation をまだ提供しません。

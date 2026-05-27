@@ -217,6 +217,9 @@ dt {
 dd {
   font-weight: 700;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 ul {

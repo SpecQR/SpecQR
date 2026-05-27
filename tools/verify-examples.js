@@ -24,7 +24,17 @@ try {
     digitalLinkSummary.normalizedUri,
     "https://example.com/01/04912345678904/10/LOT-A?17=251231&linkType=all"
   );
+  assert.deepEqual(digitalLinkSummary.parsedElements, [
+    { ai: "01", value: "04912345678904" },
+    { ai: "17", value: "251231" },
+    { ai: "10", value: "LOT-A" }
+  ]);
+  assert.deepEqual(digitalLinkSummary.parsedUnknownQuery, [
+    { key: "linkType", value: "all" }
+  ]);
+  assert.equal(digitalLinkSummary.normalizedIdempotent, true);
   assert.deepEqual(digitalLinkSummary.validationWarnings, ["GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED"]);
+  assert.equal(digitalLinkSummary.strictRejectError, "GS1_DIGITAL_LINK_UNKNOWN_QUERY");
   const digitalLinkSvg = await readFile(digitalLinkSvgPath, "utf8");
   assert.match(digitalLinkSvg, /^<svg /);
 
@@ -59,6 +69,8 @@ try {
   const typeScriptExample = await assertReadable("examples/typescript-usage.ts");
   assert.match(typeScriptExample, /createGs1DigitalLink/);
   assert.match(typeScriptExample, /parseGs1DigitalLink/);
+  assert.match(typeScriptExample, /validateGs1DigitalLink/);
+  assert.match(typeScriptExample, /normalizeGs1DigitalLink/);
   assert.match(typeScriptExample, /generateStructuredAppend/);
   assert.match(typeScriptExample, /mergeStructuredAppendParts/);
   await assertReadable("examples/browser-blob-object-url.html");

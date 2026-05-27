@@ -108,6 +108,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-26: v2.2.0 GS1 Digital Link validation API implemented. `validateGs1DigitalLink(uri, options?)` と `QRCode.validateGs1DigitalLink(uri, options?)` を追加し、throwing `parseGs1DigitalLink()` とは別に `{ ok, result, errors, warnings }` の non-throwing result を返すようにしました。この時点では `normalizeGs1DigitalLink()`、full canonicalizer、resolver、compression は未公開でした。
 - 2026-05-26: v2.2.0 GS1 Digital Link normalization API implemented. `normalizeGs1DigitalLink(uri, options?)` と `QRCode.normalizeGs1DigitalLink(uri, options?)` を追加し、SpecQR deterministic policy に基づく URI string 再出力、idempotency、unknown query preserve / reject、packed package smoke、TypeScript surface を確認しました。Full canonicalizer、resolver、compression は未公開のままです。
 - 2026-05-27: v2.2.0 release package prepared. `package.json` / `package-lock.json` の version を `2.2.0` に揃え、CHANGELOG、README、API / release docs、npm publish dry-run を stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.2.0` tag 作成は最終承認まで行いません。
+- 2026-05-27: v2.2 Digital Link docs / playground polish completed. Core runtime と public API は変えず、README / API docs / supported AI / conformance / spec scope の導線を整理し、playground に `GS1 Digital Link URI` 入力形式、unknown query preserve / reject、validation / normalization 表示を追加しました。
 
 ## v2.1.0 GS1 Validation Release Scope
 

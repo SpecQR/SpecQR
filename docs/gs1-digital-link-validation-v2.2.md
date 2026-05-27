@@ -4,6 +4,18 @@
 
 既存の `createGs1DigitalLink()` / `parseGs1DigitalLink()` は v2.0.0 で実装済みです。v2.2.0 では、UI / form validation 向けの non-throwing API と、SpecQR が扱う supported AI 範囲に限定した deterministic normalization API を追加しました。
 
+実利用時の入口は次のように分けます。
+
+| やりたいこと | API / docs |
+| --- | --- |
+| GS1 element data から URI を作る | `createGs1DigitalLink()` / [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) |
+| 既存 URI を strict に読む | `parseGs1DigitalLink()` |
+| 画面入力や import を例外なしで検証する | `validateGs1DigitalLink()` |
+| 保存・比較向けに安定した URI string にする | `normalizeGs1DigitalLink()` |
+| 対応 AI と path/query placement を確認する | [Supported GS1 AIs](./gs1-supported-ai.md) |
+
+Playground では `入力形式` に `GS1 Digital Link URI` を選ぶと、`preserve` / `reject` の unknown query policy、validation warnings、normalized URI を確認できます。
+
 ## Goals
 
 - `parseGs1DigitalLink()` の throwing behavior を維持しながら、失敗理由を機械的に扱える validation result API を用意する。

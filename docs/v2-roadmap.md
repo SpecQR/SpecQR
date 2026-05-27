@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2 系で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2 系は新しい QR family を一気に増やす release line ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release line として扱います。
 
-実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、v2.2.0 の GS1 Digital Link validation / normalization 設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
+実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、v2.2.0 の GS1 Digital Link validation / normalization 設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に、v2.3.0 の public parity helper proposal は [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
 ## v2.0.0 の目的
 
@@ -70,6 +70,8 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 15. **v2 validation expansion**: golden、decoder、optional external validation、reference comparison docs を v2 features に合わせて更新する。完了済み。
 16. **v2 examples / playground / docs**: GS1 strict validation、Digital Link、FNC1 second、Structured Append の利用導線を整える。完了済み。
 17. **v2 release readiness audit**: package version を変えずに public API surface、docs、CHANGELOG、package contents、examples、playground、release gate を監査する。完了済み。
+18. **Structured Append parity helper design**: 低レベル `structuredAppend` 利用者向けに `calculateStructuredAppendParity(input)` の API、byte policy、manual segments の扱い、high-level / merge helper との整合性を docs-only で固定する。完了済み。
+19. **Structured Append parity helper implementation**: docs に固定した設計に従い、runtime export、`QRCode` static method、TypeScript declarations、unit tests、packed smoke を追加する。未着手。
 
 ## Progress Notes
 
@@ -109,6 +111,35 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-26: v2.2.0 GS1 Digital Link normalization API implemented. `normalizeGs1DigitalLink(uri, options?)` と `QRCode.normalizeGs1DigitalLink(uri, options?)` を追加し、SpecQR deterministic policy に基づく URI string 再出力、idempotency、unknown query preserve / reject、packed package smoke、TypeScript surface を確認しました。Full canonicalizer、resolver、compression は未公開のままです。
 - 2026-05-27: v2.2.0 release package prepared. `package.json` / `package-lock.json` の version を `2.2.0` に揃え、CHANGELOG、README、API / release docs、npm publish dry-run を stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.2.0` tag 作成は最終承認まで行いません。
 - 2026-05-27: v2.2 Digital Link docs / playground polish completed. Core runtime と public API は変えず、README / API docs / supported AI / conformance / spec scope の導線を整理し、playground に `GS1 Digital Link URI` 入力形式、unknown query preserve / reject、validation / normalization 表示を追加しました。
+- 2026-05-27: v2.3.0 Structured Append parity helper design documented. Runtime behavior、public API、package version は変更せず、低レベル `structuredAppend` 利用者向けの `calculateStructuredAppendParity(input)` proposal、UTF-8 / binary / ArrayBufferView byte policy、manual segments の後回し判断、high-level API / `mergeStructuredAppendParts()` との整合性を [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に docs-only で固定しました。
+
+## v2.3.0 Structured Append Polish Scope
+
+v2.3.0 は、新しい symbol family や decoder integration ではなく、既存 Structured Append API の低レベル利用を安全にする polish release として扱います。
+
+### Proposed Public API
+
+- `calculateStructuredAppendParity(input)`: logical message の original payload bytes を XOR し、`0..255` の parity integer を返す。
+- `QRCode.calculateStructuredAppendParity(input)`: root function と同じ static method。
+
+Input は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` を対象にします。string は UTF-8 bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重します。options object は初期 scope に含めません。
+
+### Stable Policy
+
+- parity は QR Structured Append と同じく original payload bytes の XOR とする。
+- low-level `structuredAppend` に渡す parity は、各 chunk ではなく logical message 全体から計算する。
+- `generateStructuredAppend()` が返す `parity` と helper は同じ input で一致する。
+- `mergeStructuredAppendParts()` の payload parity validation と helper は同じ byte policy を使う。
+- Manual segments 専用 parity helper は v2.3.0 初期 scope に含めない。`generateSegmentsStructuredAppend()` の canonical payload byte stream と一致させる必要があるため、後続 design として扱う。
+
+### Non-scope
+
+- QR decoder / scanner integration。
+- `generateStructuredAppend()` の分割戦略変更。
+- `mergeStructuredAppendParts()` の挙動変更。
+- ECI / GS1 / FNC1 併用追加。
+- Micro QR / rMQR。
+- runtime dependency 追加。
 
 ## v2.1.0 GS1 Validation Release Scope
 

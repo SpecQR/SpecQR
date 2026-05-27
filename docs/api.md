@@ -59,7 +59,7 @@ console.log(result.diagnostics.symbols);
 
 Node で各 symbol を SVG / PNG として保存する例は [../examples/structured-append.mjs](../examples/structured-append.mjs) にあります。Playground では `Single QR` / `Structured Append` を切り替え、複数 preview、`total`、`parity`、per-symbol index、capacity diagnostics、warnings を確認できます。
 
-初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。public parity helper と QR decoder は提供していません。読み取り後に decoder metadata が取れている場合の結合は `mergeStructuredAppendParts()` で扱います。
+初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。public parity helper は現行 runtime ではまだ提供していませんが、v2.3.0 の proposed API として `calculateStructuredAppendParity(input)` を [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に docs-only で固定しています。QR decoder は提供していません。読み取り後に decoder metadata が取れている場合の結合は `mergeStructuredAppendParts()` で扱います。
 
 `generateStructuredAppend()` は高レベル API が header を管理するため、`eci`、`gs1: true`、`fnc1Second`、`structuredAppend`、`boostErrorCorrection` との併用を reject します。1 symbol に収まる input も Structured Append set としては不正なので、`generate()` または low-level `structuredAppend` option を使うよう `InvalidInputError` で reject します。
 
@@ -262,6 +262,34 @@ QRCode.generateSegments([
 `structuredAppend` は `gs1: true` / manual `{ mode: "fnc1" }` / `fnc1Second` / `eci` と併用できません。高レベル API の `generateStructuredAppend()` も同じ安全側の併用制限を持ちます。
 
 詳細な API shape、分割方針、parity policy、diagnostics、error 設計、release gate は [Structured Append v2 API Design](./structured-append-v2.md) を参照してください。
+
+### Proposed v2.3: `calculateStructuredAppendParity(input)`
+
+v2.3.0 では、低レベル `structuredAppend` 利用者向けに parity 計算 helper を追加する方針です。この API はまだ runtime/export/type declarations には存在しません。
+
+```ts
+calculateStructuredAppendParity(input): number;
+QRCode.calculateStructuredAppendParity(input): number;
+```
+
+提案中の input は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。string は UTF-8 bytes として扱い、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重します。return value は `0..255` の integer で、QR Structured Append と同じく logical message の original payload bytes を XOR した値です。
+
+低レベル API では、各 chunk ではなく logical message 全体から計算した同じ parity をすべての symbols に渡します。
+
+```js
+const message = "PART 1PART 2";
+const parity = calculateStructuredAppendParity(message);
+
+QRCode.generate("PART 1", {
+  structuredAppend: { index: 1, total: 2, parity }
+});
+
+QRCode.generate("PART 2", {
+  structuredAppend: { index: 2, total: 2, parity }
+});
+```
+
+Manual segments 専用 parity helper は v2.3.0 の初期 scope には含めず、後続候補として扱います。設計詳細は [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) を参照してください。
 
 ### GS1 Helpers
 

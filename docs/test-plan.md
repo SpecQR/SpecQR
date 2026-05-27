@@ -94,6 +94,7 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。public parity helper は初期実装では非スコープ。
 - Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。
 - Structured Append decoded parts merge: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` / unmerged data を返す場合だけ `mergeStructuredAppendParts()` で merge validation する。unit tests と packed package smoke では valid merge、shuffled parts、binary merge、missing symbol、duplicate index、total mismatch、parity mismatch、mixed data type を確認する。examples smoke では scanner adapter pattern、ZXing Java style metadata mapping、string / binary merge、metadata-less decoder の制限を確認する。metadata がない decoder では missing symbol、duplicate symbol、parity mismatch を検証できないため、外部 decoder merge は required CI gate にしない。
+- Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。設計段階では docs-only のため runtime tests は追加せず、既存 gate が変わらないことを確認する。
 - Structured Append decoder metadata: [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に従い、ZXing Java / ZXing-C++ など metadata-returning decoder 候補を optional lane として検討する。jsQR / zbar / Vision は payload readability には使えるが、`mergeStructuredAppendParts()` の release gate には使わない。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
@@ -115,6 +116,25 @@ v2.1 系は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定し�
 - Packed package smoke: new API が installed package root export と `QRCode` static method で動くこと、未公開にした API が漏れていないことを確認すること。
 
 Digital Link full canonicalization と resolver は v2.2.0 以降の design として扱います。v2.1 系では `validateGs1Elements(elements, { context: "digital-link" })` の option surface だけを固定し、v2.2.0 で `validateGs1DigitalLink(uri, options?)` を public validation API として追加しました。
+
+## v2.3.0 Structured Append Parity Helper
+
+v2.3.0 は low-level `structuredAppend` 利用者向けの polish release として、public parity helper の追加を検討します。設計は [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に固定しています。
+
+実装時の release gate は次を含めます。
+
+- root export と `QRCode.calculateStructuredAppendParity()` static method が存在すること。
+- `string` input は UTF-8 bytes の XOR になること。
+- `Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、byte array input が original bytes の XOR になること。
+- `ArrayBufferView` は `byteOffset` / `byteLength` を尊重すること。
+- empty input は `0` を返すこと。
+- invalid input と invalid byte array value は `InvalidInputError` になること。
+- `generateStructuredAppend(input).parity` と helper の result が一致すること。
+- `mergeStructuredAppendParts()` の parity validation と helper の byte policy が一致すること。
+- TypeScript consumer check が helper の return type を `number` として扱えること。
+- packed package smoke が root export と static method を installed package から確認すること。
+
+Manual segments 専用 parity helper は v2.3.0 初期 scope には含めません。追加する場合は `generateSegmentsStructuredAppend()` の canonical payload byte stream と同じ policy を別設計で固定し、control segments の扱いを negative tests に含めます。
 
 ## v2.2.0 GS1 Digital Link Validation / Normalization
 

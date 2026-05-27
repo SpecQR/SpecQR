@@ -43,6 +43,7 @@ npm install specqr@next
 - GS1 Digital Link Validation v2.2 Design: [docs/gs1-digital-link-validation-v2.2.md](docs/gs1-digital-link-validation-v2.2.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
 - Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
+- Structured Append Parity Helper v2.3 Design: [docs/structured-append-parity-v2.3.md](docs/structured-append-parity-v2.3.md)
 - Structured Append Scanning Workflow: [docs/structured-append-scanning-v2.md](docs/structured-append-scanning-v2.md)
 - Structured Append Decoder Metadata Validation: [docs/structured-append-decoder-validation-v2.md](docs/structured-append-decoder-validation-v2.md)
 - GS1 Digital Link v2 Design: [docs/gs1-digital-link-v2.md](docs/gs1-digital-link-v2.md)
@@ -266,6 +267,8 @@ QRCode.generate("PART 2", {
   output: "svg"
 });
 ```
+
+低レベル API では、`parity` は各 chunk ではなく logical message 全体の original payload bytes から計算する必要があります。v2.3.0 では、この計算を補助する `calculateStructuredAppendParity(input)` を public helper として追加する方針を docs-only で固定しています。設計は [Structured Append Parity Helper v2.3 Design](docs/structured-append-parity-v2.3.md) を参照してください。
 
 高レベル API の分割方針と制限は [Structured Append v2 API Design](docs/structured-append-v2.md) にまとめています。
 Manual segments 版は `QRCode.generateSegmentsStructuredAppend()` で利用できます。分割方針は [Structured Append Manual Segments v2 API Design](docs/structured-append-segments-v2.md) にまとめています。

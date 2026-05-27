@@ -264,7 +264,7 @@ Boundary:
 
 - QR decoder implementation.
 - Scanner integration.
-- Public parity helper.
+- Public parity helper runtime implementation. v2.3.0 の docs-only proposal は [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に分けています。
 - Existing Structured Append API changes.
 - QR core / renderer / playground behavior changes.
 - ECI / GS1 / FNC1 Structured Append combinations.

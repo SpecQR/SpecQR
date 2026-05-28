@@ -91,10 +91,10 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Control segment ordering: ECI、FNC1 first、FNC1 second、Structured Append low-level header の内部 model は実装済み。新しい control mode を追加するときは、併用可否、ordering、capacity accounting、diagnostics を同じ model に載せ、既存 output が変わらないことを golden / regression tests で確認する。
 - FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases は unit / golden tests で確認済み。今後は decoder ごとの symbology identifier 表示差を optional validation として整理する。
 - Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks は unit / golden fixtures で固定済み。
-- Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。public parity helper は初期実装では非スコープ。
+- Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。low-level header 利用者向けの parity helper は `calculateStructuredAppendParity(input)` で確認する。
 - Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。
 - Structured Append decoded parts merge: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` / unmerged data を返す場合だけ `mergeStructuredAppendParts()` で merge validation する。unit tests と packed package smoke では valid merge、shuffled parts、binary merge、missing symbol、duplicate index、total mismatch、parity mismatch、mixed data type を確認する。examples smoke では scanner adapter pattern、ZXing Java style metadata mapping、string / binary merge、metadata-less decoder の制限を確認する。metadata がない decoder では missing symbol、duplicate symbol、parity mismatch を検証できないため、外部 decoder merge は required CI gate にしない。
-- Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。設計段階では docs-only のため runtime tests は追加せず、既存 gate が変わらないことを確認する。
+- Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。
 - Structured Append decoder metadata: [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に従い、ZXing Java / ZXing-C++ など metadata-returning decoder 候補を optional lane として検討する。jsQR / zbar / Vision は payload readability には使えるが、`mergeStructuredAppendParts()` の release gate には使わない。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
@@ -119,9 +119,9 @@ Digital Link full canonicalization と resolver は v2.2.0 以降の design と�
 
 ## v2.3.0 Structured Append Parity Helper
 
-v2.3.0 は low-level `structuredAppend` 利用者向けの polish release として、public parity helper の追加を検討します。設計は [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に固定しています。
+v2.3.0 は low-level `structuredAppend` 利用者向けの polish release として、public parity helper を追加します。設計と byte policy は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に固定しています。
 
-実装時の release gate は次を含めます。
+release gate は次を含めます。
 
 - root export と `QRCode.calculateStructuredAppendParity()` static method が存在すること。
 - `string` input は UTF-8 bytes の XOR になること。

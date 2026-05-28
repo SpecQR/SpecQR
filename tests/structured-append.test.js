@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  calculateStructuredAppendParity,
   DataTooLongError,
   generate,
   generateSegmentsStructuredAppend,
@@ -159,6 +160,77 @@ test("structuredAppend rejects invalid header values", () => {
     (error) => error instanceof InvalidModeError &&
       /segments\[0\]\.total must be an integer from 2 to 16/.test(error.message)
   );
+});
+
+test("calculateStructuredAppendParity computes original payload byte XOR", () => {
+  assert.equal(calculateStructuredAppendParity("ABC"), xorBytes(new TextEncoder().encode("ABC")));
+  assert.equal(calculateStructuredAppendParity("こんにちは"), xorBytes(new TextEncoder().encode("こんにちは")));
+  assert.equal(calculateStructuredAppendParity(""), 0);
+  assert.equal(calculateStructuredAppendParity(Uint8Array.from([])), 0);
+
+  const payload = Uint8Array.from([0x00, 0xff, 0x41, 0x7e]);
+  assert.equal(calculateStructuredAppendParity(payload), xorBytes(payload));
+  assert.equal(calculateStructuredAppendParity(payload.buffer), xorBytes(payload));
+  assert.equal(calculateStructuredAppendParity([0x00, 0xff, 0x41, 0x7e]), xorBytes(payload));
+
+  const backing = Uint8Array.from([0xaa, 0x10, 0x20, 0xbb]);
+  assert.equal(calculateStructuredAppendParity(new Uint8Array(backing.buffer, 1, 2)), 0x10 ^ 0x20);
+  assert.equal(calculateStructuredAppendParity(new DataView(backing.buffer, 1, 2)), 0x10 ^ 0x20);
+  assert.equal(QRCode.calculateStructuredAppendParity(payload), xorBytes(payload));
+});
+
+test("calculateStructuredAppendParity rejects invalid input as InvalidInputError", () => {
+  const invalidInputs = [
+    null,
+    undefined,
+    true,
+    {},
+    () => {},
+    [-1],
+    [256],
+    [1.5],
+    [NaN],
+    ["1"]
+  ];
+
+  for (const input of invalidInputs) {
+    assert.throws(
+      () => calculateStructuredAppendParity(input),
+      (error) => error instanceof InvalidInputError
+    );
+  }
+});
+
+test("calculateStructuredAppendParity matches Structured Append generation and merge validation", () => {
+  const input = "A".repeat(31);
+  const generated = generateStructuredAppend(input, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    mode: "alphanumeric",
+    output: "matrix",
+    diagnostics: true
+  });
+  const parity = calculateStructuredAppendParity(input);
+  const parts = stringPartsFromStructuredAppend(generated, input);
+  const merged = mergeStructuredAppendParts(parts);
+
+  assert.equal(generated.parity, parity);
+  assert.equal(merged.parity, parity);
+  assert.equal(merged.diagnostics.parityCheck.actual, parity);
+
+  const payload = Uint8Array.from(Array.from({ length: 31 }, (_, index) => index));
+  const binaryGenerated = generateStructuredAppend(payload, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    mode: "byte",
+    output: "matrix",
+    diagnostics: true
+  });
+  const binaryParts = binaryPartsFromStructuredAppend(binaryGenerated, payload);
+  const binaryMerged = QRCode.mergeStructuredAppendParts(binaryParts);
+
+  assert.equal(binaryGenerated.parity, calculateStructuredAppendParity(payload));
+  assert.equal(binaryMerged.parity, calculateStructuredAppendParity(payload));
 });
 
 test("generateStructuredAppend splits string input with matching parity and diagnostics", () => {

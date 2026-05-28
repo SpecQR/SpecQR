@@ -51,6 +51,8 @@ assert.equal(typeof specqr.generateStructuredAppend, "function");
 assert.equal(typeof specqr.QRCode.generateStructuredAppend, "function");
 assert.equal(typeof specqr.generateSegmentsStructuredAppend, "function");
 assert.equal(typeof specqr.QRCode.generateSegmentsStructuredAppend, "function");
+assert.equal(typeof specqr.calculateStructuredAppendParity, "function");
+assert.equal(typeof specqr.QRCode.calculateStructuredAppendParity, "function");
 assert.equal(typeof specqr.mergeStructuredAppendParts, "function");
 assert.equal(typeof specqr.QRCode.mergeStructuredAppendParts, "function");
 assert.equal(typeof specqr.createGs1DigitalLink, "function");
@@ -181,6 +183,12 @@ const highLevelStructuredAppend = specqr.generateStructuredAppend(highLevelStruc
 });
 assert.equal(highLevelStructuredAppend.total, 2);
 assert.equal(highLevelStructuredAppend.parity, 65);
+assert.equal(specqr.calculateStructuredAppendParity(highLevelStructuredAppendInput), highLevelStructuredAppend.parity);
+assert.equal(specqr.QRCode.calculateStructuredAppendParity(Uint8Array.from([0x00, 0xff, 0x41])), 0x00 ^ 0xff ^ 0x41);
+assert.throws(
+  () => specqr.calculateStructuredAppendParity([256]),
+  (error) => error instanceof specqr.InvalidInputError && error.code === "INVALID_INPUT"
+);
 assert.deepEqual(
   highLevelStructuredAppend.diagnostics.symbols.map((symbol) => ({
     index: symbol.index,
@@ -391,6 +399,7 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /export interface QRStructuredAppendSegmentsGenerateOptions extends Omit</);
   assert.match(declarations, /export interface QRStructuredAppendSegmentsSummaryDiagnostics\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendSegmentsResult<TSymbol = QRGenerateResult>\s*{/);
+  assert.match(declarations, /export type QRStructuredAppendParityInput = QRInput;/);
   assert.match(declarations, /export interface QRStructuredAppendDecodedPart<TData extends QRStructuredAppendPartData = QRStructuredAppendPartData>\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendMergeResult<TData extends string \| Uint8Array = string \| Uint8Array>\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendMergeDiagnostics\s*{/);
@@ -401,6 +410,10 @@ async function assertTypeDeclarations(directory) {
   assert.match(
     declarations,
     /export function generateSegmentsStructuredAppend\(segments: QRSegmentInput\[], options\?: QRStructuredAppendSegmentsGenerateOptions & \{ diagnostics: true \}\): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult>;/
+  );
+  assert.match(
+    declarations,
+    /export function calculateStructuredAppendParity\(input: QRStructuredAppendParityInput\): number;/
   );
   assert.match(
     declarations,
@@ -430,6 +443,7 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /static validateGs1ElementString\(input: string, options\?: GS1ValidationOptions\): GS1ElementStringValidationResult;/);
   assert.match(declarations, /static generateStructuredAppend\(input: QRInput/);
   assert.match(declarations, /static generateSegmentsStructuredAppend\(segments: QRSegmentInput\[]/);
+  assert.match(declarations, /static calculateStructuredAppendParity\(input: QRStructuredAppendParityInput\): number;/);
   assert.match(declarations, /static mergeStructuredAppendParts\(parts: QRStructuredAppendDecodedPart<string>\[]/);
   assert.match(declarations, /static createGs1DigitalLink\(/);
   assert.match(declarations, /static parseGs1DigitalLink\(/);
@@ -458,6 +472,7 @@ function assertPackContents(packed) {
     "docs/conformance.md",
     "docs/test-plan.md",
     "docs/v2-roadmap.md",
+    "docs/structured-append-parity-v2.3.md",
     "examples/gs1-digital-link.mjs",
     "examples/structured-append.mjs",
     "examples/structured-append-merge.mjs",

@@ -1,5 +1,20 @@
-import { encodeUtf8 } from "./encoding/modes.js";
+import { encodeUtf8, toByteArray } from "./encoding/modes.js";
 import { InvalidInputError, InvalidModeError } from "./errors.js";
+
+export function calculateStructuredAppendParity(input) {
+  return calculateStructuredAppendByteParity(normalizeStructuredAppendParityInputBytes(input));
+}
+
+export function normalizeStructuredAppendParityInputBytes(input) {
+  if (typeof input === "string") {
+    return encodeUtf8(input);
+  }
+  return toByteArray(input, "Structured Append parity input");
+}
+
+export function calculateStructuredAppendByteParity(bytes) {
+  return bytes.reduce((parity, byte) => parity ^ byte, 0);
+}
 
 export function mergeStructuredAppendParts(parts, options = {}) {
   validateMergeOptions(options);
@@ -81,7 +96,7 @@ export function mergeStructuredAppendParts(parts, options = {}) {
 
   const sorted = [...normalized].sort((a, b) => a.index - b.index);
   const mergedBytes = sorted.flatMap((part) => part.bytes);
-  const actualParity = xorBytes(mergedBytes);
+  const actualParity = calculateStructuredAppendByteParity(mergedBytes);
   if (actualParity !== parity) {
     throw new InvalidInputError(`Structured Append parity check failed: expected ${parity}, got ${actualParity}`);
   }
@@ -174,8 +189,4 @@ function normalizePartData(value, label) {
   }
 
   throw new InvalidInputError(`${label} must be a string, Uint8Array, ArrayBuffer, or ArrayBuffer view`);
-}
-
-function xorBytes(bytes) {
-  return bytes.reduce((parity, byte) => parity ^ byte, 0);
 }

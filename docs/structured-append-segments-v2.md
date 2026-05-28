@@ -9,7 +9,7 @@
 - string / binary input の高レベル自動分割: `generateStructuredAppend(input, options)`
 - manual data segments の高レベル自動分割: `generateSegmentsStructuredAppend(segments, options)`
 
-低レベル `structuredAppend` 利用者向けの public parity helper は、v2.3.0 の docs-only proposal として [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に分けています。Manual segments 専用 parity helper は、その文書でも後続候補として扱い、現時点では実装しません。
+低レベル `structuredAppend` 利用者向けの raw input public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) として実装済みです。Manual segments 専用 parity helper は、その文書でも後続候補として扱い、現時点では実装しません。
 
 この API は、manual data segments を受け取り、最大 16 個の Structured Append symbols に自動分割します。
 
@@ -403,7 +403,7 @@ The implementation release gate is:
 
 ## Non-Scope
 
-- Public parity helper runtime implementation。v2.3.0 では raw input 用 helper を先に設計し、manual segments 専用 helper は後続候補に留めます。
+- Manual segments 専用 parity helper。v2.3.0 では raw input 用 helper を先に実装し、manual segments 専用 helper は後続候補に留めます。
 - Decoder merge helper.
 - ECI / GS1 / FNC1 combinations.
 - Numeric / alphanumeric / kanji mid-segment splitting.

@@ -60,7 +60,11 @@ import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
 import { renderPng, renderPngDataUrl } from "./render/png.js";
 import { renderSvg, renderSvgDataUrl } from "./render/svg.js";
-import { mergeStructuredAppendParts } from "./structured-append.js";
+import {
+  calculateStructuredAppendByteParity,
+  calculateStructuredAppendParity,
+  mergeStructuredAppendParts
+} from "./structured-append.js";
 
 export {
   appendGtinCheckDigit,
@@ -84,7 +88,7 @@ export {
   validateSsccCheckDigit
 } from "./gs1.js";
 
-export { mergeStructuredAppendParts } from "./structured-append.js";
+export { calculateStructuredAppendParity, mergeStructuredAppendParts } from "./structured-append.js";
 
 export {
   DataTooLongError,
@@ -110,6 +114,10 @@ export class QRCode {
 
   static generateSegmentsStructuredAppend(segments, options = {}) {
     return generateSegmentsStructuredAppend(segments, options);
+  }
+
+  static calculateStructuredAppendParity(input) {
+    return calculateStructuredAppendParity(input);
   }
 
   static mergeStructuredAppendParts(parts, options = {}) {
@@ -545,7 +553,7 @@ function createStructuredAppendInputInfo(input) {
     byteStarts,
     inputLength: units.length,
     byteLength: bytes.length,
-    parity: bytes.reduce((parity, byte) => parity ^ byte, 0),
+    parity: calculateStructuredAppendByteParity(bytes),
     makeChunk: (start, length) => {
       const unitSlice = units.slice(start, start + length);
       const byteLength = byteLengths.slice(start, start + length).reduce((total, value) => total + value, 0);
@@ -622,7 +630,7 @@ function createStructuredAppendSegmentsInputInfo(segments) {
     splitUnits,
     inputLength: segments.length,
     byteLength: canonicalBytes.length,
-    parity: canonicalBytes.reduce((parity, byte) => parity ^ byte, 0),
+    parity: calculateStructuredAppendByteParity(canonicalBytes),
     makeChunk: (start, length) => createStructuredAppendSegmentsChunk(splitUnits, start, length)
   };
 }

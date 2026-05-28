@@ -1,8 +1,8 @@
-# Structured Append Parity Helper v2.3 Design
+# Structured Append Parity Helper v2.3
 
-この文書は、SpecQR v2.3.0 の Structured Append polish release で追加する予定の public parity helper を docs-only で固定する設計記録です。現時点では runtime behavior、public API、package exports、TypeScript declarations、package version、npm package は変更していません。
+この文書は、SpecQR v2.3.0 の Structured Append polish release で追加した public parity helper の設計と実装範囲を記録します。Package version、npm package、runtime dependency はこの作業では変更していません。
 
-`generateStructuredAppend()` と `generateSegmentsStructuredAppend()` は parity を自動計算します。一方、低レベル API の `structuredAppend: { index, total, parity }` または manual `{ mode: "structured-append", index, total, parity }` を直接使う利用者は、同じ logical message のすべての symbols に同じ parity を渡す必要があります。v2.3.0 では、その計算を public helper として提供する方針です。
+`generateStructuredAppend()` と `generateSegmentsStructuredAppend()` は parity を自動計算します。一方、低レベル API の `structuredAppend: { index, total, parity }` または manual `{ mode: "structured-append", index, total, parity }` を直接使う利用者は、同じ logical message のすべての symbols に同じ parity を渡す必要があります。v2.3.0 では、その計算を `calculateStructuredAppendParity(input)` として提供します。
 
 ## Goal
 
@@ -15,9 +15,9 @@
 - `mergeStructuredAppendParts()` の payload parity validation と同じ byte policy を docs と tests で固定する。
 - ArrayBufferView の `byteOffset` / `byteLength` など、実務で壊れやすい入力境界を public contract として明確にする。
 
-## Proposed Public API
+## Public API
 
-v2.3.0 で追加する候補は 1 つだけです。
+v2.3.0 で追加する API は 1 つだけです。
 
 ```ts
 function calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
@@ -31,7 +31,7 @@ type QRStructuredAppendParityInput =
   | Uint8Array
   | ArrayBuffer
   | ArrayBufferView
-  | number[];
+  | readonly number[];
 ```
 
 Return value は `0..255` の integer です。
@@ -117,7 +117,7 @@ console.log(QRCode.calculateStructuredAppendParity(view)); // 0x10 ^ 0x20
 
 ## Low-Level Structured Append Example
 
-低レベル API では、利用者が chunk と metadata を自分で管理します。v2.3.0 では、logical message 全体から parity を計算してから、各 symbol に同じ値を渡す例を docs / README に追加します。
+低レベル API では、利用者が chunk と metadata を自分で管理します。Logical message 全体から parity を計算してから、各 symbol に同じ値を渡します。
 
 ```js
 import { QRCode, calculateStructuredAppendParity } from "specqr";
@@ -193,11 +193,11 @@ Empty string、empty `Uint8Array`、empty `ArrayBuffer` は valid input とし�
 
 ## Internal Implementation Sharing
 
-実装時は parity algorithm を 1 か所に寄せます。
+runtime では parity algorithm を `src/structured-append.js` の shared helper に寄せています。
 
-推奨方針:
+実装方針:
 
-- `src/structured-append.js` に internal `calculatePayloadParity(bytes)` 相当を置く、または新規 `src/structured-append/parity.js` に分離する。
+- `src/structured-append.js` に `calculateStructuredAppendByteParity(bytes)` を置く。
 - `generateStructuredAppend()` の string / binary parity calculation はこの helper を使う。
 - `generateSegmentsStructuredAppend()` の canonical byte stream parity calculation も同じ low-level XOR helper を使う。
 - `mergeStructuredAppendParts()` の parity validation も同じ XOR helper を使う。
@@ -207,15 +207,11 @@ Empty string、empty `Uint8Array`、empty `ArrayBuffer` は valid input とし�
 
 ## TypeScript Declaration
 
-v2.3.0 実装時は `src/index.d.ts` に次を追加します。
+`src/index.d.ts` には次を追加しています。
 
 ```ts
 export type QRStructuredAppendParityInput =
-  | string
-  | Uint8Array
-  | ArrayBuffer
-  | ArrayBufferView
-  | number[];
+  QRInput;
 
 export function calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
 
@@ -224,11 +220,11 @@ export class QRCode {
 }
 ```
 
-既存 `QRInput` と完全に同じに見える場合でも、helper 専用の alias を公開する方が docs 上の責務が明確です。もし実装時に `QRInput` を再利用するなら、docs と declaration の命名を揃えます。
+現行 declaration では、既存 binary input policy と同じ入力型を明示するため `QRStructuredAppendParityInput = QRInput` としています。
 
-## Tests To Add In v2.3.0 Implementation
+## Implemented Test Coverage
 
-実装時の必須テスト:
+追加した主なテスト:
 
 - root export `calculateStructuredAppendParity` が存在する。
 - `QRCode.calculateStructuredAppendParity` static method が存在する。
@@ -249,9 +245,9 @@ export class QRCode {
 
 追加 golden fixture は原則不要です。helper は matrix を生成しないため、unit / packed / type smoke で十分です。ただし helper 導入で `generateStructuredAppend()` の internal parity implementation を共有化する場合は、既存 Structured Append golden fixture が変わらないことを確認します。
 
-## Docs To Update In v2.3.0 Implementation
+## Docs Updated In v2.3.0 Implementation
 
-実装時は次を更新します。
+実装に合わせて次を更新しました。
 
 - `README.md`: low-level `structuredAppend` の直前に helper usage を短く追加。
 - `docs/api.md`: stable API として `calculateStructuredAppendParity()` を追加。
@@ -269,7 +265,6 @@ export class QRCode {
 
 ## Non-Scope
 
-- `calculateStructuredAppendParity()` の runtime implementation。
 - manual segments 用 parity helper の実装。
 - `generateStructuredAppend()` の分割戦略変更。
 - `mergeStructuredAppendParts()` の挙動変更。
@@ -282,7 +277,7 @@ export class QRCode {
 
 ## Release Gate For Implementation
 
-v2.3.0 実装時の release gate は次です。
+この変更の release gate は次です。
 
 - `npm test`
 - `npm run verify:types`
@@ -297,4 +292,4 @@ v2.3.0 実装時の release gate は次です。
 - `git diff --check`
 - GitHub Actions green
 
-この docs-only 設計段階では、runtime/API が変わっていないことを確認するために同じ validation command を通します。
+この helper は matrix を生成しませんが、実装共有により Structured Append generation / merge validation と drift しないことを上記 gate で確認します。

@@ -8,6 +8,7 @@ export type QRMatrix = boolean[][];
 export type QROutput = "matrix" | "svg" | "svg-data-url" | "png" | "png-data-url";
 export type QRBinaryInput = Uint8Array | ArrayBuffer | ArrayBufferView | readonly number[];
 export type QRInput = string | QRBinaryInput;
+export type QRStructuredAppendParityInput = QRInput;
 
 export type QRTextSegmentMode = "numeric" | "alphanumeric" | "kanji";
 export interface QRStructuredAppendOptions {
@@ -372,6 +373,8 @@ export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], opt
 export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendSegmentsResult<Uint8Array>;
 export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): QRStructuredAppendSegmentsResult<string>;
 
+export function calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
+
 export function mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<string>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<string>;
 export function mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<QRStructuredAppendBinaryPartData>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<Uint8Array>;
 export function mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult;
@@ -624,6 +627,7 @@ export class QRCode {
   static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendSegmentsResult<QRMatrix>;
   static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendSegmentsResult<Uint8Array>;
   static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): QRStructuredAppendSegmentsResult<string>;
+  static calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
   static mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<string>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<string>;
   static mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<QRStructuredAppendBinaryPartData>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<Uint8Array>;
   static mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult;

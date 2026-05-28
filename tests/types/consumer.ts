@@ -2,6 +2,7 @@ import type { Buffer } from "node:buffer";
 import * as specqr from "specqr";
 import {
   QRCode,
+  calculateStructuredAppendParity,
   createGs1DigitalLink,
   generate,
   generateSegments,
@@ -27,6 +28,7 @@ import {
   type QRCodeDiagnosticResult,
   type QRMatrix,
   type QRStructuredAppendMergeResult,
+  type QRStructuredAppendParityInput,
   type QRStructuredAppendResult,
   type QRStructuredAppendSegmentsResult
 } from "specqr";
@@ -64,6 +66,9 @@ const lowLevelStructuredAppend = generate("HELLO", {
   structuredAppend: { index: 1, total: 2, parity: 65 }
 });
 expectType<QRMatrix>(lowLevelStructuredAppend);
+const parityInput: QRStructuredAppendParityInput = new Uint8Array([0, 255, 65]);
+expectType<number>(calculateStructuredAppendParity(parityInput));
+expectType<number>(QRCode.calculateStructuredAppendParity("HELLO"));
 
 const segmentsResult = generateSegments([
   { mode: "fnc1-second", applicationIndicator: "37" },

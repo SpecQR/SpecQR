@@ -60,7 +60,7 @@ npm install specqr@next
 - binary input と manual segment input
 - GS1 QR Code / FNC1 first position
 - FNC1 second position
-- Structured Append low-level header / high-level automatic splitting
+- Structured Append low-level header / high-level automatic splitting / parity helpers
 - 対応 AI に限定した GS1 human-readable parser / element string / Digital Link helper
 - GTIN / SSCC check digit helper
 - `matrix`, `svg`, Data URL, PNG, canvas output
@@ -76,6 +76,8 @@ v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Stru
 2.1.0 では GS1 validation layer を stable API として強化しました。Supported AI metadata は `getSupportedGs1Ais()` / `getGs1AiInfo(ai)` で確認でき、UI / form validation では throwing API の代わりに `validateGs1Elements()` / `validateGs1ElementString()` の non-throwing result を使えます。詳細は [GS1 Validation v2.1 Design](docs/gs1-validation-v2.1.md) を参照してください。
 
 2.2.0 では GS1 Digital Link URI 向けに `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` を stable API として追加しました。Normalization は full canonicalizer ではなく、SpecQR deterministic policy に基づく安定再出力 helper です。
+
+2.3.0 では Structured Append の低レベル利用向けに `calculateStructuredAppendParity()` と `calculateStructuredAppendSegmentsParity()` を stable API として追加しました。どちらも QR encoded bitstream ではなく logical message bytes の XOR を返し、高レベル `generateStructuredAppend()` / `generateSegmentsStructuredAppend()` が返す `parity` と一致します。
 
 Digital Link 周りの導線は次の順に読むと迷いにくいです。
 
@@ -305,11 +307,23 @@ const segments = [
 
 const parity = calculateStructuredAppendSegmentsParity(segments);
 
-QRCode.generateSegmentsStructuredAppend(segments, {
+QRCode.generateSegments([
+  { mode: "structured-append", index: 1, total: 2, parity },
+  { mode: "alphanumeric", data: "ORDER-" }
+]);
+
+QRCode.generateSegments([
+  { mode: "structured-append", index: 2, total: 2, parity },
+  { mode: "numeric", data: "12345678901234567890" },
+  { mode: "byte", data: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }
+]);
+
+const autoSet = QRCode.generateSegmentsStructuredAppend(segments, {
   version: 1,
-  errorCorrectionLevel: "L",
-  output: "svg"
+  errorCorrectionLevel: "L"
 });
+
+console.log(autoSet.parity === parity);
 ```
 
 Manual segments parity helper の bytes policy と control segment rejection は [Structured Append Manual Segments Parity Helper v2.3](docs/structured-append-segments-parity-v2.3.md) にまとめています。

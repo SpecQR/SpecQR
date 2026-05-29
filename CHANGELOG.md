@@ -4,6 +4,36 @@
 
 まだありません。
 
+## 2.3.0 - 2026-05-30
+
+SpecQR 2.3.0 is the Structured Append parity helper release.
+
+SpecQR 2.3.0 は、既存の Structured Append high-level / low-level / merge helper と同じ parity policy を、利用者が低レベル API でも安全に再利用できるようにする release です。QR generation core、package exports、runtime dependency-free policy は維持しています。
+
+### 追加
+
+- 低レベル `structuredAppend` header 利用者向けに `calculateStructuredAppendParity(input)` と `QRCode.calculateStructuredAppendParity(input)` を追加しました。
+- manual segments を低レベル `{ mode: "structured-append", index, total, parity }` と組み合わせる利用者向けに `calculateStructuredAppendSegmentsParity(segments, options?)` と `QRCode.calculateStructuredAppendSegmentsParity(segments, options?)` を追加しました。
+- 両 helper の TypeScript declarations、unit tests、TypeScript consumer check、packed package smoke を追加しました。
+
+### Structured Append parity policy
+
+- `calculateStructuredAppendParity(input)` は logical message の original payload bytes を XOR します。string は UTF-8 bytes、binary input は raw bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重します。
+- `calculateStructuredAppendSegmentsParity(segments)` は `generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XORします。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、Kanji segment は Shift_JIS bytes ではなく original JavaScript string の UTF-8 bytes を使います。
+- parity は QR encoded bitstream、mode indicator、character count indicator、padding、error correction codewords、low-level Structured Append header bytes ではなく、logical message bytes の XOR です。
+- `generateStructuredAppend(input).parity` は `calculateStructuredAppendParity(input)` と一致し、`generateSegmentsStructuredAppend(segments).parity` は `calculateStructuredAppendSegmentsParity(segments)` と一致します。
+- manual segments parity helper は ECI / FNC1 first / FNC1 second / GS1 / low-level `structured-append` segment を安全側で reject します。
+
+### Docs / release package
+
+- README、API docs、Structured Append parity docs、conformance matrix、test plan、v2 roadmap、release checklist を 2.3.0 stable package 前提に更新しました。
+- `package.json` / `package-lock.json` の version を `2.3.0` に更新しました。
+
+### 意図的な制限
+
+- QR decoder / scanner integration、ECI / GS1 / FNC1 と Structured Append parity helper の併用、Structured Append の分割戦略変更、Micro QR、rMQR、logo overlay、styled modules は対象外です。
+- npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.3.0` tag 作成はこの準備 commit では行いません。
+
 ## 2.2.1 - 2026-05-27
 
 SpecQR 2.2.1 is a documentation, examples, and playground polish patch for the GS1 Digital Link v2.2 APIs.

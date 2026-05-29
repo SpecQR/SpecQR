@@ -271,7 +271,7 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した未公開 tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、deterministic normalization result、同梱 `src/index.d.ts` の v2 / v2.2 API surface、npm package contents policy も確認します。
+この check は一時ディレクトリに `npm pack` した未公開 tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、deterministic normalization result、同梱 `src/index.d.ts` の v2 / v2.3 API surface、npm package contents policy も確認します。
 
 TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は `tests/types/consumer.ts` を TypeScript compiler で `noEmit` 検査し、root / node / browser subpath import、`QRCode.generate()`、`generateSegments()`、GS1 raw parser、GS1 Digital Link helper、Structured Append helpers、FNC1 second option、low-level `structuredAppend` option、Node PNG helper、browser Blob/ImageData/Object URL helper の public type surface を consumer 目線で固定します。
 

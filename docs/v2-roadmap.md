@@ -117,6 +117,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-28: v2.3.0 Structured Append parity helper implemented. `calculateStructuredAppendParity(input)` と `QRCode.calculateStructuredAppendParity(input)` を追加し、UTF-8 string、binary input、ArrayBufferView offset / length、`number[]` validation、high-level generation / merge helper との parity consistency、TypeScript surface、packed package smoke を確認対象にしました。Manual segments 専用 parity helper、package version 変更、npm publish は行っていません。
 - 2026-05-29: v2.3.0 manual segments parity helper design documented. Runtime behavior、public API、package version は変更せず、`calculateStructuredAppendSegmentsParity(segments, options?)` の proposal、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes、numeric / alphanumeric / byte / kanji policy、ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` rejection を [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に固定しました。
 - 2026-05-29: v2.3.0 manual segments parity helper implemented. `calculateStructuredAppendSegmentsParity(segments, options?)` と `QRCode.calculateStructuredAppendSegmentsParity(segments, options?)` を追加し、numeric / alphanumeric ASCII、byte string UTF-8、byte binary raw bytes、ArrayBufferView offset / length、Kanji UTF-8、control segment rejection、`generateSegmentsStructuredAppend()` parity consistency、TypeScript surface、packed package smoke を確認対象にしました。Package version、npm publish、GitHub Release は行っていません。
+- 2026-05-30: v2.3.0 release package prepared. `package.json` / `package-lock.json` の version を `2.3.0` に揃え、CHANGELOG、README、API / release docs を Structured Append parity helpers の stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.3.0` tag 作成は最終承認まで行いません。
 
 ## v2.3.0 Structured Append Polish Scope
 
@@ -126,14 +127,19 @@ v2.3.0 は、新しい symbol family や decoder integration ではなく、既�
 
 - `calculateStructuredAppendParity(input)`: logical message の original payload bytes を XOR し、`0..255` の parity integer を返す。
 - `QRCode.calculateStructuredAppendParity(input)`: root function と同じ static method。
+- `calculateStructuredAppendSegmentsParity(segments, options?)`: manual segment list の canonical logical message bytes を XOR し、`0..255` の parity integer を返す。
+- `QRCode.calculateStructuredAppendSegmentsParity(segments, options?)`: root function と同じ static method。
 
-Input は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、`number[]` を対象にします。string は UTF-8 bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重します。options object は初期 scope に含めません。
+`calculateStructuredAppendParity(input)` の input は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、`number[]` を対象にします。string は UTF-8 bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重します。options object は初期 scope に含めません。
+
+`calculateStructuredAppendSegmentsParity(segments)` は `generateSegmentsStructuredAppend()` と同じ policy を使います。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、Kanji は original JavaScript string の UTF-8 bytes です。ECI / GS1 / FNC1 / FNC1 second / low-level `structured-append` segment は reject します。
 
 ### Stable Policy
 
 - parity は QR Structured Append と同じく original payload bytes の XOR とする。
 - low-level `structuredAppend` に渡す parity は、各 chunk ではなく logical message 全体から計算する。
 - `generateStructuredAppend()` が返す `parity` と helper は同じ input で一致する。
+- `generateSegmentsStructuredAppend()` が返す `parity` と manual segments helper は同じ segment list で一致する。
 - `mergeStructuredAppendParts()` の payload parity validation と helper は同じ byte policy を使う。
 - ECI / GS1 / FNC1 と manual segments parity helper の併用は v2.3.0 scope に含めない。`generateSegmentsStructuredAppend()` の canonical payload byte stream と一致させるため、[Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に safe rejection policy として固定する。
 

@@ -59,7 +59,7 @@ console.log(result.diagnostics.symbols);
 
 Node で各 symbol を SVG / PNG として保存する例は [../examples/structured-append.mjs](../examples/structured-append.mjs) にあります。Playground では `Single QR` / `Structured Append` を切り替え、複数 preview、`total`、`parity`、per-symbol index、capacity diagnostics、warnings を確認できます。
 
-初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。低レベル `structuredAppend` 利用者向けの parity 計算は `calculateStructuredAppendParity(input)` で提供しています。QR decoder は提供していません。読み取り後に decoder metadata が取れている場合の結合は `mergeStructuredAppendParts()` で扱います。
+初期実装の対象は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` です。manual segments 版は `generateSegmentsStructuredAppend()` で提供しています。低レベル `structuredAppend` 利用者向けの parity 計算は、raw input 用の `calculateStructuredAppendParity(input)` と manual segment list 用の `calculateStructuredAppendSegmentsParity(segments)` で提供しています。QR decoder は提供していません。読み取り後に decoder metadata が取れている場合の結合は `mergeStructuredAppendParts()` で扱います。
 
 `generateStructuredAppend()` は高レベル API が header を管理するため、`eci`、`gs1: true`、`fnc1Second`、`structuredAppend`、`boostErrorCorrection` との併用を reject します。1 symbol に収まる input も Structured Append set としては不正なので、`generate()` または low-level `structuredAppend` option を使うよう `InvalidInputError` で reject します。
 
@@ -309,7 +309,7 @@ QRCode.calculateStructuredAppendSegmentsParity(
 ): number;
 ```
 
-return value は `0..255` の integer です。`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XOR します。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重し、Kanji segment は QR Kanji mode の Shift_JIS bytes ではなく original JavaScript string の UTF-8 bytes を使います。
+return value は `0..255` の integer です。`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XOR します。これは QR encoded bitstream ではなく、mode indicator、character count indicator、padding、ECC、Structured Append header は含みません。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重し、Kanji segment は QR Kanji mode の Shift_JIS bytes ではなく original JavaScript string の UTF-8 bytes を使います。
 
 対象は `numeric` / `alphanumeric` / `byte` / `kanji` data segments だけです。manual `eci` / `fnc1` / `fnc1-second` / `structured-append` segment、`gs1` / FNC1 系 option、未知 option は reject します。`options` は将来拡張用の空 object で、現在は `undefined` または `{}` だけを受け付けます。
 

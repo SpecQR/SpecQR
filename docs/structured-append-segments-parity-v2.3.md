@@ -1,6 +1,6 @@
 # Structured Append Manual Segments Parity Helper v2.3
 
-この文書は、manual segments 用 Structured Append parity helper の v2.3.0 public API と実装範囲を記録します。package version、npm package、runtime dependency はこの作業では変更していません。
+この文書は、manual segments 用 Structured Append parity helper の SpecQR 2.3.0 public API と実装範囲を記録します。2.3.0 release package では、この helper を stable API として公開します。
 
 Raw input 用の `calculateStructuredAppendParity(input)` は実装済みです。一方、manual segments を低レベル `{ mode: "structured-append", index, total, parity }` と組み合わせて自分で chunking する利用者は、`generateSegmentsStructuredAppend()` と同じ manual segment byte policy で parity を計算できる helper があると安全です。この文書では、その public API、byte policy、reject 方針、検証範囲を固定します。
 
@@ -276,7 +276,6 @@ Golden fixture は原則不要です。この helper は matrix を生成しな�
 - ECI / GS1 / FNC1 / FNC1 second 併用対応。
 - manual segments の mid-segment splitting 追加。
 - QR decoder / scanner integration。
-- package version 変更。
 - npm publish / GitHub Release / Pages deploy。
 - runtime dependency 追加。
 
@@ -297,4 +296,4 @@ Golden fixture は原則不要です。この helper は matrix を生成しな�
 - `git diff --check`
 - GitHub Actions green
 
-Package version、npm publish、GitHub Release、Pages deploy はこの変更では行いません。
+2.3.0 release package では package version を更新しますが、npm publish、GitHub Release、Pages deploy は公開フェーズまで行いません。

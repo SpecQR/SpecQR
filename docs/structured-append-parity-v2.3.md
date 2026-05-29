@@ -1,6 +1,6 @@
 # Structured Append Parity Helper v2.3
 
-この文書は、SpecQR v2.3.0 の Structured Append polish release で追加した public parity helper の設計と実装範囲を記録します。Package version、npm package、runtime dependency はこの作業では変更していません。
+この文書は、SpecQR 2.3.0 の Structured Append polish release で追加した public parity helper の設計と実装範囲を記録します。2.3.0 release package では、この helper を stable API として公開します。
 
 `generateStructuredAppend()` と `generateSegmentsStructuredAppend()` は parity を自動計算します。一方、低レベル API の `structuredAppend: { index, total, parity }` または manual `{ mode: "structured-append", index, total, parity }` を直接使う利用者は、同じ logical message のすべての symbols に同じ parity を渡す必要があります。v2.3.0 では、その計算を `calculateStructuredAppendParity(input)` として提供します。
 
@@ -17,7 +17,7 @@
 
 ## Public API
 
-v2.3.0 で追加する API は 1 つだけです。
+この文書で扱う public API は次です。
 
 ```ts
 function calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
@@ -254,13 +254,12 @@ export class QRCode {
 
 ## Non-Scope
 
-- manual segments 用 parity helper の実装。
+- manual segments 用 parity helper の挙動変更。
 - `generateStructuredAppend()` の分割戦略変更。
 - `mergeStructuredAppendParts()` の挙動変更。
 - QR decoder / scanner integration。
 - ECI / GS1 / FNC1 併用追加。
 - Micro QR / rMQR。
-- package version 変更。
 - npm publish / GitHub Release / Pages deploy。
 - runtime dependency 追加。
 

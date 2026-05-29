@@ -1,6 +1,6 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.2.1` stable patch package を準備できる状態にします。npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.2.1` tag 作成は release gate が green になった main commit に対してだけ実行します。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.3.0` stable package の公開準備状態です。npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.3.0` tag 作成は release gate が green になった main commit に対してだけ実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
@@ -163,6 +163,19 @@ Manual deploy:
 
 この workflow は `workflow_dispatch` のみで起動します。push だけでは deploy しません。
 
+### v2.3.0 Structured Append parity 確認
+
+Structured Append parity helper を stable API として出す release では、少なくとも次を確認します。
+
+- `calculateStructuredAppendParity(input)` と `QRCode.calculateStructuredAppendParity(input)` が root / static API として型定義・packed package smoke と一致する。
+- `calculateStructuredAppendSegmentsParity(segments, options?)` と `QRCode.calculateStructuredAppendSegmentsParity(segments, options?)` が root / static API として型定義・packed package smoke と一致する。
+- `calculateStructuredAppendParity()` は string / binary input 用、`calculateStructuredAppendSegmentsParity()` は manual segment list 用であることが README / API docs から分かる。
+- どちらの helper も QR encoded bitstream、mode indicator、character count indicator、padding、ECC、Structured Append header を XOR するものではなく、logical message bytes の XOR を返すと明記されている。
+- `generateStructuredAppend()` の `parity` は raw input helper と一致し、`generateSegmentsStructuredAppend()` の `parity` は manual segments helper と一致する。
+- manual segments helper は `generateSegmentsStructuredAppend()` と同じ canonical bytes policy を使う。numeric / alphanumeric は ASCII、byte string は UTF-8、byte binary は raw bytes、Kanji は original JavaScript string の UTF-8 bytes とし、ECI / GS1 / FNC1 / FNC1 second / low-level `structured-append` segment は reject する。
+- `docs/structured-append-parity-v2.3.md` と `docs/structured-append-segments-parity-v2.3.md` が 2.3.0 stable package 前提の内容になっている。
+- published package smoke は現在 npm registry にある直近 stable を確認するための gate であり、未公開 2.3.0 の確認は `npm run verify:pack`、`npm pack --dry-run`、`npm publish --dry-run` で行う。
+
 ### v2.2 系 patch の Digital Link 確認
 
 Digital Link docs / playground だけを直す patch でも、少なくとも次を確認します。
@@ -184,7 +197,7 @@ stable version を npm `latest` で publish し、published package smoke が成
   npm install specqr
   ```
 - 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 validation / supported AI introspection API、GS1 Digital Link create/parse/validate/normalize helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
-- v2.2 系 release note では、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、Digital Link edge fixture / idempotency / packed smoke 強化、full canonicalizer / resolver / compression が非スコープであることを明記する。
+- v2.3.0 release note では、`calculateStructuredAppendParity()`、`calculateStructuredAppendSegmentsParity()`、`QRCode` static variants、high-level / low-level / merge helper との parity consistency、manual segments 専用 helper の bytes policy を明記する。
 - 検証: Node 18 / 20 / 22 / 24 matrix、golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison、local pack smoke、npm publish dry-run。
 - 非対応: Micro QR、rMQR、QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。Structured Append raw input parity helper と manual segments parity helper は実装済み。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。

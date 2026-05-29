@@ -264,7 +264,6 @@ Boundary:
 
 - QR decoder implementation.
 - Scanner integration.
-- Manual segments 専用 parity helper の実装。Raw input 用の public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) として実装済みで、manual segments 用 proposal は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に固定しています。
 - Existing Structured Append API changes.
 - QR core / renderer / playground behavior changes.
 - ECI / GS1 / FNC1 Structured Append combinations.

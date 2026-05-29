@@ -291,11 +291,11 @@ QRCode.generate("PART 2", {
 });
 ```
 
-Manual segments 専用 parity helper はまだ public API ではありません。提案中の API shape と byte policy は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に、入力型ごとの raw helper 詳細は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) にまとめています。
+入力型ごとの byte policy は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) にまとめています。
 
-#### Proposed: `calculateStructuredAppendSegmentsParity(segments, options?)`
+#### `calculateStructuredAppendSegmentsParity(segments, options?)`
 
-次の API は v2.3.0 後続実装向けの proposal であり、現在の package からは export していません。
+manual segments を低レベル `{ mode: "structured-append", index, total, parity }` と組み合わせて自分で chunking する利用者向けに、segment list 全体の Structured Append parity を計算します。root named export の `calculateStructuredAppendSegmentsParity(segments, options?)` と `QRCode.calculateStructuredAppendSegmentsParity(segments, options?)` は同じ API です。
 
 ```ts
 calculateStructuredAppendSegmentsParity(
@@ -309,7 +309,32 @@ QRCode.calculateStructuredAppendSegmentsParity(
 ): number;
 ```
 
-提案では、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XOR します。対象は `numeric` / `alphanumeric` / `byte` / `kanji` data segments だけです。ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` segment は初期実装では reject します。詳細は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) を参照してください。
+return value は `0..255` の integer です。`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XOR します。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重し、Kanji segment は QR Kanji mode の Shift_JIS bytes ではなく original JavaScript string の UTF-8 bytes を使います。
+
+対象は `numeric` / `alphanumeric` / `byte` / `kanji` data segments だけです。manual `eci` / `fnc1` / `fnc1-second` / `structured-append` segment、`gs1` / FNC1 系 option、未知 option は reject します。`options` は将来拡張用の空 object で、現在は `undefined` または `{}` だけを受け付けます。
+
+```js
+import { QRCode, calculateStructuredAppendSegmentsParity } from "specqr";
+
+const segments = [
+  { mode: "alphanumeric", data: "ORDER-" },
+  { mode: "numeric", data: "12345678901234567890" }
+];
+
+const parity = calculateStructuredAppendSegmentsParity(segments);
+
+QRCode.generateSegments([
+  { mode: "structured-append", index: 1, total: 2, parity },
+  { mode: "alphanumeric", data: "ORDER-" }
+]);
+
+QRCode.generateSegments([
+  { mode: "structured-append", index: 2, total: 2, parity },
+  { mode: "numeric", data: "12345678901234567890" }
+]);
+```
+
+詳細は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) を参照してください。
 
 ### GS1 Helpers
 

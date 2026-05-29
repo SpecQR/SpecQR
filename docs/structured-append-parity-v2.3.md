@@ -140,21 +140,16 @@ const second = QRCode.generate("PART 2", {
 
 ## Manual Segments Policy
 
-v2.3.0 の public helper は、まず raw input 用の `calculateStructuredAppendParity(input)` に限定します。manual segments 専用 helper は実装しません。
-
-理由:
-
-- `generateSegmentsStructuredAppend()` は canonical payload byte stream を内部で計算しており、manual segment の mode ごとの byte policy が caller-visible です。
-- numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、kanji は original JavaScript string の UTF-8 bytes という policy を public helper に露出すると、API surface が大きくなります。
-- manual segments では ECI / FNC1 / Structured Append control segments の扱いも別途設計が必要です。
-
-後続候補として、manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) で docs-only proposal として固定しています。API 名は次を採用候補にします。
+manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) として実装済みです。API 名は次です。
 
 ```ts
-calculateStructuredAppendSegmentsParity(segments: QRSegmentInput[]): number;
+calculateStructuredAppendSegmentsParity(
+  segments: QRSegmentInput[],
+  options?: QRStructuredAppendSegmentsParityOptions
+): number;
 ```
 
-この後続 helper を入れる場合は、`generateSegmentsStructuredAppend()` の canonical payload byte stream と完全一致すること、control segments を reject すること、TypeScript surface と negative tests を同時に追加することを条件にします。
+この helper は、`generateSegmentsStructuredAppend()` の canonical payload byte stream と完全一致します。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、Kanji は original JavaScript string の UTF-8 bytes を使います。ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` は初期 scope では reject します。
 
 ## Merge Helper Consistency
 
@@ -254,7 +249,7 @@ export class QRCode {
 
 - `calculateStructuredAppendParity(input, { encoding: "utf-8" })`: 現在 `"utf-8"` 以外の選択肢がないため初期 API では不要。
 - chunk array を受け取って自動結合する helper: parity は logical payload bytes の XOR なので、chunking helper にすると low-level API の責務と混ざる。利用者は元 message を渡すか、自分で結合した bytes を渡す。
-- manual segments parity helper を同時に追加する: segment mode ごとの byte policy と control segment rejection を別途固定する必要があるため後回し。
+- ECI / GS1 / FNC1 と manual segments parity helper の併用を同時に追加する: control metadata と logical payload bytes の責務が混ざるため後回し。
 - `validateStructuredAppendParity(parts)` を追加する: 既に `mergeStructuredAppendParts()` が metadata validation を担当しているため、v2.3.0 の scope には入れない。
 
 ## Non-Scope

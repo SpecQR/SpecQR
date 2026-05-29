@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  calculateStructuredAppendSegmentsParity,
   calculateStructuredAppendParity,
   DataTooLongError,
   generate,
@@ -199,6 +200,122 @@ test("calculateStructuredAppendParity rejects invalid input as InvalidInputError
       (error) => error instanceof InvalidInputError
     );
   }
+});
+
+test("calculateStructuredAppendSegmentsParity computes canonical manual segment byte XOR", () => {
+  const binary = Uint8Array.from([0x00, 0xff, 0x41]);
+  const backing = Uint8Array.from([0xaa, 0x10, 0x20, 0xbb]);
+  const view = new Uint8Array(backing.buffer, 1, 2);
+  const kanji = "漢字";
+  const segments = [
+    { mode: "numeric", data: "12345" },
+    { mode: "alphanumeric", data: "HELLO-QR" },
+    { mode: "byte", data: "é" },
+    { mode: "byte", data: binary },
+    { mode: "byte", data: view },
+    { mode: "kanji", data: kanji }
+  ];
+  const expectedBytes = [
+    ...new TextEncoder().encode("12345HELLO-QRé"),
+    ...binary,
+    0x10,
+    0x20,
+    ...new TextEncoder().encode(kanji)
+  ];
+  const expectedParity = xorBytes(expectedBytes);
+
+  assert.equal(calculateStructuredAppendSegmentsParity(segments), expectedParity);
+  assert.equal(QRCode.calculateStructuredAppendSegmentsParity(segments), expectedParity);
+});
+
+test("calculateStructuredAppendSegmentsParity matches Structured Append generation", () => {
+  const segments = [
+    { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+    { mode: "numeric", data: "12345678901234567890" },
+    { mode: "byte", data: Uint8Array.from([0x00, 0x01, 0x02, 0xff]) }
+  ];
+  const generated = generateSegmentsStructuredAppend(segments, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "matrix",
+    diagnostics: true
+  });
+
+  assert.equal(calculateStructuredAppendSegmentsParity(segments), generated.parity);
+  assert.equal(QRCode.calculateStructuredAppendSegmentsParity(segments), generated.parity);
+  assert.equal(generated.parity, xorBytes([
+    ...new TextEncoder().encode("ABCDEFGHIJKLMNOPQRSTU12345678901234567890"),
+    0x00,
+    0x01,
+    0x02,
+    0xff
+  ]));
+});
+
+test("calculateStructuredAppendSegmentsParity shares byte policy with calculateStructuredAppendParity", () => {
+  const text = "こんにちは";
+  const bytes = Uint8Array.from([0x00, 0xff, 0x41, 0x7e]);
+  const backing = Uint8Array.from([0xaa, ...bytes, 0xbb]);
+  const view = new DataView(backing.buffer, 1, bytes.length);
+
+  assert.equal(
+    calculateStructuredAppendSegmentsParity([{ mode: "byte", data: text }]),
+    calculateStructuredAppendParity(text)
+  );
+  assert.equal(
+    calculateStructuredAppendSegmentsParity([{ mode: "byte", data: view }]),
+    calculateStructuredAppendParity(view)
+  );
+});
+
+test("calculateStructuredAppendSegmentsParity rejects control segments and GS1/FNC1 options", () => {
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "fnc1" }, { mode: "byte", data: "ABC" }]),
+    (error) => error instanceof InvalidGs1Error && /FNC1 first/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "fnc1-second", applicationIndicator: "37" }, { mode: "byte", data: "ABC" }]),
+    (error) => error instanceof InvalidModeError && /FNC1 second/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "eci", assignmentNumber: 26 }, { mode: "byte", data: "ABC" }]),
+    (error) => error instanceof InvalidModeError && /ECI/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "structured-append", index: 1, total: 2, parity: 0 }, { mode: "byte", data: "ABC" }]),
+    (error) => error instanceof InvalidModeError && /Structured Append header/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "byte", data: "ABC" }], { gs1: true }),
+    (error) => error instanceof InvalidGs1Error
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "byte", data: "ABC" }], { structuredAppend: { index: 1, total: 2, parity: 0 } }),
+    (error) => error instanceof InvalidModeError && /Unsupported/.test(error.message)
+  );
+});
+
+test("calculateStructuredAppendSegmentsParity rejects invalid manual segment data", () => {
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity("ABC"),
+    (error) => error instanceof InvalidInputError && /manual segments/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([]),
+    (error) => error instanceof InvalidInputError && /at least one/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "byte", data: [256] }]),
+    (error) => error instanceof InvalidInputError && /0 to 255/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "numeric", data: "ABC" }]),
+    (error) => error instanceof InvalidModeError && /numeric/.test(error.message)
+  );
+  assert.throws(
+    () => calculateStructuredAppendSegmentsParity([{ mode: "byte", data: "ABC" }], null),
+    (error) => error instanceof InvalidInputError && /options/.test(error.message)
+  );
 });
 
 test("calculateStructuredAppendParity matches Structured Append generation and merge validation", () => {

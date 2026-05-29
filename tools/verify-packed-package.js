@@ -53,6 +53,8 @@ assert.equal(typeof specqr.generateSegmentsStructuredAppend, "function");
 assert.equal(typeof specqr.QRCode.generateSegmentsStructuredAppend, "function");
 assert.equal(typeof specqr.calculateStructuredAppendParity, "function");
 assert.equal(typeof specqr.QRCode.calculateStructuredAppendParity, "function");
+assert.equal(typeof specqr.calculateStructuredAppendSegmentsParity, "function");
+assert.equal(typeof specqr.QRCode.calculateStructuredAppendSegmentsParity, "function");
 assert.equal(typeof specqr.mergeStructuredAppendParts, "function");
 assert.equal(typeof specqr.QRCode.mergeStructuredAppendParts, "function");
 assert.equal(typeof specqr.createGs1DigitalLink, "function");
@@ -261,6 +263,32 @@ const manualSegmentsStructuredAppendStatic = specqr.QRCode.generateSegmentsStruc
 assert.equal(manualSegmentsStructuredAppendStatic.total, 3);
 assert.match(manualSegmentsStructuredAppendStatic.symbols[0], /^<svg /);
 
+const manualSegmentsParityInput = [
+  { mode: "alphanumeric", data: "ABCDEFGHIJKLMNOPQRSTU" },
+  { mode: "numeric", data: "12345678901234567890" },
+  { mode: "byte", data: new Uint8Array(Uint8Array.from([0xaa, 0x00, 0xff, 0xbb]).buffer, 1, 2) }
+];
+assert.equal(
+  specqr.calculateStructuredAppendSegmentsParity(manualSegmentsParityInput),
+  specqr.generateSegmentsStructuredAppend(manualSegmentsParityInput, {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "matrix"
+  }).parity
+);
+assert.equal(
+  specqr.QRCode.calculateStructuredAppendSegmentsParity([{ mode: "byte", data: "こんにちは" }]),
+  specqr.calculateStructuredAppendParity("こんにちは")
+);
+assert.throws(
+  () => specqr.calculateStructuredAppendSegmentsParity([{ mode: "byte", data: [256] }]),
+  (error) => error instanceof specqr.InvalidInputError && error.code === "INVALID_INPUT"
+);
+assert.throws(
+  () => specqr.calculateStructuredAppendSegmentsParity([{ mode: "eci", assignmentNumber: 26 }, { mode: "byte", data: "ABC" }]),
+  (error) => error instanceof specqr.InvalidModeError && error.code === "INVALID_MODE"
+);
+
 const rawWithSeparator = "010491234567890410ABC123\\x1D17251231";
 assert.deepEqual(specqr.parseGs1ElementString(rawWithSeparator), {
   elements: [
@@ -400,6 +428,7 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /export interface QRStructuredAppendSegmentsSummaryDiagnostics\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendSegmentsResult<TSymbol = QRGenerateResult>\s*{/);
   assert.match(declarations, /export type QRStructuredAppendParityInput = QRInput;/);
+  assert.match(declarations, /export interface QRStructuredAppendSegmentsParityOptions\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendDecodedPart<TData extends QRStructuredAppendPartData = QRStructuredAppendPartData>\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendMergeResult<TData extends string \| Uint8Array = string \| Uint8Array>\s*{/);
   assert.match(declarations, /export interface QRStructuredAppendMergeDiagnostics\s*{/);
@@ -414,6 +443,10 @@ async function assertTypeDeclarations(directory) {
   assert.match(
     declarations,
     /export function calculateStructuredAppendParity\(input: QRStructuredAppendParityInput\): number;/
+  );
+  assert.match(
+    declarations,
+    /export function calculateStructuredAppendSegmentsParity\(\s*segments: QRSegmentInput\[],\s*options\?: QRStructuredAppendSegmentsParityOptions\s*\): number;/
   );
   assert.match(
     declarations,
@@ -444,6 +477,10 @@ async function assertTypeDeclarations(directory) {
   assert.match(declarations, /static generateStructuredAppend\(input: QRInput/);
   assert.match(declarations, /static generateSegmentsStructuredAppend\(segments: QRSegmentInput\[]/);
   assert.match(declarations, /static calculateStructuredAppendParity\(input: QRStructuredAppendParityInput\): number;/);
+  assert.match(
+    declarations,
+    /static calculateStructuredAppendSegmentsParity\(\s*segments: QRSegmentInput\[],\s*options\?: QRStructuredAppendSegmentsParityOptions\s*\): number;/
+  );
   assert.match(declarations, /static mergeStructuredAppendParts\(parts: QRStructuredAppendDecodedPart<string>\[]/);
   assert.match(declarations, /static createGs1DigitalLink\(/);
   assert.match(declarations, /static parseGs1DigitalLink\(/);
@@ -473,6 +510,7 @@ function assertPackContents(packed) {
     "docs/test-plan.md",
     "docs/v2-roadmap.md",
     "docs/structured-append-parity-v2.3.md",
+    "docs/structured-append-segments-parity-v2.3.md",
     "examples/gs1-digital-link.mjs",
     "examples/structured-append.mjs",
     "examples/structured-append-merge.mjs",

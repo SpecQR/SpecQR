@@ -1,17 +1,17 @@
-# Structured Append Manual Segments Parity Helper v2.3 Design
+# Structured Append Manual Segments Parity Helper v2.3
 
-この文書は、manual segments 用 Structured Append parity helper の v2.3.0 design proposal です。Runtime behavior、public API、package version、package exports、runtime dependency はこの作業では変更しません。
+この文書は、manual segments 用 Structured Append parity helper の v2.3.0 public API と実装範囲を記録します。package version、npm package、runtime dependency はこの作業では変更していません。
 
-Raw input 用の `calculateStructuredAppendParity(input)` は実装済みです。一方、manual segments を低レベル `{ mode: "structured-append", index, total, parity }` と組み合わせて自分で chunking する利用者は、`generateSegmentsStructuredAppend()` と同じ manual segment byte policy で parity を計算できる helper があると安全です。この文書では、その public API を実装前に固定します。
+Raw input 用の `calculateStructuredAppendParity(input)` は実装済みです。一方、manual segments を低レベル `{ mode: "structured-append", index, total, parity }` と組み合わせて自分で chunking する利用者は、`generateSegmentsStructuredAppend()` と同じ manual segment byte policy で parity を計算できる helper があると安全です。この文書では、その public API、byte policy、reject 方針、検証範囲を固定します。
 
 ## Status
 
-- `calculateStructuredAppendSegmentsParity()` はまだ public export ではありません。
-- `QRCode.calculateStructuredAppendSegmentsParity()` もまだ存在しません。
-- この文書は次の implementation goal のための contract です。
+- `calculateStructuredAppendSegmentsParity()` は root named export です。
+- `QRCode.calculateStructuredAppendSegmentsParity()` は同じ実装を呼ぶ static method です。
+- TypeScript declaration と packed package smoke で公開 surface を固定しています。
 - 既存 `generateSegmentsStructuredAppend()` は引き続き parity を自動計算します。
 
-## Proposed Public API
+## Public API
 
 ```ts
 function calculateStructuredAppendSegmentsParity(
@@ -33,7 +33,7 @@ Return value は `0..255` の integer です。
 
 `options` は初期実装では将来拡張用の空 object として扱います。`undefined` または `{}` だけを受け付け、未知 key は reject します。ECI / GS1 / FNC1 併用や alternate encoding を options で足すことは初期 scope に含めません。
 
-TypeScript declaration 案:
+TypeScript declaration:
 
 ```ts
 export interface QRStructuredAppendSegmentsParityOptions {}
@@ -134,7 +134,7 @@ Control segment は初期実装では reject します。
   - mode-specific validation failure が既存 manual segment validation で `InvalidModeError` になる場合。
 - `InvalidGs1Error`
   - manual `{ mode: "fnc1" }` segment。
-  - future implementation で `gs1: true` option 相当が渡された場合。
+  - `gs1` option 相当が渡された場合。
 
 既存 `normalizeManualSegments()` がより具体的な error を投げる場合は、その error を優先します。
 
@@ -217,27 +217,27 @@ calculateStructuredAppendSegmentsParity([
 
 `mergeStructuredAppendParts()` は decoder が返した `{ index, total, parity, data }` parts を scan 後に検証します。
 
-両者は同じ XOR helper に最終的に寄せるべきですが、入力の抽象度は違います。
+両者は同じ XOR policy に寄せていますが、入力の抽象度は違います。
 
 - Segments parity helper: manual segment list -> canonical logical bytes -> XOR。
 - Merge helper: decoded string/binary parts -> merged payload bytes -> XOR。
 
 Manual segment boundaries は decoder output には残らないため、`mergeStructuredAppendParts()` が manual segment list を復元することはありません。
 
-## Implementation Notes For The Next Goal
+## Implementation Notes
 
-実装時は、`src/index.js` に既にある `getStructuredAppendSegmentCanonicalBytes(segment)` と同じ byte policy を共有する形に寄せます。理想は次の責務分離です。
+実装は、`src/index.js` に既にある `generateSegmentsStructuredAppend()` 用の manual segment normalization と canonical byte extraction に寄せています。責務分離は次の通りです。
 
 - manual segment normalization: existing `normalizeManualSegments()` を使う。
 - control segment rejection: `generateSegmentsStructuredAppend()` と同じ helper を共有するか、同じ table-driven validation に寄せる。
-- canonical byte extraction: `generateSegmentsStructuredAppend()` と `calculateStructuredAppendSegmentsParity()` が同じ internal function を使う。
+- canonical byte extraction: `generateSegmentsStructuredAppend()` と `calculateStructuredAppendSegmentsParity()` が同じ `getStructuredAppendSegmentCanonicalBytes(segment)` policy を使う。
 - XOR: existing `calculateStructuredAppendByteParity(bytes)` を使う。
 
 これにより、`generateSegmentsStructuredAppend().parity` と public helper が drift しないようにします。
 
-## Tests To Add When Implementing
+## Implemented Test Coverage
 
-実装時に追加する tests:
+実装に合わせて追加した tests:
 
 - root export `calculateStructuredAppendSegmentsParity` が存在する。
 - `QRCode.calculateStructuredAppendSegmentsParity` static method が存在する。
@@ -255,7 +255,7 @@ Manual segment boundaries は decoder output には残らないため、`mergeSt
 - invalid segment mode rejection。
 - invalid options object / unknown option rejection。
 - `generateSegmentsStructuredAppend(segments).parity` と一致。
-- low-level manual structured-append chunks に同じ parity を渡す usage example。
+- low-level manual structured-append chunks に同じ parity を渡す docs example。
 - TypeScript consumer check。
 - packed package smoke。
 
@@ -271,9 +271,6 @@ Golden fixture は原則不要です。この helper は matrix を生成しな�
 
 ## Non-Scope
 
-- 実 API 実装。
-- package exports 変更。
-- TypeScript declarations 変更。
 - `generateSegmentsStructuredAppend()` の分割戦略変更。
 - `calculateStructuredAppendParity()` の挙動変更。
 - ECI / GS1 / FNC1 / FNC1 second 併用対応。
@@ -283,9 +280,9 @@ Golden fixture は原則不要です。この helper は matrix を生成しな�
 - npm publish / GitHub Release / Pages deploy。
 - runtime dependency 追加。
 
-## Release Gate For Future Implementation
+## Release Gate
 
-実装時の release gate は次を含めます。
+この helper の release gate は次を含めます。
 
 - `npm test`
 - `npm run verify:types`
@@ -300,4 +297,4 @@ Golden fixture は原則不要です。この helper は matrix を生成しな�
 - `git diff --check`
 - GitHub Actions green
 
-この docs-only design では runtime behavior を変えないため、既存 gate が通ることを確認します。
+Package version、npm publish、GitHub Release、Pages deploy はこの変更では行いません。

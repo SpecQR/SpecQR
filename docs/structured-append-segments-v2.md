@@ -9,7 +9,7 @@
 - string / binary input の高レベル自動分割: `generateStructuredAppend(input, options)`
 - manual data segments の高レベル自動分割: `generateSegmentsStructuredAppend(segments, options)`
 
-低レベル `structuredAppend` 利用者向けの raw input public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) として実装済みです。Manual segments 専用 parity helper は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に docs-only proposal として固定し、現時点では実装しません。
+低レベル `structuredAppend` 利用者向けの raw input public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) として実装済みです。Manual segments 専用 parity helper も [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) として実装済みで、`generateSegmentsStructuredAppend()` と同じ canonical logical bytes policy を使います。
 
 この API は、manual data segments を受け取り、最大 16 個の Structured Append symbols に自動分割します。
 
@@ -350,7 +350,7 @@ const set = QRCode.generateSegmentsStructuredAppend([
 
 The high-level API computes `index`, `total`, and `parity`. Therefore it rejects an existing low-level Structured Append segment.
 
-Manual segments の parity を低レベル API 用に計算する helper はまだ runtime API ではありません。次の実装候補として、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を使う `calculateStructuredAppendSegmentsParity(segments, options?)` の方針を [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に docs-only で固定しています。
+Manual segments の parity を低レベル API 用に計算する helper は `calculateStructuredAppendSegmentsParity(segments, options?)` として実装済みです。`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を使い、ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` segment は安全側で reject します。詳細は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) を参照してください。
 
 ## Golden / Conformance Coverage
 
@@ -405,7 +405,6 @@ The implementation release gate is:
 
 ## Non-Scope
 
-- Manual segments 専用 parity helper の実装。v2.3.0 では raw input 用 helper を先に実装し、manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に設計だけを固定しています。
 - Decoder merge helper.
 - ECI / GS1 / FNC1 combinations.
 - Numeric / alphanumeric / kanji mid-segment splitting.

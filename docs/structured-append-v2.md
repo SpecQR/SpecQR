@@ -316,7 +316,6 @@ Decoder validation should not be the only proof for Structured Append. Some deco
 
 ## Non-Scope
 
-- Manual segments 専用 parity helper の実装。Raw input 用の `calculateStructuredAppendParity(input)` は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) として実装済みで、manual segments 用 proposal は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に固定しています。
 - QR decoder / scanner integration.
 - ECI / FNC1 / GS1 combinations.
 - Numeric / alphanumeric / kanji mid-segment splitting for the manual segments API.

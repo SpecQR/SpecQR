@@ -120,6 +120,10 @@ export class QRCode {
     return calculateStructuredAppendParity(input);
   }
 
+  static calculateStructuredAppendSegmentsParity(segments, options = {}) {
+    return calculateStructuredAppendSegmentsParity(segments, options);
+  }
+
   static mergeStructuredAppendParts(parts, options = {}) {
     return mergeStructuredAppendParts(parts, options);
   }
@@ -300,6 +304,18 @@ export function generateSegmentsStructuredAppend(segments, options = {}) {
       symbolDiagnostics
     })
   };
+}
+
+export function calculateStructuredAppendSegmentsParity(segments, options = {}) {
+  validateStructuredAppendSegmentsParityOptions(options);
+  const normalizedSegments = normalizeStructuredAppendManualSegments(
+    segments,
+    "calculateStructuredAppendSegmentsParity"
+  );
+  return createStructuredAppendSegmentsInputInfo(
+    normalizedSegments,
+    "calculateStructuredAppendSegmentsParity"
+  ).parity;
 }
 
 export function generateSegments(segments, options = {}) {
@@ -575,34 +591,54 @@ function assertStructuredAppendTextInput(input) {
   return input;
 }
 
-function normalizeStructuredAppendManualSegments(segments) {
+function validateStructuredAppendSegmentsParityOptions(options = {}) {
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    throw new InvalidInputError("calculateStructuredAppendSegmentsParity options must be an object");
+  }
+
+  if (Object.hasOwn(options, "gs1")) {
+    throw new InvalidGs1Error("calculateStructuredAppendSegmentsParity cannot be combined with GS1/FNC1 options");
+  }
+  if (Object.hasOwn(options, "fnc1Second")) {
+    throw new InvalidModeError("calculateStructuredAppendSegmentsParity cannot be combined with FNC1 second position options");
+  }
+
+  const unsupportedOption = Object.keys(options)[0];
+  if (unsupportedOption !== undefined) {
+    throw new InvalidModeError(`Unsupported calculateStructuredAppendSegmentsParity option: ${unsupportedOption}`);
+  }
+}
+
+function normalizeStructuredAppendManualSegments(segments, label = "generateSegmentsStructuredAppend") {
   const normalizedSegments = normalizeManualSegments(segments);
   if (normalizedSegments.length === 0) {
-    throw new InvalidInputError("generateSegmentsStructuredAppend requires at least two non-empty data split units");
+    throw new InvalidInputError(label === "generateSegmentsStructuredAppend"
+      ? "generateSegmentsStructuredAppend requires at least two non-empty data split units"
+      : `${label} requires at least one non-empty data segment`);
   }
 
   for (const segment of normalizedSegments) {
     if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_FIRST) {
-      throw new InvalidGs1Error("generateSegmentsStructuredAppend cannot be combined with manual FNC1 first position segments");
+      throw new InvalidGs1Error(`${label} cannot be combined with manual FNC1 first position segments`);
     }
     if (segment.mode === CONTROL_SEGMENT_MODES.FNC1_SECOND) {
-      throw new InvalidModeError("generateSegmentsStructuredAppend cannot be combined with manual FNC1 second position segments");
+      throw new InvalidModeError(`${label} cannot be combined with manual FNC1 second position segments`);
     }
     if (segment.mode === CONTROL_SEGMENT_MODES.ECI) {
-      throw new InvalidModeError("generateSegmentsStructuredAppend cannot be combined with manual ECI segments");
+      throw new InvalidModeError(`${label} cannot be combined with manual ECI segments`);
     }
     if (segment.mode === CONTROL_SEGMENT_MODES.STRUCTURED_APPEND) {
-      throw new InvalidModeError("generateSegmentsStructuredAppend owns the Structured Append header; manual structured-append segments are not supported");
+      throw new InvalidModeError(`${label} owns the Structured Append header; manual structured-append segments are not supported`);
     }
     if (isControlSegment(segment)) {
-      throw new InvalidModeError(`generateSegmentsStructuredAppend does not support manual ${segment.mode} control segments`);
+      throw new InvalidModeError(`${label} does not support manual ${segment.mode} control segments`);
     }
   }
 
   return normalizedSegments;
 }
 
-function createStructuredAppendSegmentsInputInfo(segments) {
+function createStructuredAppendSegmentsInputInfo(segments, label = "generateSegmentsStructuredAppend") {
   const splitUnits = [];
   const canonicalBytes = [];
 
@@ -616,13 +652,15 @@ function createStructuredAppendSegmentsInputInfo(segments) {
       byteStart
     });
     if (segmentUnits.length === 0) {
-      throw new InvalidInputError(`segments[${sourceSegmentIndex}] must include non-empty data for generateSegmentsStructuredAppend`);
+      throw new InvalidInputError(`segments[${sourceSegmentIndex}] must include non-empty data for ${label}`);
     }
     splitUnits.push(...segmentUnits);
   });
 
   if (splitUnits.length === 0) {
-    throw new InvalidInputError("generateSegmentsStructuredAppend requires input that can be split into at least two non-empty split units");
+    throw new InvalidInputError(label === "generateSegmentsStructuredAppend"
+      ? "generateSegmentsStructuredAppend requires input that can be split into at least two non-empty split units"
+      : `${label} requires at least one non-empty data segment`);
   }
 
   return {

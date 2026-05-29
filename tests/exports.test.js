@@ -13,6 +13,8 @@ test("package root, node, and browser subpath exports are importable", async () 
   assert.equal(typeof root.QRCode.generateSegmentsStructuredAppend, "function");
   assert.equal(typeof root.calculateStructuredAppendParity, "function");
   assert.equal(typeof root.QRCode.calculateStructuredAppendParity, "function");
+  assert.equal(typeof root.calculateStructuredAppendSegmentsParity, "function");
+  assert.equal(typeof root.QRCode.calculateStructuredAppendSegmentsParity, "function");
   assert.equal(typeof root.mergeStructuredAppendParts, "function");
   assert.equal(typeof root.QRCode.mergeStructuredAppendParts, "function");
   assert.equal(typeof root.generateSegments, "function");

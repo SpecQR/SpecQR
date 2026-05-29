@@ -1,6 +1,6 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.3.0` stable package の公開準備状態です。npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.3.0` tag 作成は release gate が green になった main commit に対してだけ実行します。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の main branch は `2.4.0` stable package の公開準備状態です。npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.4.0` tag 作成は release gate が green になった main commit に対してだけ実行します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は [Project Language Policy](./project-language.md) に従い、日本語メインで作成します。ただし package metadata、API names、install commands、README 冒頭の短い English summary は英語導線として維持します。
 
@@ -42,7 +42,7 @@ npm install specqr@next
 - representative Node 20 release gates が green。macOS Vision decode、Pages build、jsQR decode、Nayuki reference comparison、Structured Append ZXing Java optional lane、pack dry-run をここで確認する。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md)、[Supported GS1 AIs](./gs1-supported-ai.md) が現在の実装範囲と矛盾していない。
 - [Security Policy](../SECURITY.md) と [Contributing](../CONTRIBUTING.md) が release / validation 方針と矛盾していない。
-- Micro QR、rMQR、QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。Structured Append raw input parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に分ける。
+- Micro QR、rMQR、QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。Structured Append raw input parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に、Planning API は [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) に分ける。
 
 release tag は、上記 verification が green の main commit にだけ付けます。stable preparation commit ではまだ tag を作らず、publish 直前の最終承認後に作るのが安全です。
 
@@ -163,6 +163,21 @@ Manual deploy:
 
 この workflow は `workflow_dispatch` のみで起動します。push だけでは deploy しません。
 
+### v2.4.0 Planning API 確認
+
+Planning API を stable API として出す release では、少なくとも次を確認します。
+
+- `estimate(input, options?)` と `QRCode.estimate(input, options?)` が root / static API として型定義・packed package smoke と一致する。
+- `analyzeSegments(segments, options?)` と `QRCode.analyzeSegments(segments, options?)` が `generateSegments()` と同じ manual segment surface を planning 対象にする。
+- `getCapacity(options)` と `QRCode.getCapacity(options)` が Version / ECC / optional mode の capacity 情報を public-safe shape で返す。
+- `estimate()` / `analyzeSegments()` の成功時 planning fields が `generate(..., { diagnostics: true })` / `generateSegments(..., { diagnostics: true })` の planning fields と一致すると README / API docs から分かる。
+- Capacity overflow は throw ではなく `{ ok: false, reason: "data-too-long" }` result であることが README / API docs / examples から分かる。
+- Invalid option、invalid GS1、invalid ECI、invalid color などの configuration error は既存 error class を投げることを docs に残す。
+- `getCapacity()` は QR mode-level capacity を返し、GS1 AI、Digital Link、Structured Append high-level split の semantic capacity は `estimate()` / `analyzeSegments()` に任せると明記する。
+- `examples/planning-api.mjs` が examples smoke に含まれ、`estimate()` / `analyzeSegments()` / `getCapacity()` / overflow result の代表ケースを実行する。
+- Playground package contents に `playground/index.html` / `playground/playground.js` / `playground/styles.css` が含まれ、Planning panel、`QRCode.estimate()`、`QRCode.getCapacity()` の source smoke が通る。
+- published package smoke は現在 npm registry にある直近 stable を確認するための gate であり、未公開 2.4.0 の確認は `npm run verify:pack`、`npm pack --dry-run`、`npm publish --dry-run` で行う。
+
 ### v2.3.0 Structured Append parity 確認
 
 Structured Append parity helper を stable API として出す release では、少なくとも次を確認します。
@@ -174,7 +189,7 @@ Structured Append parity helper を stable API として出す release では、
 - `generateStructuredAppend()` の `parity` は raw input helper と一致し、`generateSegmentsStructuredAppend()` の `parity` は manual segments helper と一致する。
 - manual segments helper は `generateSegmentsStructuredAppend()` と同じ canonical bytes policy を使う。numeric / alphanumeric は ASCII、byte string は UTF-8、byte binary は raw bytes、Kanji は original JavaScript string の UTF-8 bytes とし、ECI / GS1 / FNC1 / FNC1 second / low-level `structured-append` segment は reject する。
 - `docs/structured-append-parity-v2.3.md` と `docs/structured-append-segments-parity-v2.3.md` が 2.3.0 stable package 前提の内容になっている。
-- published package smoke は現在 npm registry にある直近 stable を確認するための gate であり、未公開 2.3.0 の確認は `npm run verify:pack`、`npm pack --dry-run`、`npm publish --dry-run` で行う。
+- published package smoke は現在 npm registry にある直近 stable を確認するための gate であり、release preparation 中の未公開 version の確認は `npm run verify:pack`、`npm pack --dry-run`、`npm publish --dry-run` で行う。
 
 ### v2.2 系 patch の Digital Link 確認
 
@@ -196,8 +211,8 @@ stable version を npm `latest` で publish し、published package smoke が成
   ```sh
   npm install specqr
   ```
-- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 validation / supported AI introspection API、GS1 Digital Link create/parse/validate/normalize helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
-- v2.3.0 release note では、`calculateStructuredAppendParity()`、`calculateStructuredAppendSegmentsParity()`、`QRCode` static variants、high-level / low-level / merge helper との parity consistency、manual segments 専用 helper の bytes policy を明記する。
+- 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 validation / supported AI introspection API、GS1 Digital Link create/parse/validate/normalize helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、Planning API、SVG/PNG/canvas/Node/browser helpers。
+- v2.4.0 release note では、`estimate()`、`analyzeSegments()`、`getCapacity()`、`QRCode` static variants、Planning examples、Playground Planning panel、`data-too-long` が `ok:false` で返る方針を明記する。
 - 検証: Node 18 / 20 / 22 / 24 matrix、golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison、local pack smoke、npm publish dry-run。
 - 非対応: Micro QR、rMQR、QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。Structured Append raw input parity helper と manual segments parity helper は実装済み。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。

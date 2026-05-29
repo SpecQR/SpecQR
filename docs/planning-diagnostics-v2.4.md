@@ -1,6 +1,6 @@
 # Planning / Diagnostics API v2.4
 
-この文書は SpecQR v2.4.0 の planning / diagnostics API contract です。`estimate()`、`analyzeSegments()`、`getCapacity()` は root named exports と `QRCode` static methods として実装済みです。package version bump / npm publish / GitHub Release / Pages deploy はこの変更には含めません。
+この文書は SpecQR v2.4.0 の planning / diagnostics API contract です。`estimate()`、`analyzeSegments()`、`getCapacity()` は root named exports と `QRCode` static methods として実装済みです。2.4.0 release package では package version を `2.4.0` に更新しますが、npm publish / GitHub Release / Pages deploy / tag 作成は別手順で行います。
 
 v2.4.0 は QR generation core の新機能 release ではなく、生成前に「どの Version / ECC / mode に収まるか」「どの警告を UI に出すべきか」を安全に見積もる API surface を固定する release として扱います。
 
@@ -18,7 +18,7 @@ v2.4.0 は QR generation core の新機能 release ではなく、生成前に�
 - `generate()` / `generateSegments()` の return shape を変更しない。
 - Micro QR / rMQR / logo overlay / styled modules を扱わない。
 - GS1 Digital Link full canonicalization、full GS1 AI catalog、decoder / scanner integration を扱わない。
-- npm publish、GitHub Release、Pages deploy、package version bump はこの implementation step の対象外。
+- npm publish、GitHub Release、Pages deploy、tag 作成はこの release preparation step の対象外。
 
 ## Public API
 

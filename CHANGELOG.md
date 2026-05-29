@@ -4,6 +4,39 @@
 
 まだありません。
 
+## 2.4.0 - 2026-05-30
+
+SpecQR 2.4.0 is the Planning API release for checking QR capacity before rendering.
+
+SpecQR 2.4.0 は、QR を生成する前に Version / ECC / mode / capacity / warnings を安全に見積もるための Planning API release です。QR generation core、package exports、runtime dependency-free policy は維持しています。
+
+### 追加
+
+- 生成前の single-symbol planning API として `estimate(input, options?)` と `QRCode.estimate(input, options?)` を追加しました。
+- manual segments 向けの planning API として `analyzeSegments(segments, options?)` と `QRCode.analyzeSegments(segments, options?)` を追加しました。
+- Version / ECC / mode の public-safe capacity 情報を参照する `getCapacity(options)` と `QRCode.getCapacity(options)` を追加しました。
+- `QREstimateResult`、`QREstimateSuccess`、`QREstimateFailure`、`QRCapacityInfo` などの TypeScript declarations を追加しました。
+- Planning API の実行例として `examples/planning-api.mjs` と `npm run examples:planning` を追加しました。
+- Playground に Planning panel を追加し、入力変更時に selected Version、ECC、data bits、capacity bits、remaining bits、usage ratio、warnings、capacity overflow を確認できるようにしました。
+
+### Planning policy
+
+- `estimate()` と `analyzeSegments()` は `generate()` / `generateSegments()` と同じ planner と diagnostics helper を source of truth にし、成功時の planning fields を `generate(..., { diagnostics: true })` と一致させます。
+- Capacity overflow は UI / batch import で通常分岐として扱えるよう、`DataTooLongError` を throw せず `{ ok: false, reason: "data-too-long" }` を返します。
+- Invalid version、invalid mode、invalid GS1、invalid ECI、invalid color などの configuration error は既存 error class を投げます。
+- `getCapacity()` は QR mode-level capacity table を public-safe shape で返します。GS1 AI、Digital Link、Structured Append high-level split の semantic capacity は `estimate()` / `analyzeSegments()` の責務です。
+
+### Docs / release package
+
+- README、API docs、Planning / Diagnostics API docs、conformance matrix、test plan、v2 roadmap、release checklist を 2.4.0 stable package 前提に更新しました。
+- examples smoke と local packed package smoke に Planning API の代表ケースを追加しました。
+- `package.json` / `package-lock.json` の version を `2.4.0` に更新しました。
+
+### 意図的な制限
+
+- High-level Structured Append split planning、print size 専用 API、scanner risk 専用 API、Micro QR、rMQR、logo overlay、styled modules は対象外です。
+- npm publish、GitHub Release 作成、GitHub Pages deploy、`v2.4.0` tag 作成はこの準備 commit では行いません。
+
 ## 2.3.0 - 2026-05-30
 
 SpecQR 2.3.0 is the Structured Append parity helper release.

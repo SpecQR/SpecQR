@@ -291,7 +291,25 @@ QRCode.generate("PART 2", {
 });
 ```
 
-Manual segments 専用 parity helper は v2.3.0 の初期 scope には含めず、後続候補として扱います。入力型ごとの詳細は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) を参照してください。
+Manual segments 専用 parity helper はまだ public API ではありません。提案中の API shape と byte policy は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に、入力型ごとの raw helper 詳細は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) にまとめています。
+
+#### Proposed: `calculateStructuredAppendSegmentsParity(segments, options?)`
+
+次の API は v2.3.0 後続実装向けの proposal であり、現在の package からは export していません。
+
+```ts
+calculateStructuredAppendSegmentsParity(
+  segments: QRSegmentInput[],
+  options?: QRStructuredAppendSegmentsParityOptions
+): number;
+
+QRCode.calculateStructuredAppendSegmentsParity(
+  segments: QRSegmentInput[],
+  options?: QRStructuredAppendSegmentsParityOptions
+): number;
+```
+
+提案では、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XOR します。対象は `numeric` / `alphanumeric` / `byte` / `kanji` data segments だけです。ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` segment は初期実装では reject します。詳細は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) を参照してください。
 
 ### GS1 Helpers
 

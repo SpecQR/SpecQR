@@ -42,7 +42,7 @@ npm install specqr@next
 - representative Node 20 release gates が green。macOS Vision decode、Pages build、jsQR decode、Nayuki reference comparison、Structured Append ZXing Java optional lane、pack dry-run をここで確認する。
 - README、[Conformance Matrix](./conformance.md)、[External Reference Comparison](./reference-comparison.md)、[Specification Scope](./spec-scope.md)、[Supported GS1 AIs](./gs1-supported-ai.md) が現在の実装範囲と矛盾していない。
 - [Security Policy](../SECURITY.md) と [Contributing](../CONTRIBUTING.md) が release / validation 方針と矛盾していない。
-- Micro QR、rMQR、Structured Append manual segments 専用 parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。Structured Append raw input parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に分ける。
+- Micro QR、rMQR、Structured Append manual segments 専用 parity helper の runtime 実装 / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。Structured Append raw input parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper proposal は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に分ける。
 
 release tag は、上記 verification が green の main commit にだけ付けます。stable preparation commit ではまだ tag を作らず、publish 直前の最終承認後に作るのが安全です。
 
@@ -186,7 +186,7 @@ stable version を npm `latest` で publish し、published package smoke が成
 - 主な対応範囲: QR Code Model 2 Version 1-40、L/M/Q/H、Numeric / Alphanumeric / Byte / Kanji、ECI、GS1/FNC1 first position、GS1 raw element string parser、GS1 validation / supported AI introspection API、GS1 Digital Link create/parse/validate/normalize helper、FNC1 second position、Structured Append low-level header / high-level automatic splitting / manual segment splitting / decoded parts merge helper、SVG/PNG/canvas/Node/browser helpers。
 - v2.2 系 release note では、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、Digital Link edge fixture / idempotency / packed smoke 強化、full canonicalizer / resolver / compression が非スコープであることを明記する。
 - 検証: Node 18 / 20 / 22 / 24 matrix、golden conformance、jsQR decoder validation、macOS Vision validation、Nayuki reference comparison、local pack smoke、npm publish dry-run。
-- 非対応: Micro QR、rMQR、Structured Append manual segments 専用 parity helper / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。Structured Append raw input parity helper は別設計文書として扱う。
+- 非対応: Micro QR、rMQR、Structured Append manual segments 専用 parity helper の runtime 実装 / QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer。Structured Append raw input parity helper は実装済み、manual segments parity helper は別設計文書として扱う。
 - Structured Append の読み取り後 merge helper は metadata-returning decoder が `{ index, total, parity, data }` を返せる場合だけ扱います。decoder 候補と optional validation 方針は `docs/structured-append-decoder-validation-v2.md` に整理済み。
 - Links: README、playground、conformance matrix、reference comparison、test plan。
 

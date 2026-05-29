@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2 系で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2 系は新しい QR family を一気に増やす release line ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release line として扱います。
 
-実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、v2.2.0 の GS1 Digital Link validation / normalization 設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に、v2.3.0 の public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
+実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、v2.2.0 の GS1 Digital Link validation / normalization 設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に、v2.3.0 の public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper の proposal は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
 ## v2.0.0 の目的
 
@@ -72,6 +72,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 17. **v2 release readiness audit**: package version を変えずに public API surface、docs、CHANGELOG、package contents、examples、playground、release gate を監査する。完了済み。
 18. **Structured Append parity helper design**: 低レベル `structuredAppend` 利用者向けに `calculateStructuredAppendParity(input)` の API、byte policy、manual segments の扱い、high-level / merge helper との整合性を docs-only で固定する。完了済み。
 19. **Structured Append parity helper implementation**: docs に固定した設計に従い、runtime export、`QRCode` static method、TypeScript declarations、unit tests、packed smoke を追加する。完了済み。
+20. **Structured Append manual segments parity helper design**: `calculateStructuredAppendSegmentsParity(segments, options?)` の API、`generateSegmentsStructuredAppend()` と同じ canonical logical bytes、control segment rejection、TypeScript declaration 案を docs-only で固定する。完了済み。
 
 ## Progress Notes
 
@@ -113,6 +114,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-27: v2.2 Digital Link docs / playground polish completed. Core runtime と public API は変えず、README / API docs / supported AI / conformance / spec scope の導線を整理し、playground に `GS1 Digital Link URI` 入力形式、unknown query preserve / reject、validation / normalization 表示を追加しました。
 - 2026-05-27: v2.3.0 Structured Append parity helper design documented. Runtime behavior、public API、package version は変更せず、低レベル `structuredAppend` 利用者向けの `calculateStructuredAppendParity(input)` proposal、UTF-8 / binary / ArrayBufferView byte policy、manual segments の後回し判断、high-level API / `mergeStructuredAppendParts()` との整合性を [Structured Append Parity Helper v2.3 Design](./structured-append-parity-v2.3.md) に docs-only で固定しました。
 - 2026-05-28: v2.3.0 Structured Append parity helper implemented. `calculateStructuredAppendParity(input)` と `QRCode.calculateStructuredAppendParity(input)` を追加し、UTF-8 string、binary input、ArrayBufferView offset / length、`number[]` validation、high-level generation / merge helper との parity consistency、TypeScript surface、packed package smoke を確認対象にしました。Manual segments 専用 parity helper、package version 変更、npm publish は行っていません。
+- 2026-05-29: v2.3.0 manual segments parity helper design documented. Runtime behavior、public API、package version は変更せず、`calculateStructuredAppendSegmentsParity(segments, options?)` の proposal、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes、numeric / alphanumeric / byte / kanji policy、ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` rejection を [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に固定しました。
 
 ## v2.3.0 Structured Append Polish Scope
 
@@ -131,7 +133,7 @@ Input は string、byte array、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView`
 - low-level `structuredAppend` に渡す parity は、各 chunk ではなく logical message 全体から計算する。
 - `generateStructuredAppend()` が返す `parity` と helper は同じ input で一致する。
 - `mergeStructuredAppendParts()` の payload parity validation と helper は同じ byte policy を使う。
-- Manual segments 専用 parity helper は v2.3.0 初期 scope に含めない。`generateSegmentsStructuredAppend()` の canonical payload byte stream と一致させる必要があるため、後続 design として扱う。
+- Manual segments 専用 parity helper は v2.3.0 初期 scope に含めない。`generateSegmentsStructuredAppend()` の canonical payload byte stream と一致させる必要があるため、[Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に docs-only proposal として固定し、runtime 実装は後続にする。
 
 ### Non-scope
 

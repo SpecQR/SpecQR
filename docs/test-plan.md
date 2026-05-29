@@ -94,7 +94,7 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。low-level header 利用者向けの parity helper は `calculateStructuredAppendParity(input)` で確認する。
 - Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。
 - Structured Append decoded parts merge: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` / unmerged data を返す場合だけ `mergeStructuredAppendParts()` で merge validation する。unit tests と packed package smoke では valid merge、shuffled parts、binary merge、missing symbol、duplicate index、total mismatch、parity mismatch、mixed data type を確認する。examples smoke では scanner adapter pattern、ZXing Java style metadata mapping、string / binary merge、metadata-less decoder の制限を確認する。metadata がない decoder では missing symbol、duplicate symbol、parity mismatch を検証できないため、外部 decoder merge は required CI gate にしない。
-- Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。
+- Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。Manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に docs-only で方針を固定し、runtime API はまだ追加しない。
 - Structured Append decoder metadata: [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に従い、ZXing Java / ZXing-C++ など metadata-returning decoder 候補を optional lane として検討する。jsQR / zbar / Vision は payload readability には使えるが、`mergeStructuredAppendParts()` の release gate には使わない。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
@@ -134,7 +134,18 @@ release gate は次を含めます。
 - TypeScript consumer check が helper の return type を `number` として扱えること。
 - packed package smoke が root export と static method を installed package から確認すること。
 
-Manual segments 専用 parity helper は v2.3.0 初期 scope には含めません。追加する場合は `generateSegmentsStructuredAppend()` の canonical payload byte stream と同じ policy を別設計で固定し、control segments の扱いを negative tests に含めます。
+Manual segments 専用 parity helper は v2.3.0 初期 scope には含めません。次の実装候補として、`calculateStructuredAppendSegmentsParity(segments, options?)` の API shape、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes、ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` segment の rejection policy を [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に固定しています。
+
+実装時の追加 release gate は次を含めます。
+
+- root export と `QRCode.calculateStructuredAppendSegmentsParity()` static method が存在すること。
+- numeric / alphanumeric segment は ASCII bytes の XOR になること。
+- byte string segment は UTF-8 bytes、byte binary segment は raw bytes の XOR になること。
+- `ArrayBufferView` は `byteOffset` / `byteLength` を尊重すること。
+- Kanji segment は `generateSegmentsStructuredAppend()` と同じく original JavaScript string の UTF-8 bytes を使うこと。
+- ECI / FNC1 first / FNC1 second / `structured-append` segment を reject すること。
+- `generateSegmentsStructuredAppend(segments).parity` と helper の result が一致すること。
+- TypeScript consumer check と packed package smoke が helper を確認すること。
 
 ## v2.2.0 GS1 Digital Link Validation / Normalization
 

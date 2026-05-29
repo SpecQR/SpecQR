@@ -148,16 +148,10 @@ v2.3.0 の public helper は、まず raw input 用の `calculateStructuredAppen
 - numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、kanji は original JavaScript string の UTF-8 bytes という policy を public helper に露出すると、API surface が大きくなります。
 - manual segments では ECI / FNC1 / Structured Append control segments の扱いも別途設計が必要です。
 
-後続候補として、次のどちらかを別 docs で設計します。
+後続候補として、manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) で docs-only proposal として固定しています。API 名は次を採用候補にします。
 
 ```ts
 calculateStructuredAppendSegmentsParity(segments: QRSegmentInput[]): number;
-```
-
-または、
-
-```ts
-calculateStructuredAppendParityFromSegments(segments: QRSegmentInput[]): number;
 ```
 
 この後続 helper を入れる場合は、`generateSegmentsStructuredAppend()` の canonical payload byte stream と完全一致すること、control segments を reject すること、TypeScript surface と negative tests を同時に追加することを条件にします。

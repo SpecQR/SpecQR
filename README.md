@@ -433,10 +433,10 @@ console.log(result.diagnostics.warnings);
 
 ## Planning / Capacity
 
-QR を生成する前に、収まる Version や warnings を見積もれます。容量超過は throw せず `{ ok: false, reason: "data-too-long" }` で返ります。
+QR を生成する前に、収まる Version や warnings を見積もれます。容量超過は throw せず `{ ok: false, reason: "data-too-long" }` で返ります。Manual segments は `analyzeSegments()`、Version / ECC / mode 別の容量参照は `getCapacity()` を使います。
 
 ```js
-import { estimate, getCapacity } from "specqr";
+import { analyzeSegments, estimate, getCapacity } from "specqr";
 
 const plan = estimate("https://example.com", {
   errorCorrectionLevel: "Q",
@@ -456,7 +456,16 @@ const capacity = getCapacity({
 });
 
 console.log(capacity.maxBytes);
+
+const segmentPlan = analyzeSegments([
+  { mode: "alphanumeric", data: "ORDER-" },
+  { mode: "numeric", data: "1234567890" }
+]);
+
+console.log(segmentPlan.mode);
 ```
+
+実行できる例は [examples/planning-api.mjs](examples/planning-api.mjs) にあります。Playground でも入力変更時に `estimate()` の結果、capacity usage、warnings、容量超過を確認できます。
 
 ## Node helpers
 

@@ -34,6 +34,21 @@ if (result.ok) {
 }
 ```
 
+固定 Version で容量超過を UI の通常分岐として扱いたい場合も、`estimate()` は `DataTooLongError` を投げずに failure result を返します。
+
+```js
+const tooLong = estimate("a".repeat(100), {
+  version: 1,
+  errorCorrectionLevel: "H",
+  mode: "byte"
+});
+
+if (!tooLong.ok) {
+  console.log(tooLong.selectedVersion); // 1
+  console.log(tooLong.overflowBits);
+}
+```
+
 `analyzeSegments()` は `generateSegments()` と同じ manual segments を対象にし、ECI / GS1 / FNC1 / FNC1 second / low-level Structured Append control segments の bit length と capacity accounting を含めます。High-level Structured Append splitting の estimate は v2.4.0 scope に含めません。
 
 ```js
@@ -62,6 +77,8 @@ const capacity = getCapacity({
 console.log(capacity.capacityBits);
 console.log(capacity.maxBytes);
 ```
+
+Node で実行できる planning example は [../examples/planning-api.mjs](../examples/planning-api.mjs) にあります。Playground では入力変更時に `estimate()` を使い、選択 Version、ECC、`dataBitLength`、`capacityBits`、`remainingBits`、`usageRatio`、warnings、容量超過状態を表示します。
 
 `estimate()` / `analyzeSegments()` の `diagnostics` は planning subset です。`phase: "planning"`、`renderPlanned: false`、`maskEvaluated: false`、`codewordsBuilt: false` を含み、mask penalty、final codewords、rendered output は含めません。Mask / codeword diagnostics が必要な場合は `generate(..., { diagnostics: true })` を使ってください。
 

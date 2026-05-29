@@ -155,6 +155,12 @@ interface QRCapacityInfo {
 
 `getCapacity()` は GS1 AI、Digital Link、Structured Append high-level split の semantic capacity は返しません。これらは separator、URI encoding、control segment ordering、split strategy に依存するため、`estimate()` / `analyzeSegments()` を使います。
 
+## Examples / Playground
+
+実行可能な usage example は [../examples/planning-api.mjs](../examples/planning-api.mjs) にあります。この example は `estimate()`、`analyzeSegments()`、`getCapacity()`、固定 Version の `{ ok: false, reason: "data-too-long" }` result を 1 つの JSON summary として出力します。
+
+Playground は single-symbol generation の前に `estimate()` を実行し、`selectedVersion`、`minVersion`、`maxVersion`、ECC、mode、`dataBitLength`、`capacityBits`、`remainingBits`、`usageRatio`、capacity overflow を表示します。Version / ECC / mode の byte capacity 参照には `QRCode.getCapacity()` を使います。Structured Append mode では、v2.4.0 API の範囲を明確にするため single-symbol estimate として表示し、multi-symbol split planning は後続 API の対象に残します。
+
 ## Result Shape
 
 `estimate()` と `analyzeSegments()` は同じ discriminated union を返します。

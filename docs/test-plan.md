@@ -21,7 +21,7 @@
 - Diagnostics が capacity、mask/version selection reasons、quiet-zone status、contrast、print hints、warnings を出すこと。
 - Node helpers が PNG buffers を返し、PNG file を書き出すこと。
 - Browser helpers が platform support のある環境で Blob/ImageData/Object URL output を返すこと。
-- Examples smoke が Node PNG / GS1 SVG / GS1 Digital Link / Structured Append examples と browser/playground source files を確認すること。
+- Examples smoke が Node PNG / GS1 SVG / GS1 Digital Link / Structured Append examples、Planning API example、browser/playground source files を確認すること。
 - TypeScript consumer check が `specqr` root export、`specqr/node`、`specqr/browser` を compiler で検査し、v2 API と Node/browser helper declarations が consumer import で壊れていないことを確認すること。
 - Nayuki reference comparison が fixed payload / fixed Version / fixed ECC / fixed mask の matrix exact match を確認すること。
 - Root、Node、browser subpath exports が import 可能であること。
@@ -178,7 +178,8 @@ release gate は次を含めます。
 - Non-scope guard: high-level Structured Append splitting estimate、GS1 Digital Link semantic capacity、Micro QR / rMQR、styled modules / logo の API が漏れていないこと。
 - TypeScript consumer check: `QREstimateResult` の discriminated union、`QRCapacityInfo`、warning / diagnostics fields を consumer import で検査すること。
 - Packed package smoke: local packed package から root export と `QRCode` static variants を確認し、`getCapacity()` と overflow result の代表ケースを実行すること。
-- Playground source: planning UI 表示が追加された場合、selected Version / usage ratio / warnings / overflow message が source smoke または browser check で壊れていないこと。
+- Examples smoke: `examples/planning-api.mjs` が `estimate()`、`analyzeSegments()`、`getCapacity()`、固定 Version の overflow result を実行すること。
+- Playground source: planning UI が `#qr-planning` を持ち、`QRCode.estimate()` / `QRCode.getCapacity()` を使って selected Version / usage ratio / warnings / overflow message を表示すること。可能な環境では local playground を起動して表示を確認すること。
 
 ## Decoder Validation
 
@@ -264,7 +265,7 @@ repository には GitHub Actions workflow `.github/workflows/ci.yml` があり�
 npm run examples:smoke
 ```
 
-この check は Node PNG 保存 example、GS1 SVG example、GS1 Digital Link example、Structured Append string / binary SVG・PNG output example、TypeScript usage file、browser helper example、playground source files が実行または読み取り可能であることを確認します。
+この check は Node PNG 保存 example、GS1 SVG example、GS1 Digital Link example、Structured Append string / binary SVG・PNG output example、Planning API example、TypeScript usage file、browser helper example、playground source files が実行または読み取り可能であることを確認します。Playground source check では `#qr-planning`、`QRCode.estimate()`、`QRCode.getCapacity()` の存在も確認します。
 
 Playground は dependency-free な static files として提供し、local server で確認します。
 

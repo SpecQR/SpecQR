@@ -21,6 +21,7 @@ const scale = document.querySelector("#qr-scale");
 const margin = document.querySelector("#qr-margin");
 const preview = document.querySelector("#qr-preview");
 const errorBox = document.querySelector("#qr-error");
+const planning = document.querySelector("#qr-planning");
 const diagnostics = document.querySelector("#qr-diagnostics");
 const warnings = document.querySelector("#qr-warnings");
 const downloadSvg = document.querySelector("#download-svg");
@@ -61,16 +62,20 @@ function render() {
   syncModeControls();
 
   try {
+    let handledError = false;
     if (workflow.value === "structured") {
-      renderStructuredAppend();
+      handledError = renderStructuredAppend();
     } else {
-      renderSingleSymbol();
+      handledError = renderSingleSymbol();
     }
-    errorBox.hidden = true;
-    errorBox.textContent = "";
+    if (!handledError) {
+      errorBox.hidden = true;
+      errorBox.textContent = "";
+    }
   } catch (error) {
     preview.classList.remove("preview--set");
     preview.innerHTML = "";
+    planning.innerHTML = "";
     diagnostics.innerHTML = "";
     warnings.innerHTML = "";
     errorBox.hidden = false;
@@ -89,6 +94,23 @@ function renderSingleSymbol() {
     diagnostics: true,
     gs1: kind.value === "gs1"
   };
+  const plan = QRCode.estimate(data, options);
+  renderPlanning(plan, "Single QR estimate");
+  if (!plan.ok) {
+    preview.classList.remove("preview--set");
+    preview.innerHTML = "";
+    renderDiagnostics([
+      ["Mode", "Single QR"],
+      ["Input kind", getInputKindLabel()],
+      ["Status", "data-too-long"]
+    ]);
+    renderWarnings(plan.warnings);
+    errorBox.hidden = false;
+    errorBox.textContent = `入力が Version ${plan.selectedVersion ?? plan.maxVersion}-${plan.errorCorrectionLevel} の容量を ${plan.overflowBits} bits 超えています。`;
+    disableDownload(downloadSvg);
+    disableDownload(downloadPng);
+    return true;
+  }
   const result = QRCode.generate(data, options);
   const downloadOptions = {
     ...options,
@@ -124,6 +146,7 @@ function renderSingleSymbol() {
   renderDiagnostics(rows);
   renderWarnings(result.diagnostics.warnings);
   updateSingleDownloads(result.svg, data, downloadOptions);
+  return false;
 }
 
 function renderStructuredAppend() {
@@ -136,6 +159,7 @@ function renderStructuredAppend() {
     ...getBaseOptions(),
     maxSymbols: Number(maxSymbols.value)
   };
+  renderPlanning(QRCode.estimate(data, getBaseOptions()), "Single-symbol estimate");
   const diagnosticSet = QRCode.generateStructuredAppend(data, {
     ...options,
     output: "matrix",
@@ -162,6 +186,7 @@ function renderStructuredAppend() {
   renderWarnings(diagnosticSet.diagnostics.warnings);
   disableDownload(downloadSvg);
   disableDownload(downloadPng);
+  return false;
 }
 
 function getInputData() {
@@ -235,13 +260,48 @@ function renderStructuredPreview(diagnosticSet, pngSet) {
 }
 
 function renderDiagnostics(rows) {
-  diagnostics.innerHTML = "";
+  renderDefinitionList(diagnostics, rows);
+}
+
+function renderPlanning(result, scopeLabel) {
+  const rows = [
+    ["Scope", scopeLabel],
+    ["Status", result.ok ? "ok" : "data-too-long"],
+    ["Selected Version", result.selectedVersion ?? "-"],
+    ["Min Version", result.minVersion],
+    ["Max Version", result.maxVersion],
+    ["ECC", result.errorCorrectionLevel],
+    ["Mode", result.mode],
+    ["Data bits", result.dataBitLength],
+    ["Capacity bits", result.capacityBits],
+    ["Remaining", `${result.remainingBits} bits`],
+    ["Usage", formatPercent(result.usageRatio)]
+  ];
+  if (!result.ok) {
+    rows.push(
+      ["Overflow", `${result.overflowBits} bits`],
+      ["Reason", result.reason]
+    );
+  }
+  const referenceVersion = result.selectedVersion ??
+    (version.value === "auto" ? result.maxVersion : Number(version.value));
+  const referenceCapacity = QRCode.getCapacity({
+    version: referenceVersion,
+    errorCorrectionLevel: result.errorCorrectionLevel,
+    mode: "byte"
+  });
+  rows.push(["Byte capacity", `${referenceCapacity.maxBytes} bytes at v${referenceVersion}`]);
+  renderDefinitionList(planning, rows);
+}
+
+function renderDefinitionList(list, rows) {
+  list.innerHTML = "";
   for (const [label, value] of rows) {
     const term = document.createElement("dt");
     const description = document.createElement("dd");
     term.textContent = label;
     description.textContent = String(value);
-    diagnostics.append(term, description);
+    list.append(term, description);
   }
 }
 
@@ -346,6 +406,10 @@ function populateVersionOptions() {
 
 function hexByte(value) {
   return value.toString(16).padStart(2, "0");
+}
+
+function formatPercent(value) {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function escapeHtml(value) {

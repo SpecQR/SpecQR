@@ -122,6 +122,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-30: v2.3.0 release package prepared. `package.json` / `package-lock.json` の version を `2.3.0` に揃え、CHANGELOG、README、API / release docs を Structured Append parity helpers の stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.3.0` tag 作成は最終承認まで行いません。
 - 2026-05-30: v2.4.0 planning / diagnostics API designed. Runtime behavior、public exports、package version は変更せず、`estimate(input, options?)`、`analyzeSegments(segments, options?)`、`getCapacity(options)` の proposal、return shape、warning surface、`generate(..., { diagnostics: true })` との一致範囲、DataTooLong の non-throwing 方針を [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) に固定しました。
 - 2026-05-30: v2.4.0 planning / diagnostics API implemented. `estimate()`、`analyzeSegments()`、`getCapacity()` と `QRCode` static variants を追加し、既存 planner / diagnostics helper を source of truth にした non-rendering planning result、capacity overflow の `{ ok: false }` result、TypeScript surface、packed package smoke を確認対象にしました。Package version、npm publish、GitHub Release は行っていません。
+- 2026-05-30: v2.4.0 planning examples / playground support added. Core runtime と public API は変えず、`examples/planning-api.mjs` と examples smoke に `estimate()` / `analyzeSegments()` / `getCapacity()` / overflow result を追加し、playground に single-symbol planning 表示、capacity usage、warnings、容量超過表示を追加しました。
 
 ## v2.4.0 Planning / Diagnostics API Scope
 

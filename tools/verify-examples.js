@@ -38,6 +38,28 @@ try {
   const digitalLinkSvg = await readFile(digitalLinkSvgPath, "utf8");
   assert.match(digitalLinkSvg, /^<svg /);
 
+  const planningOutput = await runCapture("node", ["examples/planning-api.mjs"]);
+  const planningSummary = JSON.parse(planningOutput);
+  assert.equal(planningSummary.estimate.ok, true);
+  assert.equal(typeof planningSummary.estimate.selectedVersion, "number");
+  assert.equal(planningSummary.estimate.errorCorrectionLevel, "Q");
+  assert.ok(planningSummary.estimate.capacityBits > planningSummary.estimate.dataBitLength);
+  assert.ok(planningSummary.estimate.warningCodes.includes("QUIET_ZONE_TOO_SMALL"));
+  assert.equal(planningSummary.analyzeSegments.ok, true);
+  assert.equal(planningSummary.analyzeSegments.mode, "mixed");
+  assert.equal(planningSummary.capacity.version, 10);
+  assert.equal(planningSummary.capacity.errorCorrectionLevel, "M");
+  assert.equal(planningSummary.capacity.mode, "byte");
+  assert.equal(typeof planningSummary.capacity.maxBytes, "number");
+  assert.deepEqual(planningSummary.tooLong, {
+    ok: false,
+    reason: "data-too-long",
+    selectedVersion: 1,
+    overflowBits: planningSummary.tooLong.overflowBits,
+    errorCode: "DATA_TOO_LONG"
+  });
+  assert.ok(planningSummary.tooLong.overflowBits > 0);
+
   const structuredAppendDir = join(directory, "structured-append");
   await run("node", ["examples/structured-append.mjs", structuredAppendDir]);
   const structuredSummary = JSON.parse(await readFile(join(structuredAppendDir, "summary.json"), "utf8"));
@@ -76,8 +98,11 @@ try {
   assert.match(typeScriptExample, /generateStructuredAppend/);
   assert.match(typeScriptExample, /mergeStructuredAppendParts/);
   await assertReadable("examples/browser-blob-object-url.html");
-  await assertReadable("playground/index.html");
-  await assertReadable("playground/playground.js");
+  const playgroundHtml = await assertReadable("playground/index.html");
+  assert.match(playgroundHtml, /id="qr-planning"/);
+  const playgroundScript = await assertReadable("playground/playground.js");
+  assert.match(playgroundScript, /QRCode\.estimate/);
+  assert.match(playgroundScript, /QRCode\.getCapacity/);
 
   console.log("Example smoke checks passed.");
 } finally {

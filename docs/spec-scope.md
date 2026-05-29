@@ -46,8 +46,8 @@ v2.4.0 では、通常 QR Code Model 2 core の上に planning / diagnostics API
 - Browser canvas drawing
 - Node PNG buffer/file helpers
 - Browser Blob/ImageData/Object URL helpers
-- 実利用向け examples。Node PNG、GS1 QR、GS1 Digital Link、Structured Append SVG/PNG symbol output を含みます。
-- 小さな browser playground。通常 QR / GS1 / GS1 Digital Link URI / Structured Append mode、Digital Link validation / normalization 表示、複数 symbol preview、diagnostics / warnings を確認できます。
+- 実利用向け examples。Node PNG、GS1 QR、GS1 Digital Link、Structured Append SVG/PNG symbol output、Planning API を含みます。
+- 小さな browser playground。通常 QR / GS1 / GS1 Digital Link URI / Structured Append mode、Digital Link validation / normalization 表示、planning estimate、複数 symbol preview、diagnostics / warnings を確認できます。
 - quiet zone、contrast、capacity、mask/version selection、scan risk、print DPI の diagnostics / warnings
 
 ## Compatibility Notes
@@ -104,7 +104,7 @@ v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定しま
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
 - Structured Append: low-level header encoding、string / binary high-level automatic splitting API、manual segments high-level splitting API、raw input 向け public parity helper、manual segments 向け public parity helper、decoded parts 向け `mergeStructuredAppendParts()` は実装済み。manual segments の分割方針は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 helper の前提は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、raw parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に固定済み。QR decoder / scanner integration は未対応。
 - v2 validation expansion: golden / bitstream / matrix / decoder / reference comparison の範囲整理。
-- Planning / diagnostics API: `estimate()`、`analyzeSegments()`、`getCapacity()` は実装済みです。次は playground への表示統合と、必要なら high-level Structured Append planning を別 API として設計する。
+- Planning / diagnostics API: `estimate()`、`analyzeSegments()`、`getCapacity()` と playground の single-symbol planning 表示は実装済みです。必要なら high-level Structured Append planning を別 API として設計する。
 
 通常 QR Code Model 2 以外の symbol family や visual customization は、v2 core には混ぜず、将来の別 module として扱う方針です。
 

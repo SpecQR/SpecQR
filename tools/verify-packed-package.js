@@ -567,6 +567,7 @@ function assertPackContents(packed) {
     "docs/structured-append-parity-v2.3.md",
     "docs/structured-append-segments-parity-v2.3.md",
     "examples/gs1-digital-link.mjs",
+    "examples/planning-api.mjs",
     "examples/structured-append.mjs",
     "examples/structured-append-merge.mjs",
     "playground/index.html",

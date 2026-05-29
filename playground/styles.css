@@ -61,6 +61,10 @@ h3 {
   margin-top: 24px;
 }
 
+.diagnostics h2:not(:first-child) {
+  margin-top: 24px;
+}
+
 label {
   display: grid;
   font-size: 0.86rem;

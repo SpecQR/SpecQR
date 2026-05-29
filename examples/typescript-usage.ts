@@ -2,7 +2,9 @@ import {
   appendGtinCheckDigit,
   createGs1DigitalLink,
   createGs1ElementString,
+  estimate,
   generateStructuredAppend,
+  getCapacity,
   mergeStructuredAppendParts,
   normalizeGs1DigitalLink,
   parseGs1DigitalLink,
@@ -14,6 +16,8 @@ import {
   type GS1DigitalLinkValidationResult,
   type GS1ElementStringParseResult,
   type QRCodeDiagnosticResult,
+  type QRCapacityInfo,
+  type QREstimateResult,
   type QRStructuredAppendResult
 } from "specqr";
 import { writePngFile } from "specqr/node";
@@ -26,6 +30,14 @@ const svg: string = QRCode.generate("https://example.com", {
 const detailed: QRCodeDiagnosticResult = QRCode.generate("https://example.com", {
   diagnostics: true,
   output: "matrix"
+});
+const planned: QREstimateResult = estimate("https://example.com", {
+  errorCorrectionLevel: "Q"
+});
+const capacity: QRCapacityInfo = getCapacity({
+  version: 10,
+  errorCorrectionLevel: "M",
+  mode: "byte"
 });
 
 const gtin = appendGtinCheckDigit("0491234567890");
@@ -63,6 +75,8 @@ console.log(
   svg.length,
   detailed.diagnostics.version,
   gs1Svg.length,
+  planned.ok,
+  capacity.maxBytes,
   parsedGs1.elements.length,
   parsedDigitalLink.elements.length,
   validatedDigitalLink.ok,

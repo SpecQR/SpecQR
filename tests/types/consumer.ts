@@ -5,10 +5,12 @@ import {
   calculateStructuredAppendSegmentsParity,
   calculateStructuredAppendParity,
   createGs1DigitalLink,
+  estimate,
   generate,
   generateSegments,
   generateSegmentsStructuredAppend,
   generateStructuredAppend,
+  getCapacity,
   getGs1AiInfo,
   getSupportedGs1Ais,
   mergeStructuredAppendParts,
@@ -26,7 +28,9 @@ import {
   type GS1ElementStringValidationResult,
   type GS1ValidationError,
   type GS1ValidationResult,
+  type QRCapacityInfo,
   type QRCodeDiagnosticResult,
+  type QREstimateResult,
   type QRMatrix,
   type QRStructuredAppendMergeResult,
   type QRStructuredAppendParityInput,
@@ -54,6 +58,24 @@ function expectType<T>(_value: T): void {}
 const matrix = generate("https://example.com", { output: "matrix" });
 expectType<QRMatrix>(matrix);
 expectType<boolean>(matrix[0][0]);
+
+const estimated = estimate("https://example.com", { errorCorrectionLevel: "Q" });
+expectType<QREstimateResult>(estimated);
+expectType<boolean>(estimated.ok);
+if (estimated.ok) {
+  expectType<number>(estimated.selectedVersion);
+  expectType<number>(estimated.remainingBits);
+  expectType<"planning">(estimated.diagnostics.phase);
+} else {
+  expectType<"data-too-long">(estimated.reason);
+  expectType<"DATA_TOO_LONG">(estimated.error.code);
+}
+expectType<QREstimateResult>(QRCode.estimate("漢字", { mode: "kanji" }));
+expectType<QREstimateResult>(QRCode.analyzeSegments([{ mode: "numeric", data: "12345" }]));
+const capacity = getCapacity({ version: 1, errorCorrectionLevel: "L", mode: "byte" });
+expectType<QRCapacityInfo>(capacity);
+expectType<number | null>(capacity.maxBytes);
+expectType<QRCapacityInfo>(QRCode.getCapacity({ version: 10, errorCorrection: "M", mode: "numeric" }));
 
 const diagnosticResult = QRCode.generate("https://example.com", {
   diagnostics: true,

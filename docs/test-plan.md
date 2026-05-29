@@ -163,7 +163,7 @@ v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Des
 
 ## v2.4.0 Planning / Diagnostics API
 
-v2.4.0 の planning / diagnostics API は [Planning / Diagnostics API v2.4 Design](./planning-diagnostics-v2.4.md) に docs-only で固定しています。実装時は、新しい QR core math を重複実装せず、既存 planner と diagnostics helper を source of truth にします。
+v2.4.0 の planning / diagnostics API は [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) に実装済み contract として固定しています。新しい QR core math を重複実装せず、既存 planner と diagnostics helper を source of truth にします。
 
 release gate は次を含めます。
 
@@ -174,7 +174,7 @@ release gate は次を含めます。
 - Capacity failure: fixed Version と auto range の oversized payload が `DataTooLongError` を throw せず、`{ ok: false, reason: "data-too-long" }`、`overflowBits`、比較可能な `capacityBits` を返すこと。
 - Error behavior: invalid version、invalid mode、invalid GS1、invalid ECI、invalid color、invalid input type は既存 error class を投げること。
 - `getCapacity()`: Version 1 / 9 / 10 / 26 / 27 / 40、ECC L/M/Q/H、numeric / alphanumeric / byte / kanji の `capacityBits`、`characterCountBits`、`payloadBits`、`maxCharacters` / `maxBytes` を固定すること。
-- Warning surface: quiet zone、color contrast、alpha color、capacity near limit、print DPI、scan risk warnings が既存 diagnostics と同じ shape で返ること。Renderer output 依存の `RASTER_SCALE_SMALL` を planning API に入れるかは実装時の option policy に従ってテストすること。
+- Warning surface: quiet zone、color contrast、alpha color、capacity near limit、print DPI、scan risk warnings が既存 diagnostics と同じ shape で返ること。Renderer output 依存の `RASTER_SCALE_SMALL` は planning API では返さないこと。
 - Non-scope guard: high-level Structured Append splitting estimate、GS1 Digital Link semantic capacity、Micro QR / rMQR、styled modules / logo の API が漏れていないこと。
 - TypeScript consumer check: `QREstimateResult` の discriminated union、`QRCapacityInfo`、warning / diagnostics fields を consumer import で検査すること。
 - Packed package smoke: local packed package から root export と `QRCode` static variants を確認し、`getCapacity()` と overflow result の代表ケースを実行すること。

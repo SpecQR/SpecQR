@@ -195,6 +195,110 @@ export interface QRDiagnostics {
   warnings: QRWarning[];
 }
 
+export type QRPlanningMode = "numeric" | "alphanumeric" | "byte" | "kanji" | "mixed";
+export type QRPlanningVersionSelection = "fixed" | "auto-minimum" | "auto-range";
+export type QRPlanningSegment = QRSegmentDiagnostics;
+
+export interface QRPlanningDiagnostics {
+  phase: "planning";
+  renderPlanned: false;
+  maskEvaluated: false;
+  codewordsBuilt: false;
+  version: Version | null;
+  size: number | null;
+  errorCorrectionLevel: ErrorCorrectionLevel;
+  requestedErrorCorrectionLevel: ErrorCorrectionLevel;
+  boostedErrorCorrection: boolean;
+  versionSelection: QRPlanningVersionSelection;
+  versionSelectionReason: string;
+  mode: QRPlanningMode;
+  controlSegments: QRControlSegmentDiagnostics[];
+  eciAssignmentNumber: number | null;
+  fnc1: "first-position" | "second-position" | null;
+  fnc1Second: QRFnc1SecondDiagnostics;
+  structuredAppend: QRStructuredAppendDiagnostics;
+  gs1: boolean;
+  gs1Validation: QRGs1ValidationDiagnostics;
+  segments: QRPlanningSegment[];
+  dataBitLength: number;
+  capacityBits: number;
+  remainingBits: number;
+  capacityUtilization: number;
+  inputBytes: number;
+  quietZone: QRQuietZoneDiagnostics;
+  colors: QRColorDiagnostics;
+  print: QRPrintDiagnostics;
+  warnings: QRWarning[];
+}
+
+export interface QREstimateBase {
+  selectedVersion: Version | null;
+  minVersion: Version;
+  maxVersion: Version;
+  errorCorrectionLevel: ErrorCorrectionLevel;
+  requestedErrorCorrectionLevel: ErrorCorrectionLevel;
+  boostedErrorCorrection: boolean;
+  mode: QRPlanningMode;
+  dataBitLength: number;
+  capacityBits: number;
+  remainingBits: number;
+  usageRatio: number;
+  capacityUtilization: number;
+  inputBytes: number;
+  segments: QRPlanningSegment[];
+  controlSegments: QRControlSegmentDiagnostics[];
+  versionSelection: QRPlanningVersionSelection;
+  versionSelectionReason: string;
+  warnings: QRWarning[];
+  diagnostics: QRPlanningDiagnostics;
+}
+
+export interface QREstimateSuccess extends QREstimateBase {
+  ok: true;
+  selectedVersion: Version;
+  versionSelection: "fixed" | "auto-minimum";
+}
+
+export interface QREstimateFailure extends QREstimateBase {
+  ok: false;
+  reason: "data-too-long";
+  boostedErrorCorrection: false;
+  versionSelection: "fixed" | "auto-range";
+  overflowBits: number;
+  error: {
+    name: "DataTooLongError";
+    code: "DATA_TOO_LONG";
+    message: string;
+  };
+}
+
+export type QREstimateResult = QREstimateSuccess | QREstimateFailure;
+export type QREstimateOptions = QRCodeOptions;
+
+export interface QRGetCapacityOptions {
+  version: Version;
+  errorCorrectionLevel?: ErrorCorrectionLevel;
+  errorCorrection?: ErrorCorrectionLevel;
+  mode?: "numeric" | "alphanumeric" | "byte" | "kanji";
+  controlBits?: number;
+}
+
+export interface QRCapacityInfo {
+  version: Version;
+  errorCorrectionLevel: ErrorCorrectionLevel;
+  size: number;
+  dataCodewords: number;
+  totalCodewords: number;
+  capacityBits: number;
+  mode: null | "numeric" | "alphanumeric" | "byte" | "kanji";
+  characterCountBits: number | null;
+  modeIndicatorBits: 4 | null;
+  controlBits: number;
+  payloadBits: number | null;
+  maxCharacters: number | null;
+  maxBytes: number | null;
+}
+
 export interface QRCodeDiagnosticResult {
   matrix: QRMatrix;
   svg: string;
@@ -363,6 +467,10 @@ export function generate(input: QRInput, options?: QRCodeOptions & { diagnostics
 export function generate(input: QRInput, options?: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
 export function generate(input: QRInput, options?: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
 export function generate(input: QRInput, options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
+
+export function estimate(input: QRInput, options?: QREstimateOptions): QREstimateResult;
+export function analyzeSegments(segments: QRSegmentInput[], options?: QREstimateOptions): QREstimateResult;
+export function getCapacity(options: QRGetCapacityOptions): QRCapacityInfo;
 
 export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { diagnostics: true }): QRStructuredAppendResult<QRCodeDiagnosticResult>;
 export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendResult<QRMatrix>;
@@ -624,6 +732,9 @@ export class QRCode {
   static generate(input: QRInput, options?: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
   static generate(input: QRInput, options?: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
   static generate(input: QRInput, options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
+  static estimate(input: QRInput, options?: QREstimateOptions): QREstimateResult;
+  static analyzeSegments(segments: QRSegmentInput[], options?: QREstimateOptions): QREstimateResult;
+  static getCapacity(options: QRGetCapacityOptions): QRCapacityInfo;
   static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { diagnostics: true }): QRStructuredAppendResult<QRCodeDiagnosticResult>;
   static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendResult<QRMatrix>;
   static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendResult<Uint8Array>;

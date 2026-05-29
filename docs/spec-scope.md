@@ -10,7 +10,7 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 
 v2.1 系は GS1 validation release として、supported AI catalog introspection、non-throwing validation result、GS1 detail error code、GS1 QR Code / GS1 Digital Link の誤用防止を扱います。`getSupportedGs1Ais()`、`getGs1AiInfo(ai)`、`validateGs1Elements()`、`validateGs1ElementString()` は実装済みです。今後の catalog expansion 方針は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に固定しています。v2.2.0 では Digital Link 専用 `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` を追加しました。詳細は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に固定しています。
 
-v2.4.0 では、通常 QR Code Model 2 core の上に planning / diagnostics API を追加する設計を docs-only で固定しています。`estimate()`、`analyzeSegments()`、`getCapacity()` はまだ実装済み API ではありません。生成前の Version / ECC / mode / capacity / warnings の見積もり、既存 diagnostics との一致範囲、non-throwing capacity overflow 方針は [Planning / Diagnostics API v2.4 Design](./planning-diagnostics-v2.4.md) にまとめています。
+v2.4.0 では、通常 QR Code Model 2 core の上に planning / diagnostics API を追加しました。`estimate()`、`analyzeSegments()`、`getCapacity()` は root export と `QRCode` static method の両方で利用できます。生成前の Version / ECC / mode / capacity / warnings の見積もり、既存 diagnostics との一致範囲、non-throwing capacity overflow 方針は [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) にまとめています。
 
 ## 実装済み範囲
 
@@ -104,7 +104,7 @@ v2 系の詳細な方針は [SpecQR v2 Roadmap](./v2-roadmap.md) に固定しま
 - FNC1 second position: application indicator validation、encoding、diagnostics、golden fixtures は実装済み。今後は decoder 表示差や ECI 併用方針の再評価を行う。
 - Structured Append: low-level header encoding、string / binary high-level automatic splitting API、manual segments high-level splitting API、raw input 向け public parity helper、manual segments 向け public parity helper、decoded parts 向け `mergeStructuredAppendParts()` は実装済み。manual segments の分割方針は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 helper の前提は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、raw parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に固定済み。QR decoder / scanner integration は未対応。
 - v2 validation expansion: golden / bitstream / matrix / decoder / reference comparison の範囲整理。
-- Planning / diagnostics API: `estimate()`、`analyzeSegments()`、`getCapacity()` の docs-only design は完了済みです。次は既存 planner を source of truth にして runtime API、TypeScript declarations、packed package smoke、playground 表示を実装する。
+- Planning / diagnostics API: `estimate()`、`analyzeSegments()`、`getCapacity()` は実装済みです。次は playground への表示統合と、必要なら high-level Structured Append planning を別 API として設計する。
 
 通常 QR Code Model 2 以外の symbol family や visual customization は、v2 core には混ぜず、将来の別 module として扱う方針です。
 

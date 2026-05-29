@@ -91,6 +91,90 @@ export function createDiagnostics({
   };
 }
 
+export function createPlanningDiagnostics({
+  plan,
+  options,
+  inputBytes,
+  capacityBits,
+  getSize,
+  getDiagnosticMode,
+  getControlSegmentDiagnostics,
+  getFirstEciAssignmentNumber,
+  getFirstFnc1Mode,
+  getFirstFnc1SecondApplicationIndicator,
+  getFirstFnc1SecondApplicationIndicatorCodeword,
+  getFirstStructuredAppend,
+  getFirstStructuredAppendEncodedValues,
+  gs1Validation,
+  getSegmentDiagnostics
+}) {
+  const remainingBits = capacityBits - plan.dataBitLength;
+  const contrast = getColorContrast(options);
+  const print = getPrintDiagnostics(plan, options);
+  const fnc1 = getFirstFnc1Mode(plan.segments);
+  const gs1 = fnc1 === "first-position";
+  const fnc1SecondApplicationIndicator = getFirstFnc1SecondApplicationIndicator(plan.segments);
+  const structuredAppend = getFirstStructuredAppend(plan.segments);
+  const structuredAppendEncoded = getFirstStructuredAppendEncodedValues(plan.segments);
+  const version = plan.versionSelection === "auto-range" ? null : plan.version;
+  const warnings = createWarnings({
+    options,
+    remainingBits,
+    capacityBits,
+    contrast,
+    print,
+    includeRasterScale: false
+  });
+
+  return {
+    phase: "planning",
+    renderPlanned: false,
+    maskEvaluated: false,
+    codewordsBuilt: false,
+    version,
+    size: version === null ? null : getSize(version),
+    errorCorrectionLevel: plan.errorCorrectionLevel,
+    requestedErrorCorrectionLevel: plan.requestedErrorCorrectionLevel,
+    boostedErrorCorrection: plan.boostedErrorCorrection,
+    versionSelection: plan.versionSelection,
+    versionSelectionReason: getVersionSelectionReason(plan, options),
+    mode: getDiagnosticMode(plan.segments),
+    controlSegments: getControlSegmentDiagnostics(plan.segments),
+    eciAssignmentNumber: getFirstEciAssignmentNumber(plan.segments),
+    fnc1,
+    fnc1Second: {
+      enabled: fnc1 === "second-position",
+      applicationIndicator: fnc1SecondApplicationIndicator,
+      applicationIndicatorCodeword: getFirstFnc1SecondApplicationIndicatorCodeword(plan.segments)
+    },
+    structuredAppend: {
+      enabled: structuredAppend !== null,
+      index: structuredAppend?.index ?? null,
+      total: structuredAppend?.total ?? null,
+      parity: structuredAppend?.parity ?? null,
+      sequenceIndex: structuredAppendEncoded?.sequenceIndex ?? null,
+      sequenceTotal: structuredAppendEncoded?.sequenceTotal ?? null,
+      sequenceIndicator: structuredAppendEncoded?.sequenceIndicator ?? null
+    },
+    gs1,
+    gs1Validation: gs1Validation ?? createDefaultGs1ValidationDiagnostics(gs1),
+    segments: plan.segments.map(getSegmentDiagnostics),
+    dataBitLength: plan.dataBitLength,
+    capacityBits,
+    remainingBits,
+    capacityUtilization: plan.dataBitLength / capacityBits,
+    inputBytes,
+    quietZone: {
+      modules: options.margin,
+      recommendedModules: 4,
+      isSufficient: options.margin >= 4
+    },
+    colors: contrast,
+    print,
+    warnings
+  };
+}
+
 function createDefaultGs1ValidationDiagnostics(enabled) {
   return {
     enabled,
@@ -103,6 +187,9 @@ function createDefaultGs1ValidationDiagnostics(enabled) {
 function getVersionSelectionReason(plan, options) {
   if (plan.versionSelection === "fixed") {
     return `Version ${plan.version} was requested explicitly.`;
+  }
+  if (plan.versionSelection === "auto-range") {
+    return `No version in ${options.minVersion}..${options.maxVersion} fits the encoded data at error correction ${options.errorCorrectionLevel}; capacity is reported for version ${plan.version}.`;
   }
   return `Version ${plan.version} is the smallest version in ${options.minVersion}..${options.maxVersion} that fits the encoded data at error correction ${options.errorCorrectionLevel}.`;
 }
@@ -151,7 +238,7 @@ function getPrintDiagnostics(plan, options) {
   };
 }
 
-function createWarnings({ options, remainingBits, capacityBits, contrast, print }) {
+function createWarnings({ options, remainingBits, capacityBits, contrast, print, includeRasterScale = true }) {
   const warnings = [];
 
   if (options.margin < 4) {
@@ -220,7 +307,7 @@ function createWarnings({ options, remainingBits, capacityBits, contrast, print 
     });
   }
 
-  if (["png", "png-data-url"].includes(options.output) && options.scale < 3) {
+  if (includeRasterScale && ["png", "png-data-url"].includes(options.output) && options.scale < 3) {
     warnings.push({
       code: "RASTER_SCALE_SMALL",
       severity: "info",

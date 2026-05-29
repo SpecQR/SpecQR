@@ -7,6 +7,12 @@ test("package root, node, and browser subpath exports are importable", async () 
   const browser = await import("specqr/browser");
 
   assert.equal(typeof root.QRCode.generate, "function");
+  assert.equal(typeof root.estimate, "function");
+  assert.equal(typeof root.QRCode.estimate, "function");
+  assert.equal(typeof root.analyzeSegments, "function");
+  assert.equal(typeof root.QRCode.analyzeSegments, "function");
+  assert.equal(typeof root.getCapacity, "function");
+  assert.equal(typeof root.QRCode.getCapacity, "function");
   assert.equal(typeof root.generateStructuredAppend, "function");
   assert.equal(typeof root.QRCode.generateStructuredAppend, "function");
   assert.equal(typeof root.generateSegmentsStructuredAppend, "function");

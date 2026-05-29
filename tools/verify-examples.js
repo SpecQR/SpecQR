@@ -71,6 +71,8 @@ try {
   assert.match(typeScriptExample, /parseGs1DigitalLink/);
   assert.match(typeScriptExample, /validateGs1DigitalLink/);
   assert.match(typeScriptExample, /normalizeGs1DigitalLink/);
+  assert.match(typeScriptExample, /estimate/);
+  assert.match(typeScriptExample, /getCapacity/);
   assert.match(typeScriptExample, /generateStructuredAppend/);
   assert.match(typeScriptExample, /mergeStructuredAppendParts/);
   await assertReadable("examples/browser-blob-object-url.html");

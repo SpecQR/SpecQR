@@ -47,6 +47,12 @@ import * as specqr from "specqr";
 
 assert.equal(typeof specqr.parseGs1ElementString, "function");
 assert.equal(typeof specqr.QRCode.parseGs1ElementString, "function");
+assert.equal(typeof specqr.estimate, "function");
+assert.equal(typeof specqr.QRCode.estimate, "function");
+assert.equal(typeof specqr.analyzeSegments, "function");
+assert.equal(typeof specqr.QRCode.analyzeSegments, "function");
+assert.equal(typeof specqr.getCapacity, "function");
+assert.equal(typeof specqr.QRCode.getCapacity, "function");
 assert.equal(typeof specqr.generateStructuredAppend, "function");
 assert.equal(typeof specqr.QRCode.generateStructuredAppend, "function");
 assert.equal(typeof specqr.generateSegmentsStructuredAppend, "function");
@@ -113,6 +119,46 @@ assert.equal(
 );
 const packedNormalizedDigitalLink =
   "https://example.com/01/04912345678904/10/LOT%2FA?17=251231&foo=bar";
+const packedEstimate = specqr.estimate("https://example.com", {
+  errorCorrectionLevel: "Q",
+  margin: 1
+});
+assert.equal(packedEstimate.ok, true);
+assert.equal(packedEstimate.diagnostics.phase, "planning");
+assert.equal(packedEstimate.diagnostics.renderPlanned, false);
+assert.equal(packedEstimate.warnings.some((warning) => warning.code === "QUIET_ZONE_TOO_SMALL"), true);
+const packedAnalyzeSegments = specqr.QRCode.analyzeSegments([
+  { mode: "numeric", data: "12345" },
+  { mode: "byte", data: "abc" }
+], {
+  version: 1,
+  errorCorrectionLevel: "L"
+});
+assert.equal(packedAnalyzeSegments.ok, true);
+assert.equal(packedAnalyzeSegments.mode, "mixed");
+const packedTooLong = specqr.estimate("a".repeat(100), {
+  version: 1,
+  errorCorrectionLevel: "H",
+  mode: "byte"
+});
+assert.equal(packedTooLong.ok, false);
+assert.equal(packedTooLong.reason, "data-too-long");
+assert.equal(packedTooLong.error.code, "DATA_TOO_LONG");
+assert.deepEqual(specqr.getCapacity({ version: 1, errorCorrectionLevel: "L", mode: "byte" }), {
+  version: 1,
+  errorCorrectionLevel: "L",
+  size: 21,
+  dataCodewords: 19,
+  totalCodewords: 26,
+  capacityBits: 152,
+  mode: "byte",
+  characterCountBits: 8,
+  modeIndicatorBits: 4,
+  controlBits: 0,
+  payloadBits: 140,
+  maxCharacters: null,
+  maxBytes: 17
+});
 assert.equal(specqr.QRCode.normalizeGs1DigitalLink(packedNormalizedDigitalLink), packedNormalizedDigitalLink);
 assert.equal(specqr.normalizeGs1DigitalLink(specqr.normalizeGs1DigitalLink(packedNormalizedDigitalLink)), packedNormalizedDigitalLink);
 assert.throws(
@@ -403,6 +449,12 @@ async function assertTypeDeclarations(directory) {
     declarations,
     /export function parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /export interface QRPlanningDiagnostics\s*{/);
+  assert.match(declarations, /export type QREstimateResult = QREstimateSuccess \| QREstimateFailure;/);
+  assert.match(declarations, /export interface QRCapacityInfo\s*{/);
+  assert.match(declarations, /export function estimate\(input: QRInput, options\?: QREstimateOptions\): QREstimateResult;/);
+  assert.match(declarations, /export function analyzeSegments\(segments: QRSegmentInput\[], options\?: QREstimateOptions\): QREstimateResult;/);
+  assert.match(declarations, /export function getCapacity\(options: QRGetCapacityOptions\): QRCapacityInfo;/);
   assert.match(declarations, /export interface GS1AiInfo\s*{/);
   assert.match(declarations, /export interface GS1ValidationError\s*{/);
   assert.match(declarations, /export type GS1ValidationResult = GS1ValidationSuccess \| GS1ValidationFailure;/);
@@ -472,6 +524,9 @@ async function assertTypeDeclarations(directory) {
     declarations,
     /static parseGs1ElementString\(input: string\): GS1ElementStringParseResult;/
   );
+  assert.match(declarations, /static estimate\(input: QRInput, options\?: QREstimateOptions\): QREstimateResult;/);
+  assert.match(declarations, /static analyzeSegments\(segments: QRSegmentInput\[], options\?: QREstimateOptions\): QREstimateResult;/);
+  assert.match(declarations, /static getCapacity\(options: QRGetCapacityOptions\): QRCapacityInfo;/);
   assert.match(declarations, /static getSupportedGs1Ais\(\): GS1AiInfo\[];/);
   assert.match(declarations, /static validateGs1ElementString\(input: string, options\?: GS1ValidationOptions\): GS1ElementStringValidationResult;/);
   assert.match(declarations, /static generateStructuredAppend\(input: QRInput/);

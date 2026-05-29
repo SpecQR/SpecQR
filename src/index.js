@@ -28,8 +28,15 @@ import {
   getStructuredAppendDiagnostics,
   isControlSegment
 } from "./encoding/control-segments.js";
-import { ERROR_CORRECTION_LEVEL_ORDER, getDataCodewordCount, getSize } from "./core/tables.js";
-import { createDiagnostics } from "./diagnostics.js";
+import {
+  ERROR_CORRECTION_LEVEL_ORDER,
+  ERROR_CORRECTION_LEVELS,
+  getCharacterCountBitLength,
+  getDataCodewordCount,
+  getRawCodewordCount,
+  getSize
+} from "./core/tables.js";
+import { createDiagnostics, createPlanningDiagnostics } from "./diagnostics.js";
 import {
   appendGtinCheckDigit,
   appendSsccCheckDigit,
@@ -55,9 +62,17 @@ import {
   getGs1ElementStringDiagnostics,
   parseGs1ElementString as parseRawGs1ElementString
 } from "./gs1/validator.js";
-import { DataTooLongError, InvalidGs1Error, InvalidInputError, InvalidModeError, InvalidOutputError } from "./errors.js";
+import {
+  DataTooLongError,
+  InvalidGs1Error,
+  InvalidInputError,
+  InvalidModeError,
+  InvalidOutputError,
+  InvalidVersionError
+} from "./errors.js";
 import { normalizeOptions } from "./options.js";
 import { renderCanvas } from "./render/canvas.js";
+import { parseRgbaColor } from "./render/color.js";
 import { renderPng, renderPngDataUrl } from "./render/png.js";
 import { renderSvg, renderSvgDataUrl } from "./render/svg.js";
 import {
@@ -106,6 +121,18 @@ export {
 export class QRCode {
   static generate(input, options = {}) {
     return generate(input, options);
+  }
+
+  static estimate(input, options = {}) {
+    return estimate(input, options);
+  }
+
+  static analyzeSegments(segments, options = {}) {
+    return analyzeSegments(segments, options);
+  }
+
+  static getCapacity(options) {
+    return getCapacity(options);
   }
 
   static generateStructuredAppend(input, options = {}) {
@@ -219,6 +246,17 @@ export function generate(input, options = {}) {
   return renderResult(plan, normalized, getInputByteCount(input));
 }
 
+export function estimate(input, options = {}) {
+  const normalized = normalizeOptions(options);
+  validatePlanningColors(normalized);
+  return estimateWithDataTooLongResult(
+    () => selectPlanForInput(input, normalized),
+    () => selectPlanForInput(input, normalized, { allowOverflow: true }),
+    normalized,
+    getInputByteCount(input)
+  );
+}
+
 export function generateStructuredAppend(input, options = {}) {
   const normalized = normalizeStructuredAppendGenerateOptions(options);
   const inputInfo = createStructuredAppendInputInfo(input);
@@ -325,6 +363,77 @@ export function generateSegments(segments, options = {}) {
   return renderResult(plan, normalized, getSegmentsInputByteCount(normalizedSegments));
 }
 
+export function analyzeSegments(segments, options = {}) {
+  const normalized = normalizeOptions(options);
+  validatePlanningColors(normalized);
+  const normalizedSegments = normalizeManualSegments(segments);
+  return estimateWithDataTooLongResult(
+    () => selectPlanForManualSegments(normalizedSegments, normalized),
+    () => selectPlanForManualSegments(normalizedSegments, normalized, { allowOverflow: true }),
+    normalized,
+    getSegmentsInputByteCount(normalizedSegments)
+  );
+}
+
+export function getCapacity(options = {}) {
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    throw new InvalidInputError("getCapacity options must be an object");
+  }
+
+  const { version } = options;
+  if (!Number.isInteger(version) || version < 1 || version > 40) {
+    throw new InvalidVersionError(`version must be an integer from 1 to 40; got ${version}`);
+  }
+
+  const errorCorrectionLevel = normalizeCapacityErrorCorrection(options);
+  const mode = Object.hasOwn(options, "mode") ? options.mode : null;
+  if (mode !== null && !["numeric", "alphanumeric", "byte", "kanji"].includes(mode)) {
+    throw new InvalidModeError(`mode must be "numeric", "alphanumeric", "byte", or "kanji"; got ${mode}`);
+  }
+
+  const controlBits = Object.hasOwn(options, "controlBits") ? options.controlBits : 0;
+  if (!Number.isInteger(controlBits) || controlBits < 0) {
+    throw new InvalidInputError(`controlBits must be a non-negative integer; got ${controlBits}`);
+  }
+
+  const dataCodewords = getDataCodewordCount(version, errorCorrectionLevel);
+  const totalCodewords = getRawCodewordCount(version);
+  const capacityBits = dataCodewords * 8;
+  const base = {
+    version,
+    errorCorrectionLevel,
+    size: getSize(version),
+    dataCodewords,
+    totalCodewords,
+    capacityBits,
+    mode,
+    characterCountBits: null,
+    modeIndicatorBits: null,
+    controlBits,
+    payloadBits: null,
+    maxCharacters: null,
+    maxBytes: null
+  };
+
+  if (mode === null) {
+    return base;
+  }
+
+  const characterCountBits = getCharacterCountBitLength(version, mode);
+  const modeIndicatorBits = 4;
+  const payloadBits = Math.max(0, capacityBits - controlBits - modeIndicatorBits - characterCountBits);
+  const maxPayload = getMaxPayloadCount(mode, payloadBits);
+
+  return {
+    ...base,
+    characterCountBits,
+    modeIndicatorBits,
+    payloadBits,
+    maxCharacters: mode === "byte" ? null : maxPayload,
+    maxBytes: mode === "byte" ? maxPayload : null
+  };
+}
+
 export function drawToCanvas(target, input, options = {}) {
   const normalized = normalizeOptions({
     ...options,
@@ -346,6 +455,123 @@ export function parseGs1ElementString(input) {
     elements,
     hasSeparators: input.includes(GS1_FNC1_SEPARATOR)
   };
+}
+
+function estimateWithDataTooLongResult(selectPlan, selectOverflowPlan, normalized, inputBytes) {
+  try {
+    return createEstimateResult(selectPlan(), normalized, inputBytes, null);
+  } catch (error) {
+    if (!(error instanceof DataTooLongError)) {
+      throw error;
+    }
+    return createEstimateResult(selectOverflowPlan(), normalized, inputBytes, error);
+  }
+}
+
+function validatePlanningColors(options) {
+  if (!["png", "png-data-url"].includes(options.output)) {
+    return;
+  }
+  parseRgbaColor(options.foreground, "foreground", true);
+  parseRgbaColor(options.background, "background", true);
+}
+
+function createEstimateResult(plan, normalized, inputBytes, dataTooLongError) {
+  const capacityBits = getDataCodewordCount(plan.version, plan.errorCorrectionLevel) * 8;
+  const remainingBits = capacityBits - plan.dataBitLength;
+  const diagnostics = createPlanningDiagnostics({
+    plan,
+    options: normalized,
+    inputBytes,
+    capacityBits,
+    getSize,
+    getDiagnosticMode,
+    getControlSegmentDiagnostics,
+    getFirstEciAssignmentNumber,
+    getFirstFnc1Mode,
+    getFirstFnc1SecondApplicationIndicator,
+    getFirstFnc1SecondApplicationIndicatorCodeword,
+    getFirstStructuredAppend,
+    getFirstStructuredAppendEncodedValues,
+    gs1Validation: plan.gs1Validation,
+    getSegmentDiagnostics: (segment) => getSegmentDiagnostics(segment, plan.version)
+  });
+  const selectedVersion = plan.versionSelection === "auto-range" ? null : plan.version;
+  const base = {
+    selectedVersion,
+    minVersion: normalized.minVersion,
+    maxVersion: normalized.maxVersion,
+    errorCorrectionLevel: plan.errorCorrectionLevel,
+    requestedErrorCorrectionLevel: plan.requestedErrorCorrectionLevel,
+    boostedErrorCorrection: plan.boostedErrorCorrection,
+    mode: diagnostics.mode,
+    dataBitLength: plan.dataBitLength,
+    capacityBits,
+    remainingBits,
+    usageRatio: plan.dataBitLength / capacityBits,
+    capacityUtilization: plan.dataBitLength / capacityBits,
+    inputBytes,
+    segments: diagnostics.segments,
+    controlSegments: diagnostics.controlSegments,
+    versionSelection: plan.versionSelection,
+    versionSelectionReason: diagnostics.versionSelectionReason,
+    warnings: diagnostics.warnings,
+    diagnostics
+  };
+
+  if (dataTooLongError === null) {
+    return {
+      ok: true,
+      ...base
+    };
+  }
+
+  return {
+    ok: false,
+    reason: "data-too-long",
+    ...base,
+    boostedErrorCorrection: false,
+    overflowBits: Math.max(0, -remainingBits),
+    error: {
+      name: dataTooLongError.name,
+      code: dataTooLongError.code,
+      message: dataTooLongError.message
+    }
+  };
+}
+
+function normalizeCapacityErrorCorrection(options) {
+  const hasLevel = Object.hasOwn(options, "errorCorrectionLevel");
+  const hasAlias = Object.hasOwn(options, "errorCorrection");
+  const level = hasLevel ? options.errorCorrectionLevel : hasAlias ? options.errorCorrection : "M";
+
+  if (hasLevel && hasAlias && options.errorCorrectionLevel !== options.errorCorrection) {
+    throw new InvalidInputError("errorCorrectionLevel and errorCorrection must match when both are provided");
+  }
+  if (!ERROR_CORRECTION_LEVELS[level]) {
+    throw new InvalidInputError(`errorCorrectionLevel must be one of L, M, Q, H; got ${level}`);
+  }
+  return level;
+}
+
+function getMaxPayloadCount(mode, payloadBits) {
+  switch (mode) {
+    case "numeric": {
+      const groups = Math.floor(payloadBits / 10);
+      const remaining = payloadBits - groups * 10;
+      return groups * 3 + (remaining >= 7 ? 2 : remaining >= 4 ? 1 : 0);
+    }
+    case "alphanumeric": {
+      const pairs = Math.floor(payloadBits / 11);
+      return pairs * 2 + (payloadBits - pairs * 11 >= 6 ? 1 : 0);
+    }
+    case "byte":
+      return Math.floor(payloadBits / 8);
+    case "kanji":
+      return Math.floor(payloadBits / 13);
+    default:
+      throw new InvalidModeError(`Unsupported mode: ${mode}`);
+  }
 }
 
 function renderResult(plan, normalized, inputBytes) {
@@ -404,7 +630,7 @@ function renderResult(plan, normalized, inputBytes) {
   }
 }
 
-function selectPlanForInput(input, options) {
+function selectPlanForInput(input, options, selectOptions = {}) {
   const gs1Validation = getGs1ValidationForInput(input, options);
   const plan = selectPlan(
     (version) => prependStructuredAppendSegment(
@@ -417,12 +643,13 @@ function selectPlanForInput(input, options) {
       ),
       options.structuredAppend
     ),
-    options
+    options,
+    selectOptions
   );
   return gs1Validation ? { ...plan, gs1Validation } : plan;
 }
 
-function selectPlanForManualSegments(segments, options) {
+function selectPlanForManualSegments(segments, options, selectOptions = {}) {
   return selectPlan(
     () => prependStructuredAppendSegment(
       prependFnc1SecondSegment(
@@ -431,7 +658,8 @@ function selectPlanForManualSegments(segments, options) {
       ),
       options.structuredAppend
     ),
-    options
+    options,
+    selectOptions
   );
 }
 
@@ -1178,22 +1406,49 @@ function getGs1ValidationForInput(input, options) {
   return getGs1ElementStringDiagnostics(input);
 }
 
-function selectPlan(createSegmentsForVersion, options) {
+function selectPlan(createSegmentsForVersion, options, { allowOverflow = false } = {}) {
   if (options.version !== "auto") {
+    if (allowOverflow) {
+      const plan = createPlan(createSegmentsForVersion, options.version, options);
+      if (plan.dataBitLength > getDataCodewordCount(options.version, options.errorCorrectionLevel) * 8) {
+        return {
+          ...plan,
+          versionSelection: "fixed",
+          fits: false
+        };
+      }
+      return withBoostedErrorCorrection({
+        ...plan,
+        versionSelection: "fixed",
+        fits: true
+      }, options);
+    }
     return withBoostedErrorCorrection({
       ...ensureFits(createSegmentsForVersion, options.version, options),
-      versionSelection: "fixed"
+      versionSelection: "fixed",
+      fits: true
     }, options);
   }
 
+  let overflowPlan = null;
   for (let version = options.minVersion; version <= options.maxVersion; version += 1) {
     const plan = createPlan(createSegmentsForVersion, version, options);
     if (plan.dataBitLength <= getDataCodewordCount(version, options.errorCorrectionLevel) * 8) {
       return withBoostedErrorCorrection({
         ...plan,
-        versionSelection: "auto-minimum"
+        versionSelection: "auto-minimum",
+        fits: true
       }, options);
     }
+    overflowPlan = plan;
+  }
+
+  if (allowOverflow) {
+    return {
+      ...overflowPlan,
+      versionSelection: "auto-range",
+      fits: false
+    };
   }
 
   throw new DataTooLongError(

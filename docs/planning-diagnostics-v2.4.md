@@ -1,6 +1,6 @@
-# Planning / Diagnostics API v2.4 Design
+# Planning / Diagnostics API v2.4
 
-この文書は SpecQR v2.4.0 で予定する planning / diagnostics API の docs-only design です。現時点では runtime behavior、public exports、TypeScript declarations、package version は変更しません。
+この文書は SpecQR v2.4.0 の planning / diagnostics API contract です。`estimate()`、`analyzeSegments()`、`getCapacity()` は root named exports と `QRCode` static methods として実装済みです。package version bump / npm publish / GitHub Release / Pages deploy はこの変更には含めません。
 
 v2.4.0 は QR generation core の新機能 release ではなく、生成前に「どの Version / ECC / mode に収まるか」「どの警告を UI に出すべきか」を安全に見積もる API surface を固定する release として扱います。
 
@@ -14,16 +14,15 @@ v2.4.0 は QR generation core の新機能 release ではなく、生成前に�
 
 ## Non-Goals
 
-- v2.4.0 docs-only phase で runtime API を実装しない。
 - QR core algorithm、capacity table、mask selection、renderer output を変更しない。
 - `generate()` / `generateSegments()` の return shape を変更しない。
 - Micro QR / rMQR / logo overlay / styled modules を扱わない。
 - GS1 Digital Link full canonicalization、full GS1 AI catalog、decoder / scanner integration を扱わない。
-- npm publish、GitHub Release、Pages deploy、package version bump はこの docs-only design の対象外。
+- npm publish、GitHub Release、Pages deploy、package version bump はこの implementation step の対象外。
 
-## Proposed Public API
+## Public API
 
-v2.4.0 実装時の public API は次を第一候補にします。
+v2.4.0 の public API は次です。
 
 ```ts
 estimate(input, options?): QREstimateResult;
@@ -89,7 +88,7 @@ interface QREstimateOptions {
 }
 ```
 
-`output` と `maskPattern` は planning result に影響しません。`output` は renderer choice なので無視または reject のどちらかを実装時に決めますが、第一候補は「指定されても result に影響しない ignored option」として warnings には入れない方針です。`maskPattern` は matrix construction 後でしか penalty を評価できないため、`estimate()` は mask diagnostics を返しません。
+`output` と `maskPattern` は planning result に影響しません。既存 option validation と API consistency のため指定値は `normalizeOptions()` で検証しますが、`estimate()` は render を行わないため `RASTER_SCALE_SMALL` warning や mask diagnostics を返しません。`maskPattern` は matrix construction 後でしか penalty を評価できないため、mask diagnostics は `generate(..., { diagnostics: true })` に残します。
 
 ### GS1 / ECI / Digital Link
 
@@ -217,7 +216,7 @@ interface QREstimateFailure {
 }
 ```
 
-`usageRatio` と `capacityUtilization` は同じ値です。`capacityUtilization` は既存 diagnostics との互換名、`usageRatio` は planning UI で読みやすい名前です。v2.4.0 実装時には両方を返し、将来の deprecation は行いません。
+`usageRatio` と `capacityUtilization` は同じ値です。`capacityUtilization` は既存 diagnostics との互換名、`usageRatio` は planning UI で読みやすい名前です。v2.4.0 では両方を返し、将来の deprecation は行いません。
 
 `selectedVersion` は成功時に実際に使う Version です。Failure の場合、fixed version overflow ではその fixed version、auto range overflow では `null` を返します。`capacityBits` は failure 時も比較に使えるよう、fixed version ではその Version の capacity、auto range overflow では `maxVersion` の capacity を返します。
 
@@ -366,7 +365,7 @@ Planning API は payload capacity check を UI / batch import で扱いやすく
 
 ## Playground Plan
 
-Playground では、実装後に次の表示を追加する方針です。
+Playground では、後続 phase で次の表示を追加する方針です。
 
 - 入力変更時に `estimate()` を軽量に実行し、生成ボタン前に `selectedVersion`、ECC、mode、capacity usage を表示する。
 - Version / ECC / mode の候補 UI で `getCapacity()` を使い、最大 bytes / characters を補助表示する。
@@ -376,7 +375,7 @@ Playground では、実装後に次の表示を追加する方針です。
 
 ## Test Plan For Implementation
 
-v2.4.0 実装時は、少なくとも次を release gate に含めます。
+v2.4.0 implementation は、少なくとも次を release gate に含めます。
 
 - Root export と `QRCode` static method が存在すること。
 - `estimate()` が string / binary input で `generate(..., { diagnostics: true })` と planning fields を一致させること。
@@ -408,6 +407,4 @@ GS1 separator、Digital Link percent encoding、AI placement、Structured Append
 
 ## Implementation Notes
 
-v2.4.0 実装時は、既存 planner と diagnostics helper を source of truth にします。Capacity math を `estimate()` 用に重複実装せず、`generate()` / `generateSegments()` と同じ segment normalization、control segment prepend、version selection、error correction boosting、warning construction を共有します。
-
-Docs-only phase ではこの文書を API contract の草案として固定し、runtime と package exports は変更しません。
+v2.4.0 implementation は、既存 planner と diagnostics helper を source of truth にします。Capacity math を `estimate()` 用に重複実装せず、`generate()` / `generateSegments()` と同じ segment normalization、control segment prepend、version selection、error correction boosting、warning construction を共有します。`getCapacity()` は table lookup と mode-level payload math のみに限定し、semantic payload capacity は `estimate()` / `analyzeSegments()` に任せます。

@@ -42,7 +42,7 @@ npm install specqr@next
 - GS1 Validation v2.1 Design: [docs/gs1-validation-v2.1.md](docs/gs1-validation-v2.1.md)
 - GS1 Digital Link Validation v2.2 Design: [docs/gs1-digital-link-validation-v2.2.md](docs/gs1-digital-link-validation-v2.2.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
-- Planning / Diagnostics API v2.4 Design: [docs/planning-diagnostics-v2.4.md](docs/planning-diagnostics-v2.4.md)
+- Planning / Diagnostics API v2.4: [docs/planning-diagnostics-v2.4.md](docs/planning-diagnostics-v2.4.md)
 - Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
 - Structured Append Parity Helper v2.3: [docs/structured-append-parity-v2.3.md](docs/structured-append-parity-v2.3.md)
 - Structured Append Manual Segments Parity Helper v2.3: [docs/structured-append-segments-parity-v2.3.md](docs/structured-append-segments-parity-v2.3.md)
@@ -67,6 +67,7 @@ npm install specqr@next
 - `matrix`, `svg`, Data URL, PNG, canvas output
 - Node PNG helper と browser Blob/ImageData/Object URL helper
 - capacity、mask/version selection、contrast、quiet zone、print warning を含む diagnostics
+- 生成前の Version / capacity / warnings を見る planning API
 
 Micro QR、rMQR、logo overlay、styled modules は現在の core package の対象外です。
 
@@ -80,7 +81,7 @@ v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Stru
 
 2.3.0 では Structured Append の低レベル利用向けに `calculateStructuredAppendParity()` と `calculateStructuredAppendSegmentsParity()` を stable API として追加しました。どちらも QR encoded bitstream ではなく logical message bytes の XOR を返し、高レベル `generateStructuredAppend()` / `generateSegmentsStructuredAppend()` が返す `parity` と一致します。
 
-2.4.0 では、生成前に Version / ECC / mode / capacity / warnings を見積もる planning API を設計対象にします。現時点では docs-only proposal であり、runtime API はまだ追加していません。詳細は [Planning / Diagnostics API v2.4 Design](docs/planning-diagnostics-v2.4.md) を参照してください。
+2.4.0 では、生成前に Version / ECC / mode / capacity / warnings を見積もる `estimate()`、manual segments 用の `analyzeSegments()`、capacity table を安全に参照する `getCapacity()` を stable API として追加しました。詳細は [Planning / Diagnostics API v2.4](docs/planning-diagnostics-v2.4.md) を参照してください。
 
 Digital Link 周りの導線は次の順に読むと迷いにくいです。
 
@@ -428,6 +429,33 @@ const result = QRCode.generate("HELLO", {
 });
 
 console.log(result.diagnostics.warnings);
+```
+
+## Planning / Capacity
+
+QR を生成する前に、収まる Version や warnings を見積もれます。容量超過は throw せず `{ ok: false, reason: "data-too-long" }` で返ります。
+
+```js
+import { estimate, getCapacity } from "specqr";
+
+const plan = estimate("https://example.com", {
+  errorCorrectionLevel: "Q",
+  margin: 2
+});
+
+if (plan.ok) {
+  console.log(plan.selectedVersion, plan.usageRatio);
+} else {
+  console.log(plan.reason, plan.overflowBits);
+}
+
+const capacity = getCapacity({
+  version: 10,
+  errorCorrectionLevel: "M",
+  mode: "byte"
+});
+
+console.log(capacity.maxBytes);
 ```
 
 ## Node helpers

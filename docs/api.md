@@ -2,6 +2,25 @@
 
 この文書は現在の SpecQR main branch public API を説明します。SpecQR v2 系では、GS1 Digital Link、FNC1 second position、Structured Append API、GS1 validation / supported AI introspection API、GS1 Digital Link validation API を stable public API として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
 
+## Proposed v2.4 Planning APIs
+
+次の API は v2.4.0 の docs-only proposal です。現在の package ではまだ export していません。Runtime behavior、package exports、TypeScript declarations、package version は変更していません。
+
+- `estimate(input, options?)`
+- `QRCode.estimate(input, options?)`
+- `analyzeSegments(segments, options?)`
+- `QRCode.analyzeSegments(segments, options?)`
+- `getCapacity(options)`
+- `QRCode.getCapacity(options)`
+
+`estimate()` は `generate()` と同じ string / binary input family と主要 planning options を受け取り、生成前に selected Version、ECC、mode、`dataBitLength`、`capacityBits`、`remainingBits`、`usageRatio`、segments、warnings、planning diagnostics を返す候補 API です。Capacity overflow は `DataTooLongError` を throw せず、`{ ok: false, reason: "data-too-long" }` として返す方針です。Invalid option、invalid GS1、invalid ECI、invalid color のような configuration error は既存 error class を投げます。
+
+`analyzeSegments()` は `generateSegments()` と同じ manual segments を対象にし、ECI / GS1 / FNC1 / FNC1 second / low-level Structured Append control segments の bit length と capacity accounting を含める候補 API です。High-level Structured Append splitting の estimate は初期 v2.4.0 scope に含めません。
+
+`getCapacity()` は `version`、`errorCorrectionLevel`、optional `mode` から public-safe capacity information を返す候補 API です。Raw `capacityBits` に加えて、mode が指定された場合は mode indicator と character count indicator を差し引いた `payloadBits`、`maxCharacters` または `maxBytes` を返します。GS1 / Digital Link / Structured Append semantic capacity は `getCapacity()` ではなく `estimate()` / `analyzeSegments()` で扱います。
+
+詳細な return shape、warning surface、`generate(..., { diagnostics: true })` との一致範囲、rejected alternatives は [Planning / Diagnostics API v2.4 Design](./planning-diagnostics-v2.4.md) に固定しています。
+
 ## Core
 
 ### `QRCode.generate(input, options)`

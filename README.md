@@ -42,6 +42,7 @@ npm install specqr@next
 - GS1 Validation v2.1 Design: [docs/gs1-validation-v2.1.md](docs/gs1-validation-v2.1.md)
 - GS1 Digital Link Validation v2.2 Design: [docs/gs1-digital-link-validation-v2.2.md](docs/gs1-digital-link-validation-v2.2.md)
 - v2 Roadmap: [docs/v2-roadmap.md](docs/v2-roadmap.md)
+- Planning / Diagnostics API v2.4 Design: [docs/planning-diagnostics-v2.4.md](docs/planning-diagnostics-v2.4.md)
 - Structured Append v2 API Design: [docs/structured-append-v2.md](docs/structured-append-v2.md)
 - Structured Append Parity Helper v2.3: [docs/structured-append-parity-v2.3.md](docs/structured-append-parity-v2.3.md)
 - Structured Append Manual Segments Parity Helper v2.3: [docs/structured-append-segments-parity-v2.3.md](docs/structured-append-segments-parity-v2.3.md)
@@ -78,6 +79,8 @@ v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Stru
 2.2.0 では GS1 Digital Link URI 向けに `validateGs1DigitalLink()` と `normalizeGs1DigitalLink()` を stable API として追加しました。Normalization は full canonicalizer ではなく、SpecQR deterministic policy に基づく安定再出力 helper です。
 
 2.3.0 では Structured Append の低レベル利用向けに `calculateStructuredAppendParity()` と `calculateStructuredAppendSegmentsParity()` を stable API として追加しました。どちらも QR encoded bitstream ではなく logical message bytes の XOR を返し、高レベル `generateStructuredAppend()` / `generateSegmentsStructuredAppend()` が返す `parity` と一致します。
+
+2.4.0 では、生成前に Version / ECC / mode / capacity / warnings を見積もる planning API を設計対象にします。現時点では docs-only proposal であり、runtime API はまだ追加していません。詳細は [Planning / Diagnostics API v2.4 Design](docs/planning-diagnostics-v2.4.md) を参照してください。
 
 Digital Link 周りの導線は次の順に読むと迷いにくいです。
 

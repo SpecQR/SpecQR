@@ -2,7 +2,7 @@
 
 この文書は SpecQR `1.0.0` の公開後に、v2 系で何を強化し、何を意図的に入れないかを固定するための roadmap / readiness log です。v2 系は新しい QR family を一気に増やす release line ではなく、通常 QR Code Model 2 core の上に、GS1 syntax、QR control segments、Structured Append、検証体系を厚くする release line として扱います。
 
-実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、v2.2.0 の GS1 Digital Link validation / normalization 設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に、v2.3.0 の raw input public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
+実装済み範囲は [Conformance Matrix](./conformance.md) と [Specification Scope](./spec-scope.md) を参照してください。GS1 raw element string parser の public API 設計は [GS1 v2 API](./gs1-v2-api.md) に、GS1 Digital Link helper の設計は [GS1 Digital Link v2 Design](./gs1-digital-link-v2.md) に、v2.1.0 の GS1 validation release 設計は [GS1 Validation v2.1 Design](./gs1-validation-v2.1.md) に、v2.2.0 の GS1 Digital Link validation / normalization 設計は [GS1 Digital Link Validation v2.2 Design](./gs1-digital-link-validation-v2.2.md) に、Structured Append high-level API の設計は [Structured Append v2 API Design](./structured-append-v2.md) に、manual segments 版は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に、読み取り側 workflow と `mergeStructuredAppendParts()` は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に、metadata-returning decoder 候補は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に、v2.3.0 の raw input public parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に、v2.4.0 の planning / diagnostics API 設計は [Planning / Diagnostics API v2.4 Design](./planning-diagnostics-v2.4.md) に分離して記録します。v2 以降の公開文書と開発記録の言語方針は [Project Language Policy](./project-language.md) に固定します。
 
 ## v2.0.0 の目的
 
@@ -74,6 +74,7 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 19. **Structured Append parity helper implementation**: docs に固定した設計に従い、runtime export、`QRCode` static method、TypeScript declarations、unit tests、packed smoke を追加する。完了済み。
 20. **Structured Append manual segments parity helper design**: `calculateStructuredAppendSegmentsParity(segments, options?)` の API、`generateSegmentsStructuredAppend()` と同じ canonical logical bytes、control segment rejection、TypeScript declaration 案を docs-only で固定する。完了済み。
 21. **Structured Append manual segments parity helper implementation**: docs に固定した設計に従い、runtime export、`QRCode` static method、TypeScript declarations、unit tests、packed smoke を追加する。完了済み。
+22. **Planning / diagnostics API design**: `estimate()`、`analyzeSegments()`、`getCapacity()` の API、non-throwing capacity overflow result、existing diagnostics との一致範囲、capacity table public surface、playground 表示方針を docs-only で固定する。完了済み。
 
 ## Progress Notes
 
@@ -118,6 +119,39 @@ Micro QR / rMQR は symbol family が通常 QR Code Model 2 と異なるため�
 - 2026-05-29: v2.3.0 manual segments parity helper design documented. Runtime behavior、public API、package version は変更せず、`calculateStructuredAppendSegmentsParity(segments, options?)` の proposal、`generateSegmentsStructuredAppend()` と同じ canonical logical message bytes、numeric / alphanumeric / byte / kanji policy、ECI / FNC1 / GS1 / FNC1 second / low-level `structured-append` rejection を [Structured Append Manual Segments Parity Helper v2.3 Design](./structured-append-segments-parity-v2.3.md) に固定しました。
 - 2026-05-29: v2.3.0 manual segments parity helper implemented. `calculateStructuredAppendSegmentsParity(segments, options?)` と `QRCode.calculateStructuredAppendSegmentsParity(segments, options?)` を追加し、numeric / alphanumeric ASCII、byte string UTF-8、byte binary raw bytes、ArrayBufferView offset / length、Kanji UTF-8、control segment rejection、`generateSegmentsStructuredAppend()` parity consistency、TypeScript surface、packed package smoke を確認対象にしました。Package version、npm publish、GitHub Release は行っていません。
 - 2026-05-30: v2.3.0 release package prepared. `package.json` / `package-lock.json` の version を `2.3.0` に揃え、CHANGELOG、README、API / release docs を Structured Append parity helpers の stable publish 前提に整理しました。npm publish、GitHub Release、GitHub Pages deploy、`v2.3.0` tag 作成は最終承認まで行いません。
+- 2026-05-30: v2.4.0 planning / diagnostics API designed. Runtime behavior、public exports、package version は変更せず、`estimate(input, options?)`、`analyzeSegments(segments, options?)`、`getCapacity(options)` の proposal、return shape、warning surface、`generate(..., { diagnostics: true })` との一致範囲、DataTooLong の non-throwing 方針を [Planning / Diagnostics API v2.4 Design](./planning-diagnostics-v2.4.md) に固定しました。
+
+## v2.4.0 Planning / Diagnostics API Scope
+
+v2.4.0 は、新しい QR control mode や renderer feature ではなく、既存 core planner と diagnostics を public planning surface として安全に使えるようにする API release として扱います。この section は docs-only proposal であり、現時点では runtime API を追加していません。
+
+### Proposed Public API
+
+- `estimate(input, options?)`: `generate()` と同じ string / binary input family を生成前に見積もる。
+- `QRCode.estimate(input, options?)`: root function と同じ static method。
+- `analyzeSegments(segments, options?)`: `generateSegments()` と同じ manual segments を生成前に分析する。
+- `QRCode.analyzeSegments(segments, options?)`: root function と同じ static method。
+- `getCapacity(options)`: Version / ECC / optional mode の public-safe capacity information を返す。
+- `QRCode.getCapacity(options)`: root function と同じ static method。
+
+### Stable Policy
+
+- Capacity overflow は UI / batch import で通常分岐として扱えるよう、`DataTooLongError` を throw せず `{ ok: false, reason: "data-too-long" }` を返す。
+- Invalid version、invalid mode、invalid GS1、invalid ECI、invalid color など configuration error は既存 error class を投げる。
+- `estimate()` / `analyzeSegments()` の `ok: true` result は、同じ input / options を `generate(..., { diagnostics: true })` または `generateSegments(..., { diagnostics: true })` に渡したときの planning fields と一致させる。
+- Planning diagnostics は mask penalty、codeword stream、renderer output を返さない。これらは matrix construction 後の情報として `generate(..., { diagnostics: true })` に残す。
+- `getCapacity()` は QR mode-level capacity を返し、GS1 / Digital Link / Structured Append semantic capacity は `estimate()` / `analyzeSegments()` へ寄せる。
+- quiet zone、contrast、print DPI、capacity near limit、scan risk warnings は既存 warning shape を reuse する。
+
+### Non-scope
+
+- Runtime API 実装。
+- High-level Structured Append splitting estimate。
+- QR decoder / scanner integration。
+- Micro QR / rMQR。
+- styled modules / logo overlay。
+- Full GS1 AI catalog。
+- Digital Link full canonicalization。
 
 ## v2.3.0 Structured Append Polish Scope
 

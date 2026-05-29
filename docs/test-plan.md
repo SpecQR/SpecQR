@@ -161,6 +161,25 @@ v2.2.0 の Digital Link polish release は [GS1 Digital Link Validation v2.2 Des
 - Normalization: string return、idempotency、GS1 AI query lexical sort、unknown query の non-sorting policy、repeated unknown query key preservation、http を https に変換しない挙動、SpecQR deterministic policy と full canonicalizer の違いを unit / packed package smoke / examples smoke / docs で確認すること。
 - Packed package smoke: installed package から new API と `QRCode` static method が動き、docs examples と TypeScript consumer check が通ること。
 
+## v2.4.0 Planning / Diagnostics API
+
+v2.4.0 の planning / diagnostics API は [Planning / Diagnostics API v2.4 Design](./planning-diagnostics-v2.4.md) に docs-only で固定しています。実装時は、新しい QR core math を重複実装せず、既存 planner と diagnostics helper を source of truth にします。
+
+release gate は次を含めます。
+
+- Public export: `estimate()` / `QRCode.estimate()`、`analyzeSegments()` / `QRCode.analyzeSegments()`、`getCapacity()` / `QRCode.getCapacity()` が root package と TypeScript declarations で一致すること。
+- Input coverage: `estimate()` が string、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView`、byte array を `generate()` と同じ byte policy で扱うこと。
+- Manual segments coverage: `analyzeSegments()` が `numeric` / `alphanumeric` / `byte` / `kanji` / `eci` / `fnc1` / `fnc1-second` / `structured-append` segment の planning fields を `generateSegments()` と一致させること。
+- Capacity success: `ok: true` result の `selectedVersion`、`errorCorrectionLevel`、`mode`、`segments`、`dataBitLength`、`capacityBits`、`remainingBits`、`capacityUtilization`、planning warnings が `generate(..., { diagnostics: true })` または `generateSegments(..., { diagnostics: true })` と一致すること。
+- Capacity failure: fixed Version と auto range の oversized payload が `DataTooLongError` を throw せず、`{ ok: false, reason: "data-too-long" }`、`overflowBits`、比較可能な `capacityBits` を返すこと。
+- Error behavior: invalid version、invalid mode、invalid GS1、invalid ECI、invalid color、invalid input type は既存 error class を投げること。
+- `getCapacity()`: Version 1 / 9 / 10 / 26 / 27 / 40、ECC L/M/Q/H、numeric / alphanumeric / byte / kanji の `capacityBits`、`characterCountBits`、`payloadBits`、`maxCharacters` / `maxBytes` を固定すること。
+- Warning surface: quiet zone、color contrast、alpha color、capacity near limit、print DPI、scan risk warnings が既存 diagnostics と同じ shape で返ること。Renderer output 依存の `RASTER_SCALE_SMALL` を planning API に入れるかは実装時の option policy に従ってテストすること。
+- Non-scope guard: high-level Structured Append splitting estimate、GS1 Digital Link semantic capacity、Micro QR / rMQR、styled modules / logo の API が漏れていないこと。
+- TypeScript consumer check: `QREstimateResult` の discriminated union、`QRCapacityInfo`、warning / diagnostics fields を consumer import で検査すること。
+- Packed package smoke: local packed package から root export と `QRCode` static variants を確認し、`getCapacity()` と overflow result の代表ケースを実行すること。
+- Playground source: planning UI 表示が追加された場合、selected Version / usage ratio / warnings / overflow message が source smoke または browser check で壊れていないこと。
+
 ## Decoder Validation
 
 より高い信頼性のため、generated SVG または rasterized output を少なくとも 1 つの独立 decoder で検証します。

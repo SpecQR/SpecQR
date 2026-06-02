@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/SpecQR/SpecQR/actions/workflows/ci.yml/badge.svg)](https://github.com/SpecQR/SpecQR/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/specqr.svg)](https://www.npmjs.com/package/specqr)
+[![Conformance Lab](https://img.shields.io/endpoint?url=https://specqr.github.io/SpecQR-Conformance-Lab/badges/overall.json)](https://specqr.github.io/SpecQR-Conformance-Lab/)
 
 SpecQR is a dependency-free JavaScript QR Code Model 2 generator. It focuses on standards-conscious QR generation with SVG, PNG, matrix, diagnostics, Kanji, ECI, and GS1/FNC1 support.
 
@@ -32,6 +33,7 @@ npm install specqr@next
 - Examples: [examples/](examples/)
 - API: [docs/api.md](docs/api.md)
 - Conformance Matrix: [docs/conformance.md](docs/conformance.md)
+- Public Conformance Lab report: https://specqr.github.io/SpecQR-Conformance-Lab/
 - External Reference Comparison: [docs/reference-comparison.md](docs/reference-comparison.md)
 - Test Plan: [docs/test-plan.md](docs/test-plan.md)
 - Release Checklist: [docs/release.md](docs/release.md)

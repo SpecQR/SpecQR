@@ -12,6 +12,12 @@ Status は次の意味で使います。
 
 v2 系の release scope は [SpecQR v2 Roadmap](./v2-roadmap.md) に分けています。この matrix では現在の実装状態を主に示し、正式 release 後に残す領域は各 section の notes で明示します。
 
+## External Conformance Lab
+
+この in-repo matrix は、SpecQR core repository がサポートする範囲と、その範囲をどの種類の test / fixture / reference comparison で確認しているかを説明します。公開済み npm package を外部から検証する report は [SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/) に分けています。
+
+Conformance Lab は、published package としての SpecQR、jsQR による decode readability、Nayuki fixed-condition matrix comparison、GS1 / Digital Link helper、Structured Append helper、Planning / Diagnostics API の結果を外部 report として記録します。Micro QR、rMQR、full GS1 catalog、full QR reader、logo / styled QR は Lab の現在の検証範囲にも含めません。
+
 ## Core QR Code Model 2
 
 | 項目 | Status | 現在の確認範囲 |

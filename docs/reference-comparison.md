@@ -14,6 +14,12 @@
 
 Nayuki 実装は fixed version、fixed error correction level、fixed mask を指定できるため、SpecQR の fixed-condition matrix と比較しやすい参照実装として採用しています。
 
+## Conformance Lab との関係
+
+この repository 内の `npm run verify:reference:nayuki` は、SpecQR core の release gate として local source tree から fixed-condition matrix を比較します。一方、[SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/) の Nayuki lane は、公開済み npm package と外部 vector set を使い、report に同じ種類の fixed-condition matrix comparison を記録します。
+
+どちらも fixed Version、fixed error correction level、fixed mask の matrix exact comparison です。GS1 / Kanji / Structured Append の semantic equivalence、auto segmentation の同等性、renderer output、scanner metadata merge support は、この Nayuki comparison だけでは主張しません。
+
 ## Command
 
 ```sh

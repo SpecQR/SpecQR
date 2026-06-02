@@ -81,6 +81,10 @@ npm run verify:reference:nayuki
 
 Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、renderer output、SpecQR diagnostics は参照比較の対象外です。これらは unit / golden / decoder validation で別に検証します。詳細は [External Reference Comparison](./reference-comparison.md) を参照してください。
 
+## External Conformance Reporting
+
+公開済み npm package の外部 conformance report は [SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/) に置きます。この repository の test plan は core package の release gate と source-level regression を管理し、外部 report artifact は SpecQR core repository にはコピーしません。
+
 ## v2.0.0 Validation Planning
 
 v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまとめています。v2 では GS1 syntax layer、GS1 Digital Link、Structured Append、control segment model が増えるため、次の検証カテゴリを release gate に含めます。FNC1 second position、Structured Append low-level header、高レベル分割、manual segments 分割、decoded parts merge helper の基本 coverage は実装済みです。

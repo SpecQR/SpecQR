@@ -228,6 +228,7 @@ jobs:
       - run: npm run verify:structured-append:memory
       - run: npm run verify:links
       - run: npm run verify:writing
+      - run: npm run verify:release:workflow
       - run: npm pack --dry-run --cache "${{ runner.temp }}/specqr-npm-cache"
       - run: >-
           npm publish

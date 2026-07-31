@@ -52,7 +52,6 @@ jobs:
       matrix:
         node-version: [18, 20, 22, 24]
     env:
-      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
@@ -60,6 +59,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
+      - name: Canonical artifact path を設定
+        run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       - uses: actions/download-artifact@v5
         with:
           name: specqr-release-artifact
@@ -78,7 +81,6 @@ jobs:
     needs: package-artifact
     timeout-minutes: 10
     env:
-      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
@@ -86,6 +88,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Canonical artifact path を設定
+        run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       - uses: actions/download-artifact@v5
         with:
           name: specqr-release-artifact
@@ -102,7 +108,6 @@ jobs:
       - engine-matrix
     timeout-minutes: 20
     env:
-      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
@@ -111,6 +116,10 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: e2e/browser/package-lock.json
+      - name: Canonical artifact path を設定
+        run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       - uses: actions/download-artifact@v5
         with:
           name: specqr-release-artifact
@@ -137,7 +146,6 @@ jobs:
       - engine-matrix
     timeout-minutes: 20
     env:
-      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
@@ -145,6 +153,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Canonical artifact path を設定
+        run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       - uses: actions/download-artifact@v5
         with:
           name: specqr-release-artifact
@@ -176,7 +188,6 @@ jobs:
       - engine-matrix
       - artifact-verification
     env:
-      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
@@ -184,6 +195,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - name: Canonical artifact path を設定
+        run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
       - uses: actions/download-artifact@v5
         with:
           name: specqr-release-artifact

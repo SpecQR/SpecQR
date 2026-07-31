@@ -1,12 +1,23 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { assertReleasePackageMetadata } from "./lib/release-artifact.js";
 
-const packageSpecs = process.argv.slice(2);
+const { expectedVersion, packageSpecs } = parseArguments(process.argv.slice(2));
 const envSpecs = (process.env.SPECQR_PUBLISHED_SPECS ?? "").trim().split(/\s+/).filter(Boolean);
-const specs = packageSpecs.length > 0 ? packageSpecs : envSpecs.length > 0 ? envSpecs : ["specqr", "specqr@next"];
+const specs = packageSpecs.length > 0
+  ? packageSpecs
+  : envSpecs.length > 0
+    ? envSpecs
+    : ["specqr@3.0.0-rc.1", "specqr@next"];
+const requiredVersion =
+  expectedVersion
+  ?? process.env.SPECQR_EXPECTED_VERSION?.trim()
+  ?? (packageSpecs.length === 0 && envSpecs.length === 0
+    ? "3.0.0-rc.1"
+    : null);
 const cacheDir = process.env.SPECQR_NPM_CACHE ?? path.join(tmpdir(), "specqr-published-npm-cache");
 
 const results = [];
@@ -20,8 +31,10 @@ for (const spec of specs) {
     const installedPackage = JSON.parse(
       await readFile(path.join(directory, "node_modules", "specqr", "package.json"), "utf8")
     );
+    assertReleasePackageMetadata(installedPackage, requiredVersion ?? undefined);
     await writeSmokeTest(directory);
     await run("node", ["smoke.mjs"], directory);
+    await verifyInstalledTypeSurface(directory);
 
     results.push({
       spec,
@@ -33,10 +46,27 @@ for (const spec of specs) {
 }
 
 for (const result of results) {
-  console.log(`ok published ${result.spec} -> ${result.version}`);
+  const sourceLabel = isLocalPackageSpec(result.spec)
+    ? "local artifact equivalent"
+    : "published";
+  console.log(`ok ${sourceLabel} ${result.spec} -> ${result.version}`);
+  if (requiredVersion) {
+    assert.equal(
+      result.version,
+      requiredVersion,
+      `${result.spec} did not resolve to the required release version`
+    );
+  }
 }
 
-if (results.length >= 2) {
+if (requiredVersion && results.length >= 2) {
+  assert.equal(
+    new Set(results.map((result) => result.version)).size,
+    1,
+    "Exact version and dist-tag specs must resolve to the same version"
+  );
+  console.log(`ok published exact version and tags resolved to ${requiredVersion}`);
+} else if (results.length >= 2) {
   const versions = new Set(results.map((result) => result.version));
   if (versions.size === 1) {
     console.log(`ok published all specs resolved to ${results[0].version}`);
@@ -50,6 +80,69 @@ async function writeSmokeTest(directory) {
 import * as specqr from "specqr";
 import { toBlob } from "specqr/browser";
 import { toPngBuffer } from "specqr/node";
+
+const ROOT_EXPORTS = [
+  "DataTooLongError",
+  "GS1_FNC1_SEPARATOR",
+  "InvalidCanvasTargetError",
+  "InvalidColorError",
+  "InvalidEciError",
+  "InvalidGs1Error",
+  "InvalidInputError",
+  "InvalidModeError",
+  "InvalidOutputError",
+  "InvalidVersionError",
+  "QRCode",
+  "SpecQRError",
+  "analyzeSegments",
+  "appendGtinCheckDigit",
+  "appendSsccCheckDigit",
+  "calculateGs1CheckDigit",
+  "calculateGtinCheckDigit",
+  "calculateSsccCheckDigit",
+  "calculateStructuredAppendParity",
+  "calculateStructuredAppendSegmentsParity",
+  "createGs1DigitalLink",
+  "createGs1ElementString",
+  "drawToCanvas",
+  "estimate",
+  "generate",
+  "generateSegments",
+  "generateSegmentsStructuredAppend",
+  "generateStructuredAppend",
+  "getCapacity",
+  "getGs1AiInfo",
+  "getSupportedGs1Ais",
+  "mergeStructuredAppendParts",
+  "normalizeGs1DigitalLink",
+  "parseGs1DigitalLink",
+  "parseGs1ElementString",
+  "parseGs1HumanReadable",
+  "validateGs1CheckDigit",
+  "validateGs1DigitalLink",
+  "validateGs1ElementString",
+  "validateGs1Elements",
+  "validateGtinCheckDigit",
+  "validateSsccCheckDigit"
+];
+const NODE_EXPORTS = [
+  "toPngBuffer",
+  "toPngBufferFromSegments",
+  "writePngFile",
+  "writePngFileFromSegments"
+];
+const BROWSER_EXPORTS = [
+  "toBlob",
+  "toBlobFromSegments",
+  "toImageData",
+  "toImageDataFromSegments",
+  "toObjectURL",
+  "toObjectURLFromSegments"
+];
+
+assert.deepEqual(Object.keys(specqr).sort(), ROOT_EXPORTS);
+assert.deepEqual(Object.keys(await import("specqr/node")).sort(), NODE_EXPORTS);
+assert.deepEqual(Object.keys(await import("specqr/browser")).sort(), BROWSER_EXPORTS);
 
 const svg = specqr.QRCode.generate("https://github.com/SpecQR/SpecQR", { output: "svg" });
 assert.match(svg, /^<svg /);
@@ -173,7 +266,119 @@ const parts = structuredAppend.diagnostics.symbols.map((symbol) => ({
   data: structuredAppendInput.slice(symbol.inputStart, symbol.inputStart + symbol.inputLength)
 }));
 assert.equal(specqr.mergeStructuredAppendParts([parts[1], parts[0]]).data, structuredAppendInput);
+
+const manualSegments = [
+  { mode: "byte", data: Uint8Array.from({ length: 31 }, (_, index) => index) }
+];
+const standardManualSet = specqr.generateSegmentsStructuredAppend(manualSegments, {
+  version: 1,
+  errorCorrectionLevel: "L",
+  output: "matrix",
+  diagnostics: true
+});
+assert.equal(standardManualSet.diagnostics.splitUnitsDetail, "summary");
+assert.equal(standardManualSet.diagnostics.splitUnitCount, 31);
+assert.equal(Object.hasOwn(standardManualSet.diagnostics, "splitUnits"), false);
+assert.equal(JSON.stringify(standardManualSet.diagnostics).includes('"splitUnits":'), false);
+
+const fullManualSet = specqr.QRCode.generateSegmentsStructuredAppend(manualSegments, {
+  version: 1,
+  errorCorrectionLevel: "L",
+  output: "png",
+  diagnostics: {
+    splitUnits: "full",
+    symbolResults: "output"
+  }
+});
+assert.equal(fullManualSet.diagnostics.splitUnitsDetail, "full");
+assert.equal(fullManualSet.diagnostics.splitUnitCount, 31);
+assert.equal(fullManualSet.diagnostics.splitUnits.length, 31);
+assert.equal(fullManualSet.symbols[0] instanceof Uint8Array, true);
+assert.deepEqual(
+  structuredClone(fullManualSet.diagnostics).splitUnits,
+  fullManualSet.diagnostics.splitUnits
+);
 `);
+}
+
+async function verifyInstalledTypeSurface(directory) {
+  const fixtureDirectory = path.join(directory, "types");
+  await mkdir(fixtureDirectory);
+  for (const fixture of ["root-node-nodom.ts", "browser-dom.ts"]) {
+    const source = await readFile(
+      path.join(process.cwd(), "tests", "types", fixture),
+      "utf8"
+    );
+    await writeFile(path.join(fixtureDirectory, fixture), source);
+  }
+  const nodeTypeRoot = path.join(process.cwd(), "node_modules", "@types");
+  await writeFile(
+    path.join(fixtureDirectory, "tsconfig.root-node.json"),
+    JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        lib: ["ES2022"],
+        typeRoots: [nodeTypeRoot],
+        types: ["node"],
+        strict: true,
+        noEmit: true,
+        skipLibCheck: false
+      },
+      include: ["root-node-nodom.ts"]
+    }, null, 2)
+  );
+  await writeFile(
+    path.join(fixtureDirectory, "tsconfig.browser.json"),
+    JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "ESNext",
+        moduleResolution: "Bundler",
+        lib: ["ES2022", "DOM"],
+        types: [],
+        strict: true,
+        noEmit: true,
+        skipLibCheck: false
+      },
+      include: ["browser-dom.ts"]
+    }, null, 2)
+  );
+  const tsc = path.join(
+    process.cwd(),
+    "node_modules",
+    "typescript",
+    "bin",
+    "tsc"
+  );
+  await run(process.execPath, [tsc, "-p", "tsconfig.root-node.json"], fixtureDirectory);
+  await run(process.execPath, [tsc, "-p", "tsconfig.browser.json"], fixtureDirectory);
+}
+
+function parseArguments(argv) {
+  const packageSpecs = [];
+  let expectedVersion = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === "--expected-version") {
+      expectedVersion = argv[index + 1];
+      if (!expectedVersion) {
+        throw new Error("--expected-version requires a value");
+      }
+      index += 1;
+    } else {
+      packageSpecs.push(argv[index]);
+    }
+  }
+  return { expectedVersion, packageSpecs };
+}
+
+function isLocalPackageSpec(spec) {
+  return spec.endsWith(".tgz")
+    || spec.startsWith("file:")
+    || path.isAbsolute(spec)
+    || spec.startsWith("./")
+    || spec.startsWith("../");
 }
 
 function run(command, args, cwd) {

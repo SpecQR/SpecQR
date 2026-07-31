@@ -7,45 +7,205 @@ on:
   pull_request:
 
 jobs:
-  engine-matrix:
-    name: Node ${{ matrix.node-version }} engine gate
+  package-artifact:
+    name: Release candidate package artifact を構築
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Pack 3.0.0-rc.1 and verify expanded-content reproducibility
+        run: >-
+          npm run release:artifact --
+          --output-dir "${{ runner.temp }}/specqr-release-artifact"
+      - name: Verify release artifact manifest
+        run: npm run verify:release:artifact
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+      - name: Upload canonical release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: specqr-release-artifact
+          path: ${{ runner.temp }}/specqr-release-artifact/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload package artifact failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: specqr-release-artifact-failure
+          path: ${{ runner.temp }}/specqr-release-artifact/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  engine-matrix:
+    name: Node ${{ matrix.node-version }} の installed artifact gate
+    runs-on: ubuntu-latest
+    needs: package-artifact
     strategy:
       fail-fast: false
       matrix:
         node-version: [18, 20, 22, 24]
+    env:
+      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
+      - uses: actions/download-artifact@v5
+        with:
+          name: specqr-release-artifact
+          path: ${{ runner.temp }}/specqr-release-artifact
       - run: npm ci
+      - run: npm run verify:release:artifact
       - run: npm test
       - run: npm run verify:types
       - run: npm run examples:smoke
       - run: npm run verify:pack
       - run: npm ls --omit=dev
 
+  artifact-verification:
+    name: Canonical tarball の runtime / types / examples / policy
+    runs-on: ubuntu-latest
+    needs: package-artifact
+    timeout-minutes: 10
+    env:
+      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/download-artifact@v5
+        with:
+          name: specqr-release-artifact
+          path: ${{ runner.temp }}/specqr-release-artifact
+      - run: npm ci
+      - run: npm run verify:release:artifact
+      - run: npm run verify:pack
+
+  browser-e2e:
+    name: Canonical tarball の browser E2E
+    runs-on: ubuntu-latest
+    needs:
+      - package-artifact
+      - engine-matrix
+    timeout-minutes: 20
+    env:
+      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/browser/package-lock.json
+      - uses: actions/download-artifact@v5
+        with:
+          name: specqr-release-artifact
+          path: ${{ runner.temp }}/specqr-release-artifact
+      - run: npm ci --prefix e2e/browser
+      - run: npm --prefix e2e/browser run install:browsers:ci
+      - run: npm run verify:browser:e2e
+      - name: Upload browser E2E failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-e2e-failure-artifacts
+          path: |
+            e2e/browser/playwright-report/
+            e2e/browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  structured-append-zxing-java:
+    name: Canonical tarball の Structured Append metadata
+    runs-on: ubuntu-latest
+    needs:
+      - package-artifact
+      - engine-matrix
+    timeout-minutes: 20
+    env:
+      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/download-artifact@v5
+        with:
+          name: specqr-release-artifact
+          path: ${{ runner.temp }}/specqr-release-artifact
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21.0.11+10"
+          cache: maven
+          cache-dependency-path: e2e/zxing-java/pom.xml
+      - run: npm ci
+      - run: npm run verify:structured-append:zxing-java
+        env:
+          SPECQR_ZXING_ARTIFACT_DIR: ${{ runner.temp }}/specqr-zxing-java
+      - name: Upload ZXing Java failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: structured-append-zxing-java-failure-artifacts
+          path: ${{ runner.temp }}/specqr-zxing-java/
+          if-no-files-found: error
+          retention-days: 7
+
   release-gates:
-    name: Release gates on Node 20
+    name: Node 20 release gate
     runs-on: macos-latest
-    needs: engine-matrix
+    needs:
+      - package-artifact
+      - engine-matrix
+      - artifact-verification
+    env:
+      SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
+      - uses: actions/download-artifact@v5
+        with:
+          name: specqr-release-artifact
+          path: ${{ runner.temp }}/specqr-release-artifact
       - run: npm ci
       - name: Ensure ImageMagick for Vision decode fixtures
         run: |
           if ! command -v magick >/dev/null 2>&1; then
             brew install imagemagick
           fi
+      - run: npm run verify:release:artifact
       - run: npm run pages:build
       - run: npm run verify:decode
       - run: npm run verify:decode:jsqr
-      - run: npm run verify:reference:nayuki
-      - run: npm run verify:structured-append:zxing-java
-      - run: npm pack --dry-run
+      - run: npm run verify:conformance:fuzz
+      - run: npm run verify:resource-safety
+      - run: npm run verify:structured-append:memory
+      - run: npm run verify:links
+      - run: npm run verify:writing
+      - run: npm pack --dry-run --cache "${{ runner.temp }}/specqr-npm-cache"
+      - run: >-
+          npm publish
+          "${SPECQR_RELEASE_ARTIFACT_DIR}/specqr-3.0.0-rc.1.tgz"
+          --dry-run --tag next
+          --cache "${{ runner.temp }}/specqr-npm-cache"

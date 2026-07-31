@@ -1,8 +1,19 @@
+import { getSvgGeometry } from "./geometry.js";
+
 export function renderSvg(matrix, options) {
+  return renderSvgWithOutput(matrix, options, "svg");
+}
+
+export function renderSvgDataUrl(matrix, options) {
+  const svg = renderSvgWithOutput(matrix, options, "svg-data-url");
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function renderSvgWithOutput(matrix, options, output) {
   const size = matrix.length;
   const margin = options.margin;
   const scale = options.scale;
-  const dimension = (size + margin * 2) * scale;
+  const { dimension } = getSvgGeometry(matrix, options, output);
   const foreground = escapeAttribute(options.foreground);
   const background = escapeAttribute(options.background);
 
@@ -23,10 +34,6 @@ export function renderSvg(matrix, options) {
     `<path fill="${foreground}" d="${path.join("")}"/>`,
     "</svg>"
   ].join("");
-}
-
-export function renderSvgDataUrl(matrix, options) {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderSvg(matrix, options))}`;
 }
 
 function escapeAttribute(value) {

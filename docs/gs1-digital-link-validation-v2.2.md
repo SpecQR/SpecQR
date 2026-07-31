@@ -357,11 +357,11 @@ v2.2.0 runtime implementation では、少なくとも次を確認します。
 
 ## Implementation Order
 
-1. Internal helper で `parseGs1DigitalLink()` の throwing error を detail validation error に変換する。done.
-2. `validateGs1DigitalLink()` root export と `QRCode` static method を追加する。done.
-3. TypeScript declarations、unit tests、packed package smoke、docs examples を追加する。done.
-4. Existing `createGs1DigitalLink()` / `parseGs1DigitalLink()` output regression tests を追加する。done.
-5. `normalizeGs1DigitalLink()` root export と `QRCode` static method を追加する。done.
+1. Internal helper で `parseGs1DigitalLink()` の throwing error を detail validation error に変換する。完了。
+2. `validateGs1DigitalLink()` root export と `QRCode` static method を追加する。完了。
+3. TypeScript declarations、unit tests、packed package smoke、docs examples を追加する。完了。
+4. Existing `createGs1DigitalLink()` / `parseGs1DigitalLink()` output regression tests を追加する。完了。
+5. `normalizeGs1DigitalLink()` root export と `QRCode` static method を追加する。完了。
 6. Full canonicalizer、resolver、compression は別 design に残す。
 
 ## Current Status

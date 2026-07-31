@@ -1,12 +1,16 @@
-name: Published Package Smoke
+name: 公開済み package smoke
 
 on:
   workflow_dispatch:
     inputs:
       package_specs:
-        description: "Space-separated npm specs to install"
+        description: "検証する exact version と dist-tag の package spec（半角スペース区切り）"
         required: false
-        default: "specqr specqr@next"
+        default: "specqr@3.0.0-rc.1 specqr@next"
+      expected_version:
+        description: "すべての package spec が解決すべき version"
+        required: true
+        default: "3.0.0-rc.1"
 
 jobs:
   smoke:
@@ -18,6 +22,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: node tools/verify-published-package.js
+      - run: >-
+          node tools/verify-published-package.js
+          --expected-version "${{ inputs.expected_version }}"
         env:
           SPECQR_PUBLISHED_SPECS: ${{ inputs.package_specs }}

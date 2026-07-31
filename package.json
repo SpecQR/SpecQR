@@ -1,6 +1,6 @@
 {
   "name": "specqr",
-  "version": "2.4.0",
+  "version": "3.0.0-rc.1",
   "description": "A dependency-free QR Code Model 2 generator for JavaScript.",
   "homepage": "https://github.com/SpecQR/SpecQR#readme",
   "bugs": {
@@ -58,10 +58,19 @@
     "verify:decode:jsqr": "node tools/verify-decode-optional.js --only-jsqr --require-jsqr",
     "verify:decode:independent": "npm run verify:decode:jsqr",
     "verify:structured-append:zxing-java": "node tools/verify-structured-append-zxing-java.js",
-    "verify:types": "tsc -p tests/types/tsconfig.json --noEmit",
+    "verify:types": "tsc -p tests/types/tsconfig.json --noEmit && tsc -p tests/types/tsconfig.root-node.json --noEmit && tsc -p tests/types/tsconfig.browser.json --noEmit",
     "verify:pack": "node tools/verify-packed-package.js",
     "verify:published": "node tools/verify-published-package.js",
-    "verify:reference:nayuki": "node tools/verify-reference-nayuki.js"
+    "verify:reference:nayuki": "node tools/verify-reference-nayuki.js",
+    "verify:conformance:fuzz": "node tools/verify-conformance-fuzz.js",
+    "verify:resource-safety": "node tools/verify-resource-safety.js",
+    "verify:structured-append:memory": "node tools/verify-structured-append-memory.js",
+    "verify:browser:e2e": "npm --prefix e2e/browser run verify",
+    "release:artifact": "node tools/prepare-release-artifact.js --expected-version 3.0.0-rc.1",
+    "verify:release:artifact": "node tools/verify-release-artifact.js",
+    "verify:release:workflow": "node tools/verify-release-workflow.js",
+    "verify:links": "node tools/verify-doc-links.js",
+    "verify:writing": "node .github/scripts/verify-writing.js"
   },
   "keywords": [
     "qr",

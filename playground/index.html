@@ -62,6 +62,13 @@
               Max symbols
               <input id="qr-max-symbols" type="number" min="2" max="16" value="16">
             </label>
+            <label id="qr-split-detail-control">
+              Manual split detail
+              <select id="qr-split-detail">
+                <option value="summary" selected>summary</option>
+                <option value="full">full</option>
+              </select>
+            </label>
             <label>
               Scale
               <input id="qr-scale" type="number" min="1" max="24" value="8">
@@ -73,23 +80,23 @@
           </div>
 
           <div class="actions">
-            <a id="download-svg" class="button" download="specqr.svg" aria-disabled="true">SVG</a>
-            <a id="download-png" class="button" download="specqr.png" aria-disabled="true">PNG</a>
+            <a id="download-svg" class="button" download="specqr.svg" aria-disabled="true" data-testid="download-svg">SVG</a>
+            <a id="download-png" class="button" download="specqr.png" aria-disabled="true" data-testid="download-png">PNG</a>
           </div>
         </div>
 
         <div class="preview-area">
-          <div id="qr-preview" class="preview" aria-live="polite"></div>
-          <div id="qr-error" class="error" hidden></div>
+          <div id="qr-preview" class="preview" aria-label="QR preview" aria-live="polite" data-testid="qr-preview"></div>
+          <div id="qr-error" class="error" role="alert" hidden data-testid="qr-error"></div>
         </div>
 
         <aside class="diagnostics">
           <h2>Planning</h2>
-          <dl id="qr-planning"></dl>
+          <dl id="qr-planning" aria-label="Planning results" data-testid="qr-planning"></dl>
           <h2>Diagnostics</h2>
-          <dl id="qr-diagnostics"></dl>
+          <dl id="qr-diagnostics" aria-label="Generation diagnostics" data-testid="qr-diagnostics"></dl>
           <h3>Warnings</h3>
-          <ul id="qr-warnings"></ul>
+          <ul id="qr-warnings" aria-label="Warnings" data-testid="qr-warnings"></ul>
         </aside>
       </section>
     </main>

@@ -8,7 +8,7 @@ SpecQR は QR generator であり、decoder や scanner integration は提供し
 
 `generateStructuredAppend()` と `generateSegmentsStructuredAppend()` は、複数 QR symbols を 1 つの logical message として扱うための Structured Append header を encode します。一方で、読み取り側の decoder がどの情報を返すかは実装ごとに大きく異なります。
 
-metadata-returning decoder 候補と optional validation lane の調査は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に分離しています。この文書では scanner workflow と merge helper API の境界に集中します。
+metadata-returning decoder の責務分離は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に、固定版 ZXing Java required lane は [Structured Append ZXing Java Verification](./structured-append-zxing-java.md) に分離しています。この文書では scanner workflow と merge helper API の境界に集中します。
 
 この文書では次を固定します。
 
@@ -281,6 +281,6 @@ Structured Append generation remains validated by:
 - packed package smoke for public exports, `mergeStructuredAppendParts()`, and TypeScript declarations.
 - decoder validation as a secondary signal only.
 
-Structured Append metadata validation remains optional because it depends on external decoder capabilities. Candidate decoder research and the optional lane are tracked in [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md).
+`mergeStructuredAppendParts()` itself is release-gated by unit tests and packed package smoke です。加えて、packed package が生成した 10 fixtures / 44 symbols を ZXing Java 3.5.4 で読む required dedicated CI lane が、sequence/parity metadata と文字列 payload merge を継続確認します。
 
-`mergeStructuredAppendParts()` itself is release-gated by unit tests and packed package smoke. External decoder metadata validation remains optional until a stable metadata-returning decoder fixture can run reliably in CI.
+この追加証拠は全 scanner 互換の claim ではありません。ZXing Java 以外、arbitrary binary の string round-trip、実端末 camera、scanner 側自動 merge は引き続き non-claims です。固定 toolchain、payload assertion 分類、machine report は [Structured Append ZXing Java Verification](./structured-append-zxing-java.md) を参照してください。

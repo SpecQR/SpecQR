@@ -17,6 +17,8 @@ const ecc = document.querySelector("#qr-ecc");
 const version = document.querySelector("#qr-version");
 const maxSymbols = document.querySelector("#qr-max-symbols");
 const maxSymbolsControl = document.querySelector("#qr-max-symbols-control");
+const splitDetail = document.querySelector("#qr-split-detail");
+const splitDetailControl = document.querySelector("#qr-split-detail-control");
 const scale = document.querySelector("#qr-scale");
 const margin = document.querySelector("#qr-margin");
 const preview = document.querySelector("#qr-preview");
@@ -31,7 +33,7 @@ let objectUrls = [];
 
 populateVersionOptions();
 
-for (const element of [input, digitalLinkPolicy, ecc, version, maxSymbols, scale, margin]) {
+for (const element of [input, digitalLinkPolicy, ecc, version, maxSymbols, splitDetail, scale, margin]) {
   element.addEventListener("input", render);
   element.addEventListener("change", render);
 }
@@ -169,11 +171,21 @@ function renderStructuredAppend() {
     ...options,
     output: "png"
   });
+  const manualDiagnostics = QRCode.generateSegmentsStructuredAppend([
+    { mode: "byte", data }
+  ], {
+    ...options,
+    output: "matrix",
+    diagnostics: {
+      splitUnits: splitDetail.value,
+      symbolResults: "diagnostics"
+    }
+  }).diagnostics;
 
   preview.classList.add("preview--set");
   preview.innerHTML = "";
   renderStructuredPreview(diagnosticSet, pngSet);
-  renderDiagnostics([
+  const rows = [
     ["Mode", "Structured Append"],
     ["Symbols", diagnosticSet.total],
     ["Version", diagnosticSet.diagnostics.version],
@@ -181,8 +193,14 @@ function renderStructuredAppend() {
     ["Parity", `0x${hexByte(diagnosticSet.parity)}`],
     ["Input", `${diagnosticSet.inputLength} units / ${diagnosticSet.byteLength} bytes`],
     ["Max symbols", diagnosticSet.diagnostics.maxSymbols],
-    ["Split", diagnosticSet.diagnostics.splitStrategy]
-  ]);
+    ["Split", diagnosticSet.diagnostics.splitStrategy],
+    ["Manual split detail", manualDiagnostics.splitUnitsDetail],
+    ["Manual split units", manualDiagnostics.splitUnitCount]
+  ];
+  if (manualDiagnostics.splitUnitsDetail === "full") {
+    rows.push(["Materialized split units", manualDiagnostics.splitUnits.length]);
+  }
+  renderDiagnostics(rows);
   renderWarnings(diagnosticSet.diagnostics.warnings);
   disableDownload(downloadSvg);
   disableDownload(downloadPng);
@@ -374,6 +392,7 @@ function revokeDownloads() {
 
 function syncModeControls() {
   maxSymbolsControl.hidden = workflow.value !== "structured";
+  splitDetailControl.hidden = workflow.value !== "structured";
   digitalLinkPolicyControl.hidden = kind.value !== "digital-link";
 }
 

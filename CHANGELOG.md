@@ -4,6 +4,91 @@
 
 まだありません。
 
+## 3.0.0-rc.1 - 2026-07-31
+
+SpecQR 3.0.0-rc.1 is a release candidate that makes manual Structured
+Append diagnostics compact by default while preserving full v2 split-unit
+detail through an explicit opt-in.
+
+SpecQR 3.0.0-rc.1 は、`generateSegmentsStructuredAppend()` の
+diagnostics contract だけを breaking change として隔離した v3 release
+candidate です。QR encoding、split strategy、parity、symbol output、
+per-symbol diagnostics、error/warning semantics、package exports、
+runtime dependency-free policy は 2.4.0 から変更していません。
+
+### Breaking change
+
+- `generateSegmentsStructuredAppend()` と
+  `QRCode.generateSegmentsStructuredAppend()` の standard diagnostics は、
+  eager な `splitUnits` array を返さなくなりました。
+- Standard summary は `splitUnitsDetail: "summary"` と正確な
+  `splitUnitCount` を返し、`splitUnits` own property を持ちません。
+- v2 と同じ `splitUnits` の内容、順序、offset、plain-object mutability が必要な
+  場合は `diagnostics: { splitUnits: "full" }` を指定します。
+- Structured Append manual segments API 専用の diagnostics object で、
+  `symbolResults: "output" | "diagnostics"` を明示できます。Object form の
+  default は `{ splitUnits: "summary", symbolResults: "diagnostics" }` です。
+- `diagnostics: false` または省略時は standard summary と requested symbol
+  outputs、`diagnostics: true` では standard summary と diagnostic symbol
+  results を返します。
+
+### Migration
+
+```js
+// v2: full split-unit detail was always present
+const before = generateSegmentsStructuredAppend(segments, {
+  diagnostics: true
+});
+
+// v3: request v2-compatible full detail explicitly
+const after = generateSegmentsStructuredAppend(segments, {
+  diagnostics: { splitUnits: "full" }
+});
+```
+
+Requested PNG/SVG/matrix outputs と full detail を同時に使う場合:
+
+```js
+const result = generateSegmentsStructuredAppend(segments, {
+  output: "png",
+  diagnostics: {
+    splitUnits: "full",
+    symbolResults: "output"
+  }
+});
+```
+
+詳細な移行方法、TypeScript narrowing、JSON / `structuredClone()` の差は
+[`docs/v3-migration.md`](docs/v3-migration.md) を参照してください。
+
+### Release candidate validation
+
+- standard path で full split-unit materialization が0回であることを
+  deterministic test で確認します。
+- full opt-in の `splitUnits` は v2 characterization fixtures と deep equality、
+  property order、JSON、mutability を比較します。
+- 同一の `npm pack` artifact を Node 18 / 20 / 22 / 24、NodeNext /
+  Bundler types、Chromium / Firefox / WebKit、ZXing Java package-level
+  verification で共有する release pipeline を追加しました。
+- artifact の SHA-256、file count、packed / unpacked size、全 file content
+  manifest、二回の pack 後 content 再現性、allow/deny policy を検証します。
+
+### 意図的に含めないもの
+
+- Top-level unknown option rejection
+- GS1 metadata の readonly / freeze 変更
+- 新しい inspection API
+- GS1 catalog 拡張、Micro QR、rMQR、styled modules、logo overlay
+
+これらは RC 1 へ混ぜず、個別の将来 candidate として扱います。
+
+### Release freeze
+
+- RC 1 の runtime、types、exports、error / warning semantics、QR bytes、resource
+  budget、dependency は凍結しました。
+- 公開前に残る作業は commit / push、hosted CI、canonical tarball の `next`
+  publish、post-publish verification です。
+
 ## 2.4.0 - 2026-05-30
 
 SpecQR 2.4.0 is the Planning API release for checking QR capacity before rendering.
@@ -52,7 +137,7 @@ SpecQR 2.3.0 は、既存の Structured Append high-level / low-level / merge he
 ### Structured Append parity policy
 
 - `calculateStructuredAppendParity(input)` は logical message の original payload bytes を XOR します。string は UTF-8 bytes、binary input は raw bytes、`ArrayBufferView` は `byteOffset` / `byteLength` を尊重します。
-- `calculateStructuredAppendSegmentsParity(segments)` は `generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XORします。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、Kanji segment は Shift_JIS bytes ではなく original JavaScript string の UTF-8 bytes を使います。
+- `calculateStructuredAppendSegmentsParity(segments)` は `generateSegmentsStructuredAppend()` と同じ canonical logical message bytes を XOR します。numeric / alphanumeric は ASCII bytes、byte string は UTF-8 bytes、byte binary は raw bytes、Kanji segment は Shift_JIS bytes ではなく original JavaScript string の UTF-8 bytes を使います。
 - parity は QR encoded bitstream、mode indicator、character count indicator、padding、error correction codewords、low-level Structured Append header bytes ではなく、logical message bytes の XOR です。
 - `generateStructuredAppend(input).parity` は `calculateStructuredAppendParity(input)` と一致し、`generateSegmentsStructuredAppend(segments).parity` は `calculateStructuredAppendSegmentsParity(segments)` と一致します。
 - manual segments parity helper は ECI / FNC1 first / FNC1 second / GS1 / low-level `structured-append` segment を安全側で reject します。

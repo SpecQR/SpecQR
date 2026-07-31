@@ -6,9 +6,10 @@ SpecQR は dependency-free runtime を維持する QR Code Model 2 generator で
 
 | Version | Status |
 | --- | --- |
-| `2.x` | Supported |
-| `1.x` | Security fixes only when practical |
-| prerelease / RC | Stable release への upgrade を推奨 |
+| `2.x` | 対応中 |
+| `1.x` | 実用上可能な範囲で security fix |
+| `3.0.0-rc.1` | 未公開の release candidate。評価用途で、stable support の対象外 |
+| その他 prerelease / RC | stable release への upgrade を推奨 |
 
 ## Reporting a Vulnerability
 
@@ -37,3 +38,21 @@ Security Advisory が使えない場合は、詳細を公開せずに GitHub iss
 ## Dependency Policy
 
 SpecQR の runtime dependency は 0 を維持します。`jsqr`、`nayuki-qr-code-generator`、TypeScript などは devDependency / validation 用です。依存追加が必要な場合は、runtime package に入れる前に security / maintenance / bundle impact を確認します。
+
+実ブラウザと Structured Append metadata の重い検証は root dependency から分離します。`e2e/zxing-java/` は Maven Wrapper 3.3.4 / Maven 3.9.16 / ZXing core + javase 3.5.4 を exact pin し、Maven distribution を SHA-256 で検証します。JAR、Maven cache、compiled class、fixture PNG、report は vendor せず、npm package にも含めません。取得元、license、upgrade 手順は [Structured Append ZXing Java Verification](./docs/structured-append-zxing-java.md) と `e2e/zxing-java/NOTICE.md` に記録します。
+
+Release candidate では、一度だけ生成した npm tarball の SHA-256 と全 file
+content manifest を記録し、Node engine matrix、browser、ZXing Java へ同じ
+artifact を渡します。Repeated pack の expanded-content 一致、package allow/deny
+policy、repository metadata、runtime dependency 0 も検証します。Manifest、
+tarball、temporary install、browser/JDK/Maven artifacts は repository や npm
+package へ含めません。詳細は
+[Release Artifact Verification](./docs/release-artifact.md) を参照してください。
+
+`3.0.0-rc.1` は release freeze 状態です。公開前の editorial change は runtime、
+types、exports、error / warning message、QR output bytes、resource budget を
+変更しません。
+
+## Resource Limits
+
+Renderer は cross-runtime deterministic な pixel / byte / serialized-output budget を allocation 前に検証し、超過時は `InvalidInputError` で失敗します。Single-symbol generation は収容不能を証明できる input を segment optimization 前に `DataTooLongError` で reject します。具体的な上限、低 heap gate、non-goals は [Resource Safety / Correctness Hardening](./docs/resource-safety.md) に記載しています。

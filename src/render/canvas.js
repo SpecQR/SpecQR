@@ -1,4 +1,5 @@
 import { InvalidCanvasTargetError } from "../errors.js";
+import { getRasterGeometry } from "./geometry.js";
 
 export function renderCanvas(target, matrix, options) {
   const context = getCanvasContext(target);
@@ -6,7 +7,7 @@ export function renderCanvas(target, matrix, options) {
   const size = matrix.length;
   const margin = options.margin;
   const scale = options.scale;
-  const dimension = (size + margin * 2) * scale;
+  const { dimension } = getRasterGeometry(matrix, options, "canvas");
 
   if (canvas && "width" in canvas) {
     canvas.width = dimension;

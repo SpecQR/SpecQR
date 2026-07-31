@@ -12,7 +12,7 @@ export function canEncodeKanjiModeCharacter(character) {
 }
 
 export function assertKanjiModeText(text) {
-  for (const character of Array.from(text)) {
+  for (const character of text) {
     if (!canEncodeKanjiModeCharacter(character)) {
       throw new InvalidModeError(`kanji mode cannot encode character: ${character}`);
     }

@@ -41,7 +41,20 @@ export interface QRCanvasContextLike {
   fillRect(x: number, y: number, width: number, height: number): void;
 }
 
+interface QRPortableCanvasContextLike {
+  canvas?: { width: number; height: number };
+  fillStyle: unknown;
+  fillRect(x: number, y: number, width: number, height: number): void;
+}
+
+interface QRPortableCanvasLike {
+  width: number;
+  height: number;
+  getContext(contextId: "2d"): QRPortableCanvasContextLike | null;
+}
+
 export type QRCanvasTarget = QRCanvasLike | QRCanvasContextLike;
+type QRPortableCanvasTarget = QRPortableCanvasLike | QRPortableCanvasContextLike;
 
 export interface QRCodeOptions {
   errorCorrectionLevel?: ErrorCorrectionLevel;
@@ -314,11 +327,20 @@ export interface QRStructuredAppendGenerateOptions extends Omit<
   maxSymbols?: number;
 }
 
+export type QRStructuredAppendSplitUnitsDetail = "summary" | "full";
+export type QRStructuredAppendSymbolResultMode = "output" | "diagnostics";
+
+export interface QRStructuredAppendSegmentsDiagnosticsOptions {
+  splitUnits?: QRStructuredAppendSplitUnitsDetail;
+  symbolResults?: QRStructuredAppendSymbolResultMode;
+}
+
 export interface QRStructuredAppendSegmentsGenerateOptions extends Omit<
   QRCodeOptions,
-  "mode" | "encoding" | "optimizeSegments" | "eci" | "gs1" | "fnc1Second" | "structuredAppend" | "boostErrorCorrection"
+  "mode" | "encoding" | "optimizeSegments" | "eci" | "gs1" | "fnc1Second" | "structuredAppend" | "boostErrorCorrection" | "diagnostics"
 > {
   maxSymbols?: number;
+  diagnostics?: boolean | QRStructuredAppendSegmentsDiagnosticsOptions;
 }
 
 export interface QRStructuredAppendSymbolDiagnostics {
@@ -385,7 +407,7 @@ export interface QRStructuredAppendSegmentsSymbolDiagnostics {
   maskPattern: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 }
 
-export interface QRStructuredAppendSegmentsSummaryDiagnostics {
+export interface QRStructuredAppendSegmentsSummaryDiagnosticsBase {
   version: Version;
   errorCorrectionLevel: ErrorCorrectionLevel;
   versionSelection: "fixed" | "auto-minimum";
@@ -397,10 +419,25 @@ export interface QRStructuredAppendSegmentsSummaryDiagnostics {
   segmentCount: number;
   maxSymbols: number;
   splitStrategy: "segment-boundary-byte-chunk";
-  splitUnits: QRStructuredAppendSplitUnitDiagnostics[];
+  splitUnitCount: number;
   symbols: QRStructuredAppendSegmentsSymbolDiagnostics[];
   warnings: QRWarning[];
 }
+
+export interface QRStructuredAppendSegmentsStandardDiagnostics
+  extends QRStructuredAppendSegmentsSummaryDiagnosticsBase {
+  splitUnitsDetail: "summary";
+}
+
+export interface QRStructuredAppendSegmentsFullDiagnostics
+  extends QRStructuredAppendSegmentsSummaryDiagnosticsBase {
+  splitUnitsDetail: "full";
+  splitUnits: QRStructuredAppendSplitUnitDiagnostics[];
+}
+
+export type QRStructuredAppendSegmentsSummaryDiagnostics =
+  | QRStructuredAppendSegmentsStandardDiagnostics
+  | QRStructuredAppendSegmentsFullDiagnostics;
 
 export interface QRStructuredAppendResult<TSymbol = QRGenerateResult> {
   symbols: TSymbol[];
@@ -411,14 +448,42 @@ export interface QRStructuredAppendResult<TSymbol = QRGenerateResult> {
   diagnostics: QRStructuredAppendSummaryDiagnostics;
 }
 
-export interface QRStructuredAppendSegmentsResult<TSymbol = QRGenerateResult> {
+export interface QRStructuredAppendSegmentsResult<
+  TSymbol = QRGenerateResult,
+  TDiagnostics extends QRStructuredAppendSegmentsSummaryDiagnostics =
+    QRStructuredAppendSegmentsSummaryDiagnostics
+> {
   symbols: TSymbol[];
   total: number;
   parity: number;
   inputLength: number;
   byteLength: number;
-  diagnostics: QRStructuredAppendSegmentsSummaryDiagnostics;
+  diagnostics: TDiagnostics;
 }
+
+type QRStructuredAppendSegmentsStandardDiagnosticSelection =
+  | true
+  | {
+    splitUnits?: "summary";
+    symbolResults?: "diagnostics";
+  };
+
+type QRStructuredAppendSegmentsFullDiagnosticSelection = {
+  splitUnits: "full";
+  symbolResults?: "diagnostics";
+};
+
+type QRStructuredAppendSegmentsStandardOutputSelection =
+  | false
+  | {
+    splitUnits?: "summary";
+    symbolResults: "output";
+  };
+
+type QRStructuredAppendSegmentsFullOutputSelection = {
+  splitUnits: "full";
+  symbolResults: "output";
+};
 
 export type QRStructuredAppendBinaryPartData = Uint8Array | ArrayBuffer | ArrayBufferView;
 export type QRStructuredAppendPartData = string | QRStructuredAppendBinaryPartData;
@@ -463,24 +528,31 @@ export interface QRStructuredAppendMergeResult<TData extends string | Uint8Array
   diagnostics: QRStructuredAppendMergeDiagnostics;
 }
 
-export function generate(input: QRInput, options?: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
-export function generate(input: QRInput, options?: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
-export function generate(input: QRInput, options?: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
+export function generate(input: QRInput, options: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
+export function generate(input: QRInput, options: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
+export function generate(input: QRInput, options: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
 export function generate(input: QRInput, options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
+export function generate(input: QRInput, options?: QRCodeOptions): QRGenerateResult;
 
 export function estimate(input: QRInput, options?: QREstimateOptions): QREstimateResult;
 export function analyzeSegments(segments: QRSegmentInput[], options?: QREstimateOptions): QREstimateResult;
 export function getCapacity(options: QRGetCapacityOptions): QRCapacityInfo;
 
-export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { diagnostics: true }): QRStructuredAppendResult<QRCodeDiagnosticResult>;
-export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendResult<QRMatrix>;
-export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendResult<Uint8Array>;
+export function generateStructuredAppend(input: QRInput, options: QRStructuredAppendGenerateOptions & { diagnostics: true }): QRStructuredAppendResult<QRCodeDiagnosticResult>;
+export function generateStructuredAppend(input: QRInput, options: QRStructuredAppendGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendResult<QRMatrix>;
+export function generateStructuredAppend(input: QRInput, options: QRStructuredAppendGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendResult<Uint8Array>;
 export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): QRStructuredAppendResult<string>;
+export function generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions): QRStructuredAppendResult;
 
-export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { diagnostics: true }): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult>;
-export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendSegmentsResult<QRMatrix>;
-export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendSegmentsResult<Uint8Array>;
-export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): QRStructuredAppendSegmentsResult<string>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { diagnostics: QRStructuredAppendSegmentsFullDiagnosticSelection }): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult, QRStructuredAppendSegmentsFullDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { diagnostics: QRStructuredAppendSegmentsStandardDiagnosticSelection }): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult, QRStructuredAppendSegmentsStandardDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics: QRStructuredAppendSegmentsFullOutputSelection }): QRStructuredAppendSegmentsResult<QRMatrix, QRStructuredAppendSegmentsFullDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics?: QRStructuredAppendSegmentsStandardOutputSelection }): QRStructuredAppendSegmentsResult<QRMatrix, QRStructuredAppendSegmentsStandardDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics: QRStructuredAppendSegmentsFullOutputSelection }): QRStructuredAppendSegmentsResult<Uint8Array, QRStructuredAppendSegmentsFullDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics?: QRStructuredAppendSegmentsStandardOutputSelection }): QRStructuredAppendSegmentsResult<Uint8Array, QRStructuredAppendSegmentsStandardDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics: QRStructuredAppendSegmentsFullOutputSelection }): QRStructuredAppendSegmentsResult<string, QRStructuredAppendSegmentsFullDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: QRStructuredAppendSegmentsStandardOutputSelection }): QRStructuredAppendSegmentsResult<string, QRStructuredAppendSegmentsStandardDiagnostics>;
+export function generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions): QRStructuredAppendSegmentsResult;
 
 export function calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
 export function calculateStructuredAppendSegmentsParity(
@@ -492,12 +564,14 @@ export function mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<
 export function mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<QRStructuredAppendBinaryPartData>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<Uint8Array>;
 export function mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult;
 
-export function generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
-export function generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
-export function generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
+export function generateSegments(segments: QRSegmentInput[], options: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
+export function generateSegments(segments: QRSegmentInput[], options: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
+export function generateSegments(segments: QRSegmentInput[], options: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
 export function generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
+export function generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions): QRGenerateResult;
 
 export function drawToCanvas<T extends QRCanvasTarget>(target: T, input: QRInput, options?: QRCodeOptions): T;
+export function drawToCanvas<T extends QRPortableCanvasTarget>(target: T, input: QRInput, options?: QRCodeOptions): T;
 
 export interface GS1Element {
   ai: string;
@@ -728,21 +802,28 @@ export class InvalidCanvasTargetError extends SpecQRError {
 }
 
 export class QRCode {
-  static generate(input: QRInput, options?: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
-  static generate(input: QRInput, options?: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
-  static generate(input: QRInput, options?: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
+  static generate(input: QRInput, options: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
+  static generate(input: QRInput, options: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
+  static generate(input: QRInput, options: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
   static generate(input: QRInput, options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
+  static generate(input: QRInput, options?: QRCodeOptions): QRGenerateResult;
   static estimate(input: QRInput, options?: QREstimateOptions): QREstimateResult;
   static analyzeSegments(segments: QRSegmentInput[], options?: QREstimateOptions): QREstimateResult;
   static getCapacity(options: QRGetCapacityOptions): QRCapacityInfo;
-  static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { diagnostics: true }): QRStructuredAppendResult<QRCodeDiagnosticResult>;
-  static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendResult<QRMatrix>;
-  static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendResult<Uint8Array>;
+  static generateStructuredAppend(input: QRInput, options: QRStructuredAppendGenerateOptions & { diagnostics: true }): QRStructuredAppendResult<QRCodeDiagnosticResult>;
+  static generateStructuredAppend(input: QRInput, options: QRStructuredAppendGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendResult<QRMatrix>;
+  static generateStructuredAppend(input: QRInput, options: QRStructuredAppendGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendResult<Uint8Array>;
   static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): QRStructuredAppendResult<string>;
-  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { diagnostics: true }): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult>;
-  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics?: false }): QRStructuredAppendSegmentsResult<QRMatrix>;
-  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics?: false }): QRStructuredAppendSegmentsResult<Uint8Array>;
-  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): QRStructuredAppendSegmentsResult<string>;
+  static generateStructuredAppend(input: QRInput, options?: QRStructuredAppendGenerateOptions): QRStructuredAppendResult;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { diagnostics: QRStructuredAppendSegmentsFullDiagnosticSelection }): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult, QRStructuredAppendSegmentsFullDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { diagnostics: QRStructuredAppendSegmentsStandardDiagnosticSelection }): QRStructuredAppendSegmentsResult<QRCodeDiagnosticResult, QRStructuredAppendSegmentsStandardDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics: QRStructuredAppendSegmentsFullOutputSelection }): QRStructuredAppendSegmentsResult<QRMatrix, QRStructuredAppendSegmentsFullDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "matrix"; diagnostics?: QRStructuredAppendSegmentsStandardOutputSelection }): QRStructuredAppendSegmentsResult<QRMatrix, QRStructuredAppendSegmentsStandardDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics: QRStructuredAppendSegmentsFullOutputSelection }): QRStructuredAppendSegmentsResult<Uint8Array, QRStructuredAppendSegmentsFullDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output: "png"; diagnostics?: QRStructuredAppendSegmentsStandardOutputSelection }): QRStructuredAppendSegmentsResult<Uint8Array, QRStructuredAppendSegmentsStandardDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics: QRStructuredAppendSegmentsFullOutputSelection }): QRStructuredAppendSegmentsResult<string, QRStructuredAppendSegmentsFullDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: QRStructuredAppendSegmentsStandardOutputSelection }): QRStructuredAppendSegmentsResult<string, QRStructuredAppendSegmentsStandardDiagnostics>;
+  static generateSegmentsStructuredAppend(segments: QRSegmentInput[], options?: QRStructuredAppendSegmentsGenerateOptions): QRStructuredAppendSegmentsResult;
   static calculateStructuredAppendParity(input: QRStructuredAppendParityInput): number;
   static calculateStructuredAppendSegmentsParity(
     segments: QRSegmentInput[],
@@ -751,11 +832,13 @@ export class QRCode {
   static mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<string>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<string>;
   static mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart<QRStructuredAppendBinaryPartData>[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult<Uint8Array>;
   static mergeStructuredAppendParts(parts: QRStructuredAppendDecodedPart[], options?: QRStructuredAppendMergeOptions): QRStructuredAppendMergeResult;
-  static generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
-  static generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
-  static generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
+  static generateSegments(segments: QRSegmentInput[], options: QRCodeOptions & { diagnostics: true }): QRCodeDiagnosticResult;
+  static generateSegments(segments: QRSegmentInput[], options: QRCodeOptions & { output: "matrix"; diagnostics?: false }): QRMatrix;
+  static generateSegments(segments: QRSegmentInput[], options: QRCodeOptions & { output: "png"; diagnostics?: false }): Uint8Array;
   static generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions & { output?: "svg" | "svg-data-url" | "png-data-url"; diagnostics?: false }): string;
+  static generateSegments(segments: QRSegmentInput[], options?: QRCodeOptions): QRGenerateResult;
   static drawToCanvas<T extends QRCanvasTarget>(target: T, input: QRInput, options?: QRCodeOptions): T;
+  static drawToCanvas<T extends QRPortableCanvasTarget>(target: T, input: QRInput, options?: QRCodeOptions): T;
   static createGs1ElementString(elements: GS1Element[]): string;
   static createGs1DigitalLink(
     input: GS1Element[] | GS1ElementStringParseResult,

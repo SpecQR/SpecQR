@@ -173,11 +173,11 @@ Use deterministic greedy largest-fitting, mirroring `generateStructuredAppend()`
 
 1. Normalize manual segments with the same validation rules as `generateSegments()`.
 2. Reject control segments and incompatible options.
-3. Convert normalized data segments into split units:
-   - one unit per numeric / alphanumeric / kanji segment
-   - one or more units for byte segments when byte chunking is needed
-4. Compute the canonical payload byte stream and parity before splitting.
-5. For each candidate version, greedily choose the largest prefix of split units that fits with a temporary low-level Structured Append header.
+3. Create one compact source descriptor per normalized data segment:
+   - numeric / alphanumeric / kanji segments are one atomic logical unit
+   - byte segments expose virtual byte/code-point ranges when chunking is needed
+4. Scan the canonical payload byte policy to compute byte length and parity without constructing a full canonical byte array.
+5. For each candidate version, greedily choose the largest prefix of the virtual logical-unit sequence that fits with a temporary low-level Structured Append header.
 6. Preserve at least one split unit for a second symbol.
 7. Continue until all units are consumed or `maxSymbols` is exceeded.
 8. Select the smallest common version that yields `2..maxSymbols` symbols when `version: "auto"`.
@@ -185,6 +185,12 @@ Use deterministic greedy largest-fitting, mirroring `generateStructuredAppend()`
 All symbols in the returned set use the same version and error correction level. Per-symbol version selection is deferred.
 
 The splitter may use existing `generateSegments()` capacity checks as the source of truth. It should not duplicate QR capacity math outside the existing planner unless tests prove a need.
+
+Before creating text checkpoints or final chunks, a safe total-capacity lower bound rejects
+input that cannot fit in `maxSymbols`. Candidate probes use descriptor ranges and do not
+construct per-byte objects or repeatedly copy candidate segment arrays. The selected final
+ranges alone are materialized. Details are in
+[Structured Append Memory Hardening](./structured-append-memory.md).
 
 ## Version / ECC / Mask Policy
 
@@ -288,7 +294,17 @@ interface QRStructuredAppendSegmentsSymbolDiagnostics {
 }
 ```
 
-`sourceSegmentEnd` is exclusive. `splitUnitStart` and `splitUnitLength` refer to the internal split-unit array, not the caller's original segment array.
+`sourceSegmentEnd` is exclusive. `splitUnitStart` and `splitUnitLength` refer to the
+logical split-unit sequence, not the caller's original segment array. The implementation
+uses virtual ranges internally; the public `splitUnits` diagnostics array is materialized
+once after successful generation to preserve this return shape.
+
+This paragraph records the published v2 baseline. Package metadata in the current dirty
+working tree is integrated as the unpublished `3.0.0-rc.1` candidate, in which standard
+diagnostics omit the property and full detail is explicitly requested with
+`diagnostics: { splitUnits: "full" }`. See
+[v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) and
+[v3 Migration Guide](./v3-migration.md).
 
 When `diagnostics: true`, each returned symbol is still the normal `QRCodeDiagnosticResult` from `generateSegments()`, including `diagnostics.structuredAppend`.
 
@@ -363,7 +379,7 @@ The implementation includes tests for:
 - fixed version exact split and single-symbol rejection.
 - auto version chooses the smallest common version that yields `2..maxSymbols`.
 - non-byte segment too large for fixed version throws `DataTooLongError`.
-- low-level structured append segment is rejected.
+- low-level Structured Append segment is rejected.
 - ECI / FNC1 first / FNC1 second / `gs1: true` are rejected.
 - parity equals canonical payload byte stream XOR.
 - per-symbol diagnostics have matching `index`, `total`, `parity`, sequence fields, byte offsets, and segment ranges.

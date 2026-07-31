@@ -1,6 +1,16 @@
 # API
 
-この文書は現在の SpecQR main branch public API を説明します。SpecQR v2 系では、GS1 Digital Link、FNC1 second position、Structured Append API、GS1 validation / supported AI introspection API、GS1 Digital Link validation API を stable public API として含めています。API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する識別子なので英語のままです。
+この文書は現在の SpecQR main branch、package version `3.0.0-rc.1` の public
+API を説明します。RC は未公開です。SpecQR v2 系の GS1 Digital Link、FNC1
+second position、Structured Append API、GS1 validation / supported AI
+introspection API、GS1 Digital Link validation API は維持し、RC 1 では
+`generateSegmentsStructuredAppend()` の diagnostics contract だけを変更します。
+API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する
+識別子なので英語のままです。
+
+RC 1 は release freeze 状態です。この diagnostics contract 以外の runtime、
+型、public export の変更は追加しません。unknown-option rejection、GS1 metadata
+readonly、新しい inspection API は将来候補として RC 1 の対象外に保ちます。
 
 ## Planning / Capacity APIs
 
@@ -178,7 +188,52 @@ const result = generateSegmentsStructuredAppend([
 });
 ```
 
-Split policy は segment boundary first です。`byte` segment だけを byte boundary、または string data の Unicode code point boundary で安全に chunking します。`numeric` / `alphanumeric` / `kanji` segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は reject します。`diagnostics.splitStrategy` は `"segment-boundary-byte-chunk"` になり、`diagnostics.splitUnits` と `diagnostics.symbols` に source segment range、split unit range、byte offset、per-symbol Structured Append metadata が入ります。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
+Split policy は segment boundary first です。`byte` segment だけを byte boundary、または string data の Unicode code point boundary で安全に chunking します。`numeric` / `alphanumeric` / `kanji` segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は reject します。`diagnostics.splitStrategy` は `"segment-boundary-byte-chunk"` になり、`diagnostics.symbols` に source segment range、split unit range、byte offset、per-symbol Structured Append metadata が入ります。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
+
+次の v3 diagnostics contract を `3.0.0-rc.1` candidate へ統合しています。
+RC は未公開であり、published stable package の support claim ではありません。
+
+```js
+const segments = [
+  { mode: "byte", data: "A".repeat(31) }
+];
+
+const standard = generateSegmentsStructuredAppend(segments, {
+  output: "png",
+  diagnostics: false
+});
+
+console.log(standard.diagnostics.splitUnitsDetail); // "summary"
+console.log(standard.diagnostics.splitUnitCount);
+console.log(Object.hasOwn(standard.diagnostics, "splitUnits")); // false
+
+const full = generateSegmentsStructuredAppend(segments, {
+  diagnostics: {
+    splitUnits: "full",
+    symbolResults: "diagnostics"
+  }
+});
+
+console.log(full.diagnostics.splitUnitsDetail); // "full"
+console.log(full.diagnostics.splitUnits.length);
+```
+
+Manual Structured Append 専用の `diagnostics` object は次を受け付けます。
+
+- `splitUnits?: "summary" | "full"`。Default は `"summary"`。
+- `symbolResults?: "output" | "diagnostics"`。Object form の default は
+  `"diagnostics"`。
+- `false` または省略は standard summary + requested output。
+- `true` は standard summary + diagnostic symbol results。
+
+Standard summary は `splitUnitCount` と `splitUnitsDetail: "summary"` を持ち、
+`splitUnits` own property を持ちません。Full summary は
+`splitUnitsDetail: "full"` と v2 互換の mutable plain `splitUnits` array を持ちます。
+Raw input 版 `generateStructuredAppend()` と base generation API の `diagnostics` は
+boolean のままです。Migration、serialization、型 narrowing は
+[v3 Migration Guide](./v3-migration.md) と
+[v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md)
+を参照してください。
 
 ### `QRCode.mergeStructuredAppendParts(parts, options?)`
 
@@ -223,7 +278,7 @@ const merged = mergeStructuredAppendParts(parts);
 
 metadata がない decoder output、たとえば decoded string だけの配列からは、順序、欠落、重複、parity を安全に判断できません。その場合は `mergeStructuredAppendParts()` に渡さず、decoder が返した通常の decoded data として扱ってください。実行可能な adapter example は [../examples/structured-append-merge.mjs](../examples/structured-append-merge.mjs) にあります。
 
-Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の metadata を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
+Structured Append を読み取る decoder が自動で payload を merge するか、各 symbol の metadata を返すかは実装依存です。読み取り側 workflow と decoder metadata がない場合の限界は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) を参照してください。SpecQR の required ZXing Java 3.5.4 lane は sequence/parity metadata と信頼できる text payload merge を確認しますが、全 scanner 互換は主張しません。固定 toolchain と non-claims は [Structured Append ZXing Java Verification](./structured-append-zxing-java.md) に記録しています。
 
 ### `QRCode.drawToCanvas(target, input, options)`
 
@@ -237,6 +292,24 @@ QRCode.drawToCanvas(canvas, "https://example.com", {
   margin: 4
 });
 ```
+
+Root declaration は DOM global 型を直接参照しません。Custom canvas mock を使う Node consumer は `QRCanvasLike` / `QRCanvasContextLike` を利用でき、DOM lib がある browser consumer は実 `HTMLCanvasElement` / `CanvasRenderingContext2D` をそのまま渡せます。
+
+### TypeScript return inference
+
+`generate()` / `generateSegments()` と `QRCode` static variants は、literal `output` / `diagnostics` から return type を絞ります。`output: "matrix"` は `QRMatrix`、`output: "png"` は `Uint8Array`、文字列 output と引数省略は `string`、`diagnostics: true` は `QRCodeDiagnosticResult` です。
+
+```ts
+import { generate, type QRCodeOptions, type QRGenerateResult } from "specqr";
+
+const matrix = generate("A", { output: "matrix" }); // QRMatrix
+const detailed = generate("A", { diagnostics: true }); // QRCodeDiagnosticResult
+
+declare const options: QRCodeOptions;
+const dynamic: QRGenerateResult = generate("A", options);
+```
+
+Narrow overload の末尾には `QRCodeOptions` catch-all があるため、動的な options 変数も拒否しません。Structured Append の symbol output も同じ方針です。型、canvas portability、option compatibility の詳細は [Public API / TypeScript Contract](./public-api-contract.md) を参照してください。
 
 ## Options
 
@@ -260,6 +333,14 @@ QRCode.drawToCanvas(canvas, "https://example.com", {
 - `structuredAppend`: `false | { index, total, parity }`。default は `false`。Structured Append mode indicator (`0011`) と 8-bit Symbol Sequence Indicator、8-bit parity data を先頭に挿入します。public API の `index` は 1-based、`total` は `2..16`、`index` は `1..total`、`parity` は `0..255` integer です。この実装では ECI / FNC1 first / FNC1 second / `gs1: true` との併用を安全側で reject します。
 - `diagnostics`: `true` の場合、生成詳細と warnings を返します。
 - `printDpi`: print-size diagnostics のための optional DPI。生成結果そのものには影響しません。
+
+Current major では、base API の unknown key は無視され、`null` / array option container も legacy behavior として default merge されます。`diagnostics` の non-boolean truthy value も現在は受理されます。これらは互換性のため維持している挙動であり、新規利用では documented key と正しい型だけを non-null object で渡してください。Structured Append や `getCapacity()` にはより strict な所有 option / container policy があります。API family ごとの差と v3 tightening 候補は [Public API / TypeScript Contract](./public-api-contract.md) に固定しています。
+
+### Rendering resource limits
+
+SVG / PNG / Data URL / canvas / ImageData と Node/browser helper は、描画前に dimension と allocation size を checked arithmetic で検証します。Raster は最大 4,194,304 pixels、RGBA 16 MiB、SVG source は事前見積もり 8 MiB、Data URL は事前見積もり 32 MiB です。超過、`Infinity`、unsafe integer は raw `RangeError` や invalid image ではなく `InvalidInputError` (`INVALID_INPUT`) になります。`output: "matrix"` は renderer allocation を行わないため対象外です。
+
+正確な metric、PNG scanline / stream budget、helper ごとの適用範囲、failure message は [Resource Safety / Correctness Hardening](./resource-safety.md) を参照してください。
 
 ## GS1 / FNC1 First Position
 
@@ -493,6 +574,8 @@ validateGs1ElementString(input, options?): Gs1ElementStringValidationResult;
 ```
 
 `getSupportedGs1Ais()` / `getGs1AiInfo(ai)` は `ai`、`label`、fixed / variable length、`valueKind`、check digit rule、Digital Link role、separator requirement を公開 metadata として返します。AI family は concrete AI entries に展開して返し、internal dictionary object はそのまま露出しません。
+
+Runtime return は呼出しごとに分離された deep-frozen public metadata で、nested `length` / `digitalLinkPathForPrimary` の mutation も内部 dictionary や後続 validation へ伝播しません。TypeScript declaration の `readonly` 化は既存 consumer を拒否するため current major では適用せず、v3 compatibility decision としています。詳細は [Public API / TypeScript Contract](./public-api-contract.md) を参照してください。
 
 `validateGs1Elements()` / `validateGs1ElementString()` は成功時に `{ ok: true, elements, warnings }`、失敗時に `{ ok: false, errors, warnings }` を返します。Raw element string validation の成功 result には `hasSeparators` も入ります。Detail error code は `GS1_UNSUPPORTED_AI`、`GS1_INVALID_LENGTH`、`GS1_INVALID_CHARSET`、`GS1_MISSING_SEPARATOR`、`GS1_UNEXPECTED_SEPARATOR`、`GS1_INVALID_CHECK_DIGIT`、`GS1_INVALID_DIGITAL_LINK_PLACEMENT`、`GS1_INVALID_INPUT` です。
 

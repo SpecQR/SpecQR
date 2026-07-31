@@ -1,0 +1,17 @@
+{
+  "name": "specqr-browser-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "verify": "node run-e2e.mjs",
+    "install:browsers": "playwright install chromium firefox webkit",
+    "install:browsers:ci": "playwright install --with-deps chromium firefox webkit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0"
+  }
+}

@@ -2,6 +2,7 @@ import { generate, generateSegments } from "./index.js";
 import { InvalidInputError } from "./errors.js";
 import { normalizeOptions } from "./options.js";
 import { parseRgbaColor } from "./render/color.js";
+import { getRasterGeometry } from "./render/geometry.js";
 
 export function toBlob(input, options = {}) {
   assertBlobSupport();
@@ -59,10 +60,10 @@ function matrixToImageData(matrix, options) {
   }
 
   const size = matrix.length;
-  const dimension = (size + options.margin * 2) * options.scale;
+  const { dimension, rgbaBytes } = getRasterGeometry(matrix, options, "image-data");
   const foreground = parseRgbaColor(options.foreground, "foreground", true);
   const background = parseRgbaColor(options.background, "background", true);
-  const data = new Uint8ClampedArray(dimension * dimension * 4);
+  const data = new Uint8ClampedArray(rgbaBytes);
 
   for (let y = 0; y < dimension; y += 1) {
     const moduleY = Math.floor(y / options.scale) - options.margin;

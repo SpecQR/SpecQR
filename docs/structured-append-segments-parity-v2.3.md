@@ -263,7 +263,7 @@ Golden fixture は原則不要です。この helper は matrix を生成しな�
 
 ## Rejected Choices
 
-- QR encoded bitstream を XOR する: Structured Append parity は logical message bytes の helperとして固定するため不採用。
+- QR encoded bitstream を XOR する: Structured Append parity は logical message bytes の helper として固定するため不採用。
 - Kanji segment を Shift_JIS bytes で XOR する: 現行 `generateSegmentsStructuredAppend()` の canonical payload byte stream と一致しないため不採用。
 - ECI / FNC1 / GS1 を初期実装で受け付ける: control metadata と payload bytes の責務が混ざるため不採用。
 - low-level `{ mode: "structured-append" }` segment を無視する: caller の入力ミスを隠すため不採用。

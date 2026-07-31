@@ -1,14 +1,14 @@
 import { bytesToBase64 } from "./base64.js";
 import { parseRgbaColor } from "./color.js";
+import { getRasterGeometry } from "./geometry.js";
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 const CRC_TABLE = createCrcTable();
 
 export function renderPng(matrix, options) {
-  const size = matrix.length;
   const margin = options.margin;
   const scale = options.scale;
-  const width = (size + margin * 2) * scale;
+  const { dimension: width } = getRasterGeometry(matrix, options, "png");
   const height = width;
   const foreground = parseRgbaColor(options.foreground, "foreground", true);
   const background = parseRgbaColor(options.background, "background", true);
@@ -24,6 +24,7 @@ export function renderPng(matrix, options) {
 }
 
 export function renderPngDataUrl(matrix, options) {
+  getRasterGeometry(matrix, options, "png-data-url");
   return `data:image/png;base64,${bytesToBase64(renderPng(matrix, options))}`;
 }
 

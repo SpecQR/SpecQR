@@ -12,19 +12,25 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 
 Node.js は `>=18` をサポート範囲にし、CI では Node 18 / 20 / 22 / 24 の engine matrix を release gate として確認します。
 
+この checkout は `3.0.0-rc.1` の公開候補です。npm の `latest` は公開済み stable
+2.4.0 向け、RC は公開時に `next` へ置く方針です。この文書作成時点では
+3.0.0-rc.1 を npm へ公開していません。
+
 ## インストール
 
 ```sh
 npm install specqr
 ```
 
-次の prerelease channel を明示して試す場合:
+3.0.0-rc.1 が `next` へ公開された後、prerelease channel を明示して試す場合:
 
 ```sh
 npm install specqr@next
 ```
 
-`specqr` は stable channel です。`specqr@next` は次の prerelease を試すための channel として扱いますが、stable 公開直後は `latest` と同じ version を指すことがあります。通常利用では `npm install specqr` を使ってください。
+`specqr` は stable channel です。通常利用では `npm install specqr` を使ってください。
+`specqr@next` が実際にどの version を指すかは registry で確認し、未公開 RC を
+install できるとは記述しません。
 
 ## Links
 
@@ -32,14 +38,21 @@ npm install specqr@next
 - GitHub Pages playground after manual deploy: https://specqr.github.io/SpecQR/playground/
 - Examples: [examples/](examples/)
 - API: [docs/api.md](docs/api.md)
+- Public API / TypeScript Contract: [docs/public-api-contract.md](docs/public-api-contract.md)
 - Conformance Matrix: [docs/conformance.md](docs/conformance.md)
 - Public Conformance Lab report: https://specqr.github.io/SpecQR-Conformance-Lab/
 - External Reference Comparison: [docs/reference-comparison.md](docs/reference-comparison.md)
+- Resource Safety: [docs/resource-safety.md](docs/resource-safety.md)
+- Structured Append Memory: [docs/structured-append-memory.md](docs/structured-append-memory.md)
 - Test Plan: [docs/test-plan.md](docs/test-plan.md)
 - Release Checklist: [docs/release.md](docs/release.md)
+- Release Artifact Verification: [docs/release-artifact.md](docs/release-artifact.md)
+- v3 Migration Guide: [docs/v3-migration.md](docs/v3-migration.md)
+- 3.0.0-rc.1 Release Notes: [docs/release-notes-3.0.0-rc.1.md](docs/release-notes-3.0.0-rc.1.md)
+- v3 Structured Append Diagnostics Contract: [docs/v3-structured-append-diagnostics.md](docs/v3-structured-append-diagnostics.md)
 - Security Policy: [SECURITY.md](SECURITY.md)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Project Language Policy: [docs/project-language.md](docs/project-language.md)
+- Project Language and Writing Style: [docs/project-language.md](docs/project-language.md)
 - Supported GS1 AIs: [docs/gs1-supported-ai.md](docs/gs1-supported-ai.md)
 - GS1 Validation v2.1 Design: [docs/gs1-validation-v2.1.md](docs/gs1-validation-v2.1.md)
 - GS1 Digital Link Validation v2.2 Design: [docs/gs1-digital-link-validation-v2.2.md](docs/gs1-digital-link-validation-v2.2.md)
@@ -50,6 +63,7 @@ npm install specqr@next
 - Structured Append Manual Segments Parity Helper v2.3: [docs/structured-append-segments-parity-v2.3.md](docs/structured-append-segments-parity-v2.3.md)
 - Structured Append Scanning Workflow: [docs/structured-append-scanning-v2.md](docs/structured-append-scanning-v2.md)
 - Structured Append Decoder Metadata Validation: [docs/structured-append-decoder-validation-v2.md](docs/structured-append-decoder-validation-v2.md)
+- Structured Append ZXing Java Verification: [docs/structured-append-zxing-java.md](docs/structured-append-zxing-java.md)
 - GS1 Digital Link v2 Design: [docs/gs1-digital-link-v2.md](docs/gs1-digital-link-v2.md)
 
 ## 現在の対応範囲
@@ -84,6 +98,18 @@ v2 系では、GS1 syntax layer、GS1 Digital Link、FNC1 second position、Stru
 2.3.0 では Structured Append の低レベル利用向けに `calculateStructuredAppendParity()` と `calculateStructuredAppendSegmentsParity()` を stable API として追加しました。どちらも QR encoded bitstream ではなく logical message bytes の XOR を返し、高レベル `generateStructuredAppend()` / `generateSegmentsStructuredAppend()` が返す `parity` と一致します。
 
 2.4.0 では、生成前に Version / ECC / mode / capacity / warnings を見積もる `estimate()`、manual segments 用の `analyzeSegments()`、capacity table を安全に参照する `getCapacity()` を stable API として追加しました。詳細は [Planning / Diagnostics API v2.4](docs/planning-diagnostics-v2.4.md) を参照してください。
+
+3.0.0-rc.1 では、manual segments 版 Structured Append の standard diagnostics を
+compact にします。Standard は `splitUnitsDetail: "summary"` と
+`splitUnitCount` を返し、full detail は
+`diagnostics: { splitUnits: "full" }` で opt-in します。これは RC 1 で唯一の
+breaking change です。移行方法は [v3 Migration Guide](docs/v3-migration.md) を
+参照してください。
+
+RC 1 は release freeze 状態です。unknown-option rejection、GS1 metadata readonly、
+新しい inspection API、その他の runtime / type / export 変更は RC 1 に追加しません。
+公開前に残る作業は、commit / push、hosted CI、`next` publish、post-publish
+verification です。
 
 Digital Link 周りの導線は次の順に読むと迷いにくいです。
 
@@ -253,7 +279,7 @@ console.log(set.symbols);
 
 各 symbol を SVG / PNG として保存する例は [examples/structured-append.mjs](examples/structured-append.mjs) にあります。Playground でも `Structured Append` mode を選ぶと、複数 symbol の preview、parity、per-symbol diagnostics を確認できます。
 
-Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。読み取り側 workflow と `mergeStructuredAppendParts()` の位置づけは [Structured Append Scanning Workflow](docs/structured-append-scanning-v2.md) に、metadata-returning decoder 候補と optional validation 方針は [Structured Append Decoder Metadata Validation](docs/structured-append-decoder-validation-v2.md) にまとめています。
+Structured Append は複数 QR symbols を 1 つの logical message として扱うための QR 仕様機能です。ただし、scanner によっては自動結合結果を返さず、各 symbol を個別に露出する場合があります。SpecQR の検証では decoder merge だけに依存せず、header、parity、matrix、diagnostics、golden fixture を重視しています。読み取り側 workflow と `mergeStructuredAppendParts()` の位置づけは [Structured Append Scanning Workflow](docs/structured-append-scanning-v2.md) に、decoder ごとの責務は [Structured Append Decoder Metadata Validation](docs/structured-append-decoder-validation-v2.md) にまとめています。ZXing Java を使う required metadata lane の固定版 toolchain と non-claims は [Structured Append ZXing Java Verification](docs/structured-append-zxing-java.md) を参照してください。
 
 decoder が `{ index, total, parity, data }` を返せる場合は、`mergeStructuredAppendParts()` で欠落、重複、metadata mismatch、payload parity を検証してから結合できます。
 
@@ -333,6 +359,14 @@ console.log(autoSet.parity === parity);
 ```
 
 Manual segments parity helper の bytes policy と control segment rejection は [Structured Append Manual Segments Parity Helper v2.3](docs/structured-append-segments-parity-v2.3.md) にまとめています。
+
+3.0.0-rc.1 では manual Structured Append の full split-unit diagnostics を
+明示的 opt-in にします。Standard では `splitUnitsDetail: "summary"` と正確な
+`splitUnitCount` を返し、`splitUnits` property を持ちません。Full detail は
+`diagnostics: { splitUnits: "full" }` で要求します。RC は未公開であり、
+移行と型 contract は [v3 Migration Guide](docs/v3-migration.md) と
+[v3 Structured Append Diagnostics Contract](docs/v3-structured-append-diagnostics.md)
+を参照してください。
 
 ## GS1 Digital Link URI QR
 
@@ -533,9 +567,14 @@ try {
 
 ```sh
 npm test
+npm run verify:writing
 ```
 
 `npm test` には、固定 Version / 誤り訂正 / mask の golden conformance fixture が含まれます。matrix rows、codewords、diagnostics、format bits、version bits、remainder bits の代表ケースを固定しています。
+
+`npm run verify:writing` は、公開 prose の spacing、既知 unit、正式名称のうち
+機械的に曖昧なく判定できる規則を検査します。詳細は
+[Project Language and Writing Style](docs/project-language.md) を参照してください。
 
 QR 構築ロジックの意図した変更を受け入れる場合だけ、snapshot を更新します。
 
@@ -566,13 +605,55 @@ npm run verify:decode:jsqr
 
 `jsqr` は devDependency のみです。SpecQR の runtime package は dependency-free のままです。
 
+Structured Append の sequence / parity metadata は、packed package と固定版
+ZXing Java を使う required lane で検証します。JDK 21 が必要で、未導入時や
+dependency 取得不能時は skip せず失敗します。
+
+```sh
+npm run verify:structured-append:zxing-java
+```
+
+この lane は 2 / 3 / 16 symbols、UTF-8 / astral、binary / offset view、manual segments、
+fixed Version/ECC/mask、shuffled scan order を対象にします。詳細は
+[Structured Append ZXing Java Verification](docs/structured-append-zxing-java.md)
+を参照してください。
+
 固定条件での外部参照比較には Nayuki QR Code generator を使います。
 
 ```sh
 npm run verify:reference:nayuki
 ```
 
-この check は fixed payload、fixed Version、fixed ECC、fixed mask の matrix を外部実装と比較します。auto segmentation や GS1 semantics の完全一致は目的にしていません。
+この check は Version 1-40 × ECC L / M / Q / H × mask 0-7 の全 1,280
+fixed-condition matrix を外部実装と比較します。auto segmentation や GS1 semantics
+の完全一致は目的にしていません。
+
+固定 seed の property / differential release gate:
+
+```sh
+npm run verify:conformance:fuzz
+```
+
+bounded suite、extended mode、failure の単独再実行方法は [Deterministic Conformance / Fuzzing](docs/conformance-fuzzing.md) を参照してください。
+
+Renderer allocation、oversized input、large manual parity、Structured Append single-pass は独立した低 heap gate でも確認します。
+
+```sh
+npm run verify:resource-safety
+npm run verify:structured-append:memory
+```
+
+上限値と failure semantics は [Resource Safety / Correctness Hardening](docs/resource-safety.md) を、高レベル Structured Append の capacity preflight と compact split source は [Structured Append Memory Hardening](docs/structured-append-memory.md) を参照してください。
+
+実ブラウザ上の packed package と build 済み Playground は、独立した Playwright harness で Chromium / Firefox / WebKit を確認します。
+
+```sh
+npm ci --prefix e2e/browser
+npm --prefix e2e/browser run install:browsers
+npm run verify:browser:e2e
+```
+
+この gate は Node.js `>=22` を使いますが、root package の Node.js `>=18` support と runtime dependency 0 は維持します。検証範囲と CI artifact は [Browser E2E](docs/browser-e2e.md) を参照してください。
 
 pack した package を一時 install し、公開 API と型定義の surface を確認します。
 
@@ -580,10 +661,36 @@ pack した package を一時 install し、公開 API と型定義の surface �
 npm run verify:pack
 ```
 
-この check は `parseGs1ElementString()`、`QRCode.parseGs1ElementString()`、`specqr/node` / `specqr/browser` とは独立した root install smoke と、同梱 `.d.ts` の軽量確認を行います。
+この check は tarball を隔離 install し、root / `specqr/node` / `specqr/browser` の runtime export と代表呼出し、installed declarations に対する NodeNext（DOM なし）/ Bundler（DOM あり）consumer compile を確認します。
+
+3.0.0-rc.1 の公開候補は、repository 外の空 directory へ一度だけ pack し、同じ
+tarball を Node matrix、browser、ZXing Java へ渡します。
+
+```sh
+npm run release:artifact -- \
+  --output-dir /private/tmp/specqr-3.0.0-rc.1-artifact
+
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
+  npm run verify:release:artifact
+```
+
+Tarball SHA-256、全 file content manifest、再 pack content 一致、package
+allow/deny policy、公開後の exact version / `next` 検証手順は
+[Release Artifact Verification](docs/release-artifact.md) を参照してください。
 
 公開済み npm package の smoke test は release 前後に実行します。
 
 ```sh
 npm run verify:published
 ```
+
+3.0.0-rc.1 の registry smoke は RC を `next` へ公開した後だけ実行します。
+
+```sh
+node tools/verify-published-package.js \
+  --expected-version 3.0.0-rc.1 \
+  specqr@3.0.0-rc.1 specqr@next
+```
+
+Conformance Lab は公開済み 2.4.0 を対象としており、この未公開 RC の検証済み claim
+には使用しません。

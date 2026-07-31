@@ -124,11 +124,23 @@ export function createSegments(input, requestedMode, version, optimizeSegments =
 }
 
 export function normalizeManualSegments(segments) {
+  return normalizeManualSegmentsInternal(segments, false);
+}
+
+export function normalizeManualSegmentsPreservingBinary(segments) {
+  return normalizeManualSegmentsInternal(segments, true);
+}
+
+function normalizeManualSegmentsInternal(segments, preserveBinary) {
   if (!Array.isArray(segments)) {
     throw new InvalidInputError("manual segments must be an array");
   }
 
-  return validateManualControlSegments(segments.map((segment, index) => normalizeManualSegment(segment, index)));
+  return validateManualControlSegments(
+    segments.map((segment, index) =>
+      normalizeManualSegment(segment, index, preserveBinary)
+    )
+  );
 }
 
 export { prependEciSegment, prependFnc1Segment, prependFnc1SecondSegment, prependStructuredAppendSegment };
@@ -218,6 +230,30 @@ export function isKanji(text) {
   return Array.from(text).every((character) => canEncodeKanjiModeCharacter(character));
 }
 
+export function createSegmentOptimizationBitLengthTracker(version, allowKanji = true) {
+  const modes = allowKanji ? MODES : MODES.filter((mode) => mode !== "kanji");
+  let states = new Map([
+    ["start", {
+      cost: 0,
+      segmentCount: 0,
+      mode: null,
+      mod: 0,
+      prevKey: null
+    }]
+  ]);
+
+  return {
+    append(character) {
+      states = advanceOptimizationStates(states, character, modes, version);
+      const { state } = selectBestOptimizationState(states);
+      if (!state) {
+        throw new Error("Unable to encode input text");
+      }
+      return state.cost;
+    }
+  };
+}
+
 function getPayloadBitLength(segment) {
   switch (segment.mode) {
     case "numeric": {
@@ -267,44 +303,17 @@ function optimizeSegmentModes(text, version, allowKanji = true) {
   });
 
   for (let index = 0; index < characters.length; index += 1) {
-    for (const [key, state] of layers[index]) {
-      for (const mode of modes) {
-        const character = characters[index];
-        if (!canEncodeCharacter(character, mode)) {
-          continue;
-        }
-
-        const sameSegment = state.mode === mode;
-        const payloadBits = sameSegment
-          ? getIncrementalPayloadBits(character, mode, state.mod)
-          : getIncrementalPayloadBits(character, mode, 0);
-        const overheadBits = sameSegment ? 0 : 4 + getCharacterCountBitLength(version, mode);
-        const nextMod = getNextMod(character, mode, sameSegment ? state.mod : 0);
-        const nextKey = `${mode}:${nextMod}`;
-        const candidate = {
-          cost: state.cost + overheadBits + payloadBits,
-          segmentCount: state.segmentCount + (sameSegment ? 0 : 1),
-          mode,
-          mod: nextMod,
-          prevKey: key
-        };
-
-        const current = layers[index + 1].get(nextKey);
-        if (!current || isBetterState(candidate, current)) {
-          layers[index + 1].set(nextKey, candidate);
-        }
-      }
-    }
+    layers[index + 1] = advanceOptimizationStates(
+      layers[index],
+      characters[index],
+      modes,
+      version
+    );
   }
 
-  let bestKey = null;
-  let bestState = null;
-  for (const [key, state] of layers[characters.length]) {
-    if (!bestState || isBetterState(state, bestState)) {
-      bestKey = key;
-      bestState = state;
-    }
-  }
+  const { key: bestKey, state: bestState } = selectBestOptimizationState(
+    layers[characters.length]
+  );
 
   if (!bestState) {
     throw new Error("Unable to encode input text");
@@ -318,6 +327,58 @@ function optimizeSegmentModes(text, version, allowKanji = true) {
   }
 
   return coalesceAssignments(characters, assignments);
+}
+
+function advanceOptimizationStates(states, character, modes, version) {
+  const nextStates = new Map();
+
+  for (const [key, state] of states) {
+    for (const mode of modes) {
+      if (!canEncodeCharacter(character, mode)) {
+        continue;
+      }
+
+      const sameSegment = state.mode === mode;
+      const payloadBits = sameSegment
+        ? getIncrementalPayloadBits(character, mode, state.mod)
+        : getIncrementalPayloadBits(character, mode, 0);
+      const overheadBits = sameSegment
+        ? 0
+        : 4 + getCharacterCountBitLength(version, mode);
+      const nextMod = getNextMod(
+        character,
+        mode,
+        sameSegment ? state.mod : 0
+      );
+      const nextKey = `${mode}:${nextMod}`;
+      const candidate = {
+        cost: state.cost + overheadBits + payloadBits,
+        segmentCount: state.segmentCount + (sameSegment ? 0 : 1),
+        mode,
+        mod: nextMod,
+        prevKey: key
+      };
+
+      const current = nextStates.get(nextKey);
+      if (!current || isBetterState(candidate, current)) {
+        nextStates.set(nextKey, candidate);
+      }
+    }
+  }
+
+  return nextStates;
+}
+
+function selectBestOptimizationState(states) {
+  let bestKey = null;
+  let bestState = null;
+  for (const [key, state] of states) {
+    if (!bestState || isBetterState(state, bestState)) {
+      bestKey = key;
+      bestState = state;
+    }
+  }
+  return { key: bestKey, state: bestState };
 }
 
 function isBetterState(candidate, current) {
@@ -482,7 +543,7 @@ function assertText(text) {
   }
 }
 
-function normalizeManualSegment(segment, index) {
+function normalizeManualSegment(segment, index, preserveBinary = false) {
   if (!segment || typeof segment !== "object") {
     throw new InvalidInputError(`segments[${index}] must be an object`);
   }
@@ -521,7 +582,12 @@ function normalizeManualSegment(segment, index) {
       if (typeof data === "string") {
         return { mode: "byte", text: data };
       }
-      return { mode: "byte", bytes: toByteArray(data, `segments[${index}].data`) };
+      return {
+        mode: "byte",
+        bytes: preserveBinary
+          ? normalizeByteSequence(data, `segments[${index}].data`)
+          : toByteArray(data, `segments[${index}].data`)
+      };
     }
     default:
       throw new InvalidModeError(`segments[${index}].mode must be "structured-append", "fnc1", "fnc1-second", "eci", "numeric", "alphanumeric", "byte", or "kanji"`);
@@ -564,6 +630,11 @@ function getByteValues(segment) {
 }
 
 function validateByteValues(bytes, label) {
+  assertByteValues(bytes, label);
+  return Array.from(bytes);
+}
+
+function assertByteValues(bytes, label) {
   if (!Array.isArray(bytes)) {
     throw new InvalidInputError(`${label} must contain byte values`);
   }
@@ -575,5 +646,24 @@ function validateByteValues(bytes, label) {
     }
   }
 
-  return Array.from(bytes);
+  return bytes;
+}
+
+function normalizeByteSequence(value, label) {
+  if (Array.isArray(value)) {
+    return assertByteValues(value, label);
+  }
+  if (value instanceof Uint8Array) {
+    return value;
+  }
+  if (value instanceof ArrayBuffer) {
+    return new Uint8Array(value);
+  }
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  }
+
+  throw new InvalidInputError(
+    `${label} must be a string, Uint8Array, ArrayBuffer, or ArrayBuffer view`
+  );
 }

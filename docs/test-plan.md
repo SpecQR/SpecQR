@@ -23,7 +23,7 @@
 - Browser helpers が platform support のある環境で Blob/ImageData/Object URL output を返すこと。
 - Examples smoke が Node PNG / GS1 SVG / GS1 Digital Link / Structured Append examples、Planning API example、browser/playground source files を確認すること。
 - TypeScript consumer check が `specqr` root export、`specqr/node`、`specqr/browser` を compiler で検査し、v2 API と Node/browser helper declarations が consumer import で壊れていないことを確認すること。
-- Nayuki reference comparison が fixed payload / fixed Version / fixed ECC / fixed mask の matrix exact match を確認すること。
+- Nayuki reference comparison が Version 1-40 × ECC L/M/Q/H × mask 0-7 の全 1280 fixed-condition cases で matrix exact match と主要 metadata を確認すること。
 - Root、Node、browser subpath exports が import 可能であること。
 - Deterministic random payloads が matrix shape、capacity、masking、diagnostics invariants を満たすこと。
 - Reed-Solomon arithmetic が安定した correction bytes を生成すること。
@@ -77,13 +77,84 @@ Golden tests は、すべての scanner が output image を受け入れるこ�
 npm run verify:reference:nayuki
 ```
 
-この script は devDependency の `nayuki-qr-code-generator@1.8.0` を使い、SpecQR と Nayuki に同じ fixed payload、fixed Version、fixed error correction level、fixed mask、fixed segment を渡して full matrix rows を比較します。現在の coverage は numeric、alphanumeric、byte、manual mixed segments、ECI + UTF-8 byte、raw binary byte data です。
+この script は devDependency の `nayuki-qr-code-generator@1.8.0` を使い、Version 1-40 × ECC L/M/Q/H × mask 0-7 の全 1280 組を比較します。numeric、alphanumeric、byte、manual mixed segments、ECI + UTF-8 byte、raw binary byte data を Version 1-9 / 10-26 / 27-40 の全 range に分散し、full matrix modules、Version、size、mask、data bit length、capacity、codeword counts を一件ずつ比較します。
 
-Auto segmentation、auto mask selection、Kanji helper、GS1 semantics、renderer output、SpecQR diagnostics は参照比較の対象外です。これらは unit / golden / decoder validation で別に検証します。詳細は [External Reference Comparison](./reference-comparison.md) を参照してください。
+Auto segmentation、Kanji helper、GS1 semantics、renderer output は参照比較の対象外です。auto mask と SpecQR diagnostics の内部整合は下記の deterministic property suite で別に検証します。詳細は [External Reference Comparison](./reference-comparison.md) を参照してください。
+
+## Deterministic Conformance / Fuzzing
+
+広い入力・Version・ECC・mask 空間を再現可能な gate として検証します。
+
+```sh
+npm run verify:conformance:fuzz
+```
+
+既定 seed は `0x5eedc0de` です。bounded suite は上記 1280 Nayuki cases に加え、determinism、auto Version minimum fit、auto mask minimum penalty、Planning diagnostics、single manual segment equivalence、GS1 / Digital Link round-trip、Structured Append parity / split / shuffled merge を各 32 cases、合計 256 property cases 実行します。
+
+ローカル extended mode と exact replay:
+
+```sh
+npm run verify:conformance:fuzz -- --extended
+npm run verify:conformance:fuzz -- --seed 0x12345678 --cases 128
+npm run verify:conformance:fuzz -- --seed 0x5eedc0de --cases 32 --case property:auto-mask:0003
+```
+
+case generator は `Math.random()`、時刻、locale、実行順へ依存しません。failure は seed、case ID、input、options、exact replay command を出します。設計、case taxonomy、non-claims、CI placement は [Deterministic Conformance / Fuzzing](./conformance-fuzzing.md) にまとめています。
+
+## Resource Safety / Correctness
+
+AUD-01〜05 の regression は `tests/resource-safety.test.js` と独立 gate で固定します。
+
+```sh
+npm run verify:resource-safety
+npm run verify:structured-append:memory
+```
+
+- 全 renderer/helper が unsafe geometry と deterministic budget 超過を allocation 前に `InvalidInputError` で reject する。
+- matrix-only output は renderer budget の対象外である。
+- manual Structured Append parity が 150,000-byte input と offset 付き `ArrayBufferView` を streaming XOR できる。
+- Version 9/10・26/27 の numeric / alphanumeric / byte / Kanji、UTF-8、binary、manual segments、ECI overhead の exact-fit / max+1 が preflight 後も一致する。
+- 20,000-character auto input の generation と planning が 32 MiB V8 old-space child で明示的に失敗する。
+- Structured Append の final symbol ごとの core encoding が一度だけで、matrix output が unused SVG を作らない。
+- planning overflow に `CAPACITY_NEAR_LIMIT` が付かず、successful near-limit result には従来 warning が残る。
+- High-level Structured Append が 150,000-byte raw binary / ASCII / manual byte
+  input を split-unit 全量生成前に 32 MiB old-space で `DataTooLongError` にする。
+- High-level Structured Append の 4,304-byte / 16-symbol raw/manual boundary が同じ
+  低 heap で成功し、matrix/diagnostics hash、parity、split position を維持する。
+- Raw source が binary view/sparse text index、manual source が segment descriptor を使い、
+  内部探索で 1-unit object や canonical byte 全量 copy を持たない。
+
+Renderer/single-symbol budget は [Resource Safety / Correctness Hardening](./resource-safety.md)、
+高レベル分割の preflight、compact source、public diagnostics cost は
+[Structured Append Memory Hardening](./structured-append-memory.md) に固定しています。
+処理時間や RSS は環境差が大きいため pass/fail 閾値にしません。
+
+## Architecture Characterization
+
+Behavior-preserving internal refactor は、既存 golden fixture を更新せず、public orchestration 専用の characterization と構造 gate で固定します。
+
+- `tests/architecture-characterization.test.js`
+  - root named exports と `QRCode` static methods
+  - matrix rows/hash、SVG/PNG/Data URL bytes/hash
+  - generation diagnostics、Planning success/overflow、manual mixed segments
+  - GS1 element string / Digital Link result
+  - raw/manual Structured Append symbols と summary
+  - canvas dimensions/draw calls
+  - error class/code/message
+- `tests/internal-architecture.test.js`
+  - `src/index.js` に planning/build/render/split implementation が戻っていないこと
+  - `src` の static import/export graph に循環がないこと
+
+Module 責務、internal artifact、依存方向、benchmark 方法は [Internal Architecture](./internal-architecture.md) に固定します。Characterization hash の変更は public behavior change として扱い、理由のない snapshot 更新は禁止します。
 
 ## External Conformance Reporting
 
-公開済み npm package の外部 conformance report は [SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/) に置きます。この repository の test plan は core package の release gate と source-level regression を管理し、外部 report artifact は SpecQR core repository にはコピーしません。
+公開済み npm package の外部 conformance report は
+[SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/)
+に置きます。現在の Lab は公開済み 2.4.0 を対象とし、未公開 3.0.0-rc.1 の証拠とは
+しません。この repository の test plan は core package の release gate と
+source-level regression を管理し、外部 report artifact は SpecQR core
+repository にはコピーしません。
 
 ## v2.0.0 Validation Planning
 
@@ -95,11 +166,12 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Control segment ordering: ECI、FNC1 first、FNC1 second、Structured Append low-level header の内部 model は実装済み。新しい control mode を追加するときは、併用可否、ordering、capacity accounting、diagnostics を同じ model に載せ、既存 output が変わらないことを golden / regression tests で確認する。
 - FNC1 second position: application indicator validation、bit length、encoding、diagnostics、negative cases は unit / golden tests で確認済み。今後は decoder ごとの symbology identifier 表示差を optional validation として整理する。
 - Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks は unit / golden fixtures で固定済み。
-- Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。low-level header 利用者向けの parity helper は `calculateStructuredAppendParity(input)` で確認する。
-- Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。
-- Structured Append decoded parts merge: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` / unmerged data を返す場合だけ `mergeStructuredAppendParts()` で merge validation する。unit tests と packed package smoke では valid merge、shuffled parts、binary merge、missing symbol、duplicate index、total mismatch、parity mismatch、mixed data type を確認する。examples smoke では scanner adapter pattern、ZXing Java style metadata mapping、string / binary merge、metadata-less decoder の制限を確認する。metadata がない decoder では missing symbol、duplicate symbol、parity mismatch を検証できないため、外部 decoder merge は required CI gate にしない。
+- Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。Oversized raw input の preflight と compact split source は [Structured Append Memory Hardening](./structured-append-memory.md) と低 heap gate で確認する。low-level header 利用者向けの parity helper は `calculateStructuredAppendParity(input)` で確認する。
+- Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。Internal descriptor は O(segment count + sparse checkpoints)とする。v3 candidate の standard summary は split-unit object を materialize せず、full opt-in だけが成功後に一度 materialize する。
+- v3 Structured Append diagnostics: [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) は**3.0.0-rc.1 candidate / unpublished**。Standard path で throwing fake materializer の呼出し0回、`splitUnits` own property 不在、正確な `splitUnitCount`、standard/full discriminant、full v2 array/JSON deep equality、legacy summary projection hash、named/static/literal/dynamic type narrowing、canonical packed package、Node/3-engine browser serialization、Version 40-L / 16-symbol standard/full memory 差と 32 MiB standard success を required gate で確認する。
+- Structured Append decoded parts merge: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` / unmerged data を返す場合だけ `mergeStructuredAppendParts()` で merge validation する。unit tests と packed package smoke では valid merge、shuffled parts、binary merge、missing/duplicate/total/parity/data type mismatch を確認する。ZXing Java required lane では、実 decoded string parts の 7 fixture を public merge helper へ渡して元 payload を確認する。任意 binary 3 fixture は metadata-only とし、理由を report へ残す。
 - Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。Manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に従い、`calculateStructuredAppendSegmentsParity(segments)` の root export、`QRCode` static method、numeric / alphanumeric ASCII、byte string UTF-8、byte binary raw bytes、`ArrayBufferView` offset / length、Kanji UTF-8、control segment rejection、`generateSegmentsStructuredAppend()` との parity consistency、TypeScript surface、packed package smoke を確認する。
-- Structured Append decoder metadata: [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に従い、ZXing Java / ZXing-C++ など metadata-returning decoder 候補を optional lane として検討する。jsQR / zbar / Vision は payload readability には使えるが、`mergeStructuredAppendParts()` の release gate には使わない。
+- Structured Append decoder metadata: [Structured Append ZXing Java Verification](./structured-append-zxing-java.md) に従い、ZXing Java 3.5.4 を required 専用 job で実行する。sequence/parity metadata の型・値、index completeness、common total/parity、文字列 payload merge を確認する。jsQR / zbar / Vision は payload readability に使うが、この metadata gate の代替にはしない。
 - Golden fixtures: decoder 表示に依存しすぎず、matrix / codeword / diagnostics / control metadata を固定する。
 - Decoder validation limits: FNC1 や Structured Append は decoder によって露出方法が異なるため、decode 成功だけを唯一の根拠にしない。
 - Reference comparison limits: Nayuki comparison は fixed-condition matrix regression に使い、GS1 semantics、Digital Link conversion、Structured Append API shape の検証は unit / golden tests に分ける。
@@ -229,19 +301,54 @@ npm run verify:decode:optional
 
 Optional script は local release checks や decoder environment を制御できる CI job に向いています。portable baseline としては `npm test` と `npm run verify:decode:jsqr` を保ちます。
 
-Structured Append の `index` / `total` / `parity` metadata を検証する prototype は、ZXing Java 向けの任意 script として追加しています。
+Structured Append の `index` / `total` / `parity` metadata は、固定版 ZXing Java を使う required script で検証します。
 
 ```sh
 npm run verify:structured-append:zxing-java
 ```
 
-この check は `ZXING_CLASSPATH` に ZXing Java core jar/classes が指定され、`java` と `javac` が利用できる環境だけで実 decode を行います。`generateStructuredAppend()` の 2-symbol / 3-symbol string case、binary input case、`generateSegmentsStructuredAppend()` の segment boundary split / byte segment chunking case、fixed Version / ECC / mask deterministic case の PNG を一時生成し、ZXing Java の `STRUCTURED_APPEND_SEQUENCE` / `STRUCTURED_APPEND_PARITY` metadata から復元した `index` / `total` / `parity` を SpecQR diagnostics と照合します。ZXing Java がない環境や metadata が露出しない環境では skip として成功終了します。詳細は [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) を参照してください。
+この check は canonical release artifact を指定した CI では再 pack せず、その tarball を
+隔離 install します。Artifact 指定なしの local command だけは self-pack します。
+Installed public API だけで 2/3/16-symbol、UTF-8/astral、raw binary/offset view、
+manual mixed/byte chunk、fixed Version/ECC/mask、shuffled scan order の
+10 fixtures / 44 symbols を生成します。Maven Wrapper 3.3.4 / Maven 3.9.16 が
+ZXing core/javase 3.5.4 を取得し、`STRUCTURED_APPEND_SEQUENCE` /
+`STRUCTURED_APPEND_PARITY` を6つの public diagnostics field へ照合します。
+JDK 21や dependency 取得が利用できない場合、metadata が欠ける場合、部分 decode の
+場合は skip せず failure です。詳細は
+[Structured Append ZXing Java Verification](./structured-append-zxing-java.md)
+を参照してください。
 
-この lane はまだ required CI gate にしません。既存の `verify:decode:optional` は payload readability 向けに保ち、metadata semantics を見る ZXing Java prototype は独立 script として扱います。
+既存の `verify:decode:optional` は payload readability 向けに保ち、metadata semantics を確認する ZXing Java lane は独立 required job で一度だけ実行します。
+
+## Browser E2E
+
+実ブラウザ contract は root dependencies と分離した `e2e/browser/` の Playwright Test harness で検証します。Harness は Node.js `>=22` と pinned `@playwright/test` だけを持ち、root package の Node.js `>=18` と runtime dependency 0 を変更しません。
+
+```sh
+npm ci --prefix e2e/browser
+npm --prefix e2e/browser run install:browsers
+npm run verify:browser:e2e
+```
+
+Required gate は Chromium / Firefox / WebKit の 3 projects を retry 0 で実行し、次を確認します。
+
+- CI では canonical release tarball を一時 install し、installed package の `exports` から解決した `specqr` / `specqr/browser` だけを native ESM import する。Artifact 指定なしの local command だけは self-pack する。
+- Matrix / SVG / PNG determinism、実 canvas、Blob、Object URL、ImageData、transparent color、offset 付き view、resource budget、Kanji capability を確認する。
+- `npm run pages:build` の `dist/pages` だけを配信し、Single QR、fixed Version overflow、GS1、Digital Link、Structured Append、代表 download を操作する。
+- `console.error`、page error、unhandled rejection、外部 request、failed local request、HTTP error を failure にする。
+- Tarball に `e2e/` が入らず、Pages resource が `/pages/`、package resource が installed tarball 配下だけであることを確認する。
+
+Browser binaries がない場合は skip せず install command 付きで失敗します。Trace、screenshot、JSON / HTML report は失敗時の CI artifact として保存します。Playwright WebKit を branded Safari とは主張しません。詳細は [Browser E2E](./browser-e2e.md) を参照してください。
 
 ## CI
 
-repository には GitHub Actions workflow `.github/workflows/ci.yml` があります。`package.json` の `engines.node: >=18` を実際の release gate にするため、Node 18 / 20 / 22 / 24 の matrix を使います。すべての Node version で次を実行します。
+repository には GitHub Actions workflow `.github/workflows/ci.yml` があります。
+最初に `package-artifact` job が `3.0.0-rc.1` を一度 pack し、tarball、SHA-256、
+全 file content manifest、二回 pack の expanded-content 比較を artifact として
+upload します。`package.json` の `engines.node: >=18` を実際の release gate に
+するため、Node 18 / 20 / 22 / 24 の matrix はその同じ artifact を download します。
+すべての Node version で次を実行します。
 
 - `npm ci`
 - `npm test`
@@ -255,11 +362,33 @@ repository には GitHub Actions workflow `.github/workflows/ci.yml` があり�
 - `npm run pages:build`
 - `npm run verify:decode`
 - `npm run verify:decode:jsqr`
-- `npm run verify:reference:nayuki`
-- `npm run verify:structured-append:zxing-java`
+- `npm run verify:conformance:fuzz`（内部で Nayuki 1280件を比較）
+- `npm run verify:resource-safety`
+- `npm run verify:structured-append:memory`
+- `npm run verify:writing`
 - `npm pack --dry-run`
+- canonical tarball を指定した `npm publish --dry-run --tag next`
+- `npm run verify:links`
 
 代表 Node を 20 にする理由は、v1 / v2 の既存 release lane と同じ比較軸を保ちつつ、Node 18 / 22 / 24 の engines claim は軽量 matrix で別に検証するためです。macOS Vision validation は Swift、Vision、ImageMagick に依存するため、この代表 Node job では macOS runner を使います。
+
+実ブラウザ gate は engine matrix へ重複させず、Ubuntu / Node.js 22 の専用
+`Browser E2E on canonical tarball` job で同じ release artifact を使い、3 engines を
+一度だけ実行します。この job は required であり、conditional skip や retry を
+使いません。
+
+Structured Append metadata gate も engine matrix へ重複させず、Ubuntu /
+Node.js 22 / Eclipse Temurin `21.0.11+10` の専用 job で同じ release artifact を
+一度だけ実行します。Maven cache は利用しますが clean environment で解決でき、
+failure 時は report、fixture PNG、Java/Node/Maven log を artifact として保存します。
+
+Artifact contents、job dependency、local/CI commands は
+[Release Artifact Verification](./release-artifact.md) に固定します。
+
+`verify:writing` は代表 Node の release gate で一度だけ実行します。Markdown の
+code fence、inline code の内部、URL、path、command を除外し、日本語と Latin text、
+数値と既知 unit、正式名称のうち曖昧なく判定できる規則だけを検査します。Source of
+truth は [Project Language and Writing Style](./project-language.md) です。
 
 ## Examples / Playground
 
@@ -295,9 +424,19 @@ pack した local package の install / import smoke は push CI と release 前
 npm run verify:pack
 ```
 
-この check は一時ディレクトリに `npm pack` した未公開 tarball を install し、root export から `parseGs1ElementString()` / `QRCode.parseGs1ElementString()`、`getSupportedGs1Ais()`、`getGs1AiInfo()`、`validateGs1Elements()`、`validateGs1ElementString()`、`validateGs1DigitalLink()`、`normalizeGs1DigitalLink()`、GS1 Digital Link helper、FNC1 second、Structured Append API、`specqr/node`、`specqr/browser` を実行します。`{ elements, hasSeparators }` の return shape、Digital Link を含む non-throwing validation result、deterministic normalization result、同梱 `src/index.d.ts` の v2 / v2.3 API surface、npm package contents policy も確認します。
+Artifact path を省略した local command は一時 directory に self-pack します。
+`SPECQR_RELEASE_ARTIFACT_DIR` を指定した release/CI command は再 pack せず、
+canonical tarball を install します。Source を直接 import せずに root /
+`specqr/node` / `specqr/browser` の exact export manifest と代表 runtime call、
+v3 standard/full contract、packaged examples を確認します。Installed
+declarations だけを参照する NodeNext（DOM なし root/node）と Bundler（DOM あり
+root/browser）consumer compile も実行します。`{ elements, hasSeparators }` の
+return shape、Digital Link validation / normalization、npm package contents
+policy も対象です。
 
-TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は `tests/types/consumer.ts` を TypeScript compiler で `noEmit` 検査し、root / node / browser subpath import、`QRCode.generate()`、`generateSegments()`、GS1 raw parser、GS1 Digital Link helper、Structured Append helpers、FNC1 second option、low-level `structuredAppend` option、Node PNG helper、browser Blob/ImageData/Object URL helper の public type surface を consumer 目線で固定します。
+TypeScript declaration regression は別 gate として `npm run verify:types` で確認します。この check は既存 mixed consumer と baseline compatibility fixture、NodeNext（DOM なし）fixture、Bundler（DOM あり）fixture を TypeScript compiler で `noEmit` 検査します。Literal `output` / `diagnostics` inference、`QRCodeOptions` 変数の catch-all、named/static/manual segments parity、custom/real DOM canvas、root/node/browser subpath、GS1 / Digital Link / Structured Append surface を consumer 目線で固定します。
+
+Runtime option policy と GS1 mutation boundary は `tests/public-api-contract.test.js` で確認します。Base / Planning / manual segments の legacy permissive container、Structured Append と `getCapacity()` の strict container / owned alias、Node/browser helper の owned output、known invalid option の既存 error、deep-frozen detached GS1 metadata を固定します。Unknown key rejection や `diagnostics` boolean tightening はこの test を緩めて導入せず、major-version decision として [Public API / TypeScript Contract](./public-api-contract.md) に分離します。
 
 公開済み npm package の install / import smoke は release 前後の確認として実行します。
 
@@ -305,6 +444,10 @@ TypeScript declaration regression は別 gate として `npm run verify:types` �
 npm run verify:published
 ```
 
-この check は一時ディレクトリで `npm install specqr` と `npm install specqr@next` を実行し、root export、`specqr/node`、`specqr/browser`、GS1 helper が install 後に動くことを確認します。npm registry に依存するため通常 push CI には含めず、`Published Package Smoke` workflow で手動実行できるようにしています。
-
-v2 系では published smoke でも、GS1 raw parser、GS1 Digital Link helper、FNC1 second position、Structured Append API の代表ケースを確認します。`latest` と `next` が同じ stable version を指している期間は、両方が同じ version に解決されることも確認します。
+3.0.0-rc.1 publish 後の manual workflow は
+`specqr@3.0.0-rc.1` と `specqr@next` を一時 directory へ install し、両方が exact
+`3.0.0-rc.1` へ解決することを必須にします。Root/node/browser exact exports、
+metadata、GS1、v3 standard/full contract、NodeNext/Bundler types も確認します。
+npm registry に依存するため通常 push CI には含めません。RC 未公開の現在は
+canonical tarball path を同じ verifier へ渡す local equivalent だけを実行し、
+registry/dist-tag 検証済みとは主張しません。

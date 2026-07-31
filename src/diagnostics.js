@@ -285,7 +285,7 @@ function createWarnings({ options, remainingBits, capacityBits, contrast, print,
     });
   }
 
-  if (remainingBits / capacityBits < 0.05) {
+  if (remainingBits >= 0 && remainingBits / capacityBits < 0.05) {
     warnings.push({
       code: "CAPACITY_NEAR_LIMIT",
       severity: "info",

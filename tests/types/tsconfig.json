@@ -9,5 +9,5 @@
     "noEmit": true,
     "skipLibCheck": false
   },
-  "include": ["consumer.ts"]
+  "include": ["baseline-compatibility.ts", "consumer.ts"]
 }

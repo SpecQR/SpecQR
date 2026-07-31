@@ -172,17 +172,23 @@ Using one Version for the whole set keeps printed symbols visually predictable a
 
 Use a greedy largest-fitting chunk strategy for each candidate version.
 
-1. Convert input into split units:
-   - string input: Unicode code points
-   - binary input: bytes
+1. Treat input as a virtual split-unit sequence:
+   - string input: Unicode code points, addressed through a sparse UTF-16/UTF-8 index
+   - binary input: bytes, addressed through the original byte view/range
 2. For the remaining input, find the largest non-empty prefix that fits in one symbol with a temporary low-level Structured Append header.
-3. Use binary search over split units to find the largest fitting chunk.
+3. Use range probes or a streaming mode-cost tracker to find the largest fitting chunk without materializing every candidate.
 4. Continue until all input is consumed or the chunk count exceeds `maxSymbols`.
 5. For `mode: "auto"`, run existing per-chunk segmentation independently.
 
 The splitter must reserve at least one split unit for each remaining required symbol when it already knows the result must contain at least 2 symbols. This prevents a first chunk from consuming the entire payload and producing an invalid one-symbol Structured Append set.
 
 This strategy is intentionally not globally optimal. It is predictable and relies on existing `generate()` capacity checks as the source of truth. Golden fixtures should lock the result.
+
+Before building the sparse index or any final chunks, a safe total-capacity lower bound
+rejects input that cannot fit in `maxSymbols` even at the selected maximum Version. The
+lower bound is deliberately optimistic and cannot reject a potentially fitting input.
+Allocation details and the low-heap gate are documented in
+[Structured Append Memory Hardening](./structured-append-memory.md).
 
 ### One-Symbol Inputs
 

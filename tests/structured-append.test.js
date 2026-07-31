@@ -1056,13 +1056,15 @@ for (const fixture of manualSegmentsFixtures) {
   test(`generateSegmentsStructuredAppend golden fixture: ${fixture.id}`, () => {
     const result = generateSegmentsStructuredAppend(fixture.segments, {
       ...fixture.options,
-      diagnostics: true
+      diagnostics: { splitUnits: "full" }
     });
 
     assert.equal(result.total, fixture.expected.total);
     assert.equal(result.parity, fixture.expected.parity);
     assert.equal(result.inputLength, fixture.expected.inputLength);
     assert.equal(result.byteLength, fixture.expected.byteLength);
+    assert.equal(result.diagnostics.splitUnitsDetail, "full");
+    assert.equal(result.diagnostics.splitUnitCount, fixture.expected.splitUnits.length);
     assert.deepEqual(result.diagnostics.splitUnits, fixture.expected.splitUnits);
     assert.deepEqual(
       result.diagnostics.symbols.map((symbol) => ({

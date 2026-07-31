@@ -35,8 +35,11 @@ import {
   type QRStructuredAppendMergeResult,
   type QRStructuredAppendParityInput,
   type QRStructuredAppendResult,
+  type QRStructuredAppendSegmentsFullDiagnostics,
+  type QRStructuredAppendSegmentsGenerateOptions,
   type QRStructuredAppendSegmentsParityOptions,
-  type QRStructuredAppendSegmentsResult
+  type QRStructuredAppendSegmentsResult,
+  type QRStructuredAppendSegmentsStandardDiagnostics
 } from "specqr";
 import {
   toPngBuffer,
@@ -188,6 +191,10 @@ const structuredAppendSegmentsSet = generateSegmentsStructuredAppend([
 });
 expectType<QRStructuredAppendSegmentsResult<string>>(structuredAppendSegmentsSet);
 expectType<string>(structuredAppendSegmentsSet.symbols[0]);
+expectType<"summary">(structuredAppendSegmentsSet.diagnostics.splitUnitsDetail);
+expectType<number>(structuredAppendSegmentsSet.diagnostics.splitUnitCount);
+// @ts-expect-error Standard diagnostics intentionally omit the full array.
+structuredAppendSegmentsSet.diagnostics.splitUnits;
 
 const staticStructuredAppendSegmentsSet = QRCode.generateSegmentsStructuredAppend([
   { mode: "byte", bytes: Uint8Array.from([1, 2, 3, 4]) }
@@ -198,6 +205,95 @@ const staticStructuredAppendSegmentsSet = QRCode.generateSegmentsStructuredAppen
 });
 expectType<QRStructuredAppendSegmentsResult<Uint8Array>>(staticStructuredAppendSegmentsSet);
 expectType<Uint8Array>(staticStructuredAppendSegmentsSet.symbols[0]);
+
+const diagnosticStructuredAppendSegmentsSet = generateSegmentsStructuredAppend([
+  { mode: "byte", data: "A".repeat(64) }
+], {
+  version: 1,
+  errorCorrectionLevel: "L",
+  diagnostics: true
+});
+expectType<
+  QRStructuredAppendSegmentsResult<
+    QRCodeDiagnosticResult,
+    QRStructuredAppendSegmentsStandardDiagnostics
+  >
+>(diagnosticStructuredAppendSegmentsSet);
+expectType<"summary">(
+  diagnosticStructuredAppendSegmentsSet.diagnostics.splitUnitsDetail
+);
+
+const fullStructuredAppendSegmentsSet = generateSegmentsStructuredAppend([
+  { mode: "byte", data: "A".repeat(64) }
+], {
+  version: 1,
+  errorCorrectionLevel: "L",
+  diagnostics: { splitUnits: "full" }
+});
+expectType<
+  QRStructuredAppendSegmentsResult<
+    QRCodeDiagnosticResult,
+    QRStructuredAppendSegmentsFullDiagnostics
+  >
+>(fullStructuredAppendSegmentsSet);
+expectType<number>(fullStructuredAppendSegmentsSet.diagnostics.splitUnits.length);
+
+const fullPngStructuredAppendSegmentsSet =
+  QRCode.generateSegmentsStructuredAppend([
+    { mode: "byte", data: "A".repeat(64) }
+  ], {
+    version: 1,
+    errorCorrectionLevel: "L",
+    output: "png",
+    diagnostics: {
+      splitUnits: "full",
+      symbolResults: "output"
+    }
+  });
+expectType<
+  QRStructuredAppendSegmentsResult<
+    Uint8Array,
+    QRStructuredAppendSegmentsFullDiagnostics
+  >
+>(fullPngStructuredAppendSegmentsSet);
+
+declare const dynamicStructuredAppendSegmentsOptions:
+  QRStructuredAppendSegmentsGenerateOptions;
+const dynamicStructuredAppendSegmentsSet =
+  generateSegmentsStructuredAppend(
+    [{ mode: "byte", data: "A".repeat(64) }],
+    dynamicStructuredAppendSegmentsOptions
+  );
+if (dynamicStructuredAppendSegmentsSet.diagnostics.splitUnitsDetail === "full") {
+  expectType<number>(
+    dynamicStructuredAppendSegmentsSet.diagnostics.splitUnits.length
+  );
+} else {
+  // @ts-expect-error The summary branch has no splitUnits property.
+  dynamicStructuredAppendSegmentsSet.diagnostics.splitUnits;
+}
+if ("splitUnits" in dynamicStructuredAppendSegmentsSet.diagnostics) {
+  expectType<number>(
+    dynamicStructuredAppendSegmentsSet.diagnostics.splitUnits.length
+  );
+}
+
+generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(64) }], {
+  // @ts-expect-error Invalid v3 diagnostics enum.
+  diagnostics: { splitUnits: "all" }
+});
+generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(64) }], {
+  // @ts-expect-error Arrays are not diagnostics option objects.
+  diagnostics: []
+});
+generateSegmentsStructuredAppend([{ mode: "byte", data: "A".repeat(64) }], {
+  // @ts-expect-error Null is not a diagnostics option object.
+  diagnostics: null
+});
+generateStructuredAppend("A".repeat(64), {
+  // @ts-expect-error Raw Structured Append remains boolean-only.
+  diagnostics: { splitUnits: "summary" }
+});
 
 const mergedString = mergeStructuredAppendParts([
   { index: 1, total: 2, parity: 65, data: "HELLO " },

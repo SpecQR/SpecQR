@@ -18,7 +18,8 @@ README、docs、CHANGELOG、release notes、commit message、設計メモは日�
 - script 名、install command
 - README 冒頭の短い English summary
 
-詳しくは [Project Language Policy](docs/project-language.md) を参照してください。
+詳しくは [Project Language and Writing Style](docs/project-language.md) を参照して
+ください。
 
 ## Tests / Verification
 
@@ -29,6 +30,7 @@ npm test
 npm run verify:types
 npm run examples:smoke
 npm run verify:pack
+npm run verify:writing
 ```
 
 release hygiene や QR core に関わる変更では、次も確認します。
@@ -38,14 +40,23 @@ npm run pages:build
 npm run verify:decode
 npm run verify:decode:jsqr
 npm run verify:reference:nayuki
+npm run verify:conformance:fuzz
+npm run verify:resource-safety
+npm run verify:structured-append:memory
+npm run verify:browser:e2e
 npm run verify:structured-append:zxing-java
 npm pack --dry-run --cache /private/tmp/specqr-npm-cache
-npm publish --dry-run --tag latest --cache /private/tmp/specqr-npm-cache
 npm ls --omit=dev
 git diff --check
 ```
 
-`npm run verify:structured-append:zxing-java` は Java / ZXing classpath がない環境では明示 skip します。skip は失敗ではありませんが、release 前に metadata-returning decoder 環境で確認できるとより強い検証になります。
+`npm run verify:browser:e2e` と
+`npm run verify:structured-append:zxing-java` は required release gate です。
+Playwright browser、JDK、Maven dependency を利用できない場合は、復旧手順を示して
+failure にします。環境不足を success 扱いする skip path はありません。
+
+publish dry-run の dist-tag と canonical tarball path は release 種別ごとに異なるため、
+[Release Checklist](docs/release.md) の command を使ってください。
 
 ## Golden Fixtures
 

@@ -64,6 +64,7 @@ const REQUIRED_PATHS = Object.freeze([
   "docs/release-artifact.md",
   "docs/release.md",
   "docs/release-notes-3.0.0-rc.1.md",
+  "docs/release-notes-3.0.0-rc.2.md",
   "docs/spec-scope.md",
   "docs/test-plan.md",
   "docs/v3-migration.md",

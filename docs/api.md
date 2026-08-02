@@ -1,16 +1,18 @@
 # API
 
-この文書は現在の SpecQR main branch、package version `3.0.0-rc.1` の public
-API を説明します。RC は未公開です。SpecQR v2 系の GS1 Digital Link、FNC1
+この文書は現在の SpecQR main branch、package version `3.0.0-rc.2` の public
+API を説明します。`3.0.0-rc.1` は npm `next` で公開済みで、RC 2 は未公開の
+release-correction candidate です。SpecQR v2 系の GS1 Digital Link、FNC1
 second position、Structured Append API、GS1 validation / supported AI
 introspection API、GS1 Digital Link validation API は維持し、RC 1 では
 `generateSegmentsStructuredAppend()` の diagnostics contract だけを変更します。
 API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する
 識別子なので英語のままです。
 
-RC 1 は release freeze 状態です。この diagnostics contract 以外の runtime、
-型、public export の変更は追加しません。unknown-option rejection、GS1 metadata
-readonly、新しい inspection API は将来候補として RC 1 の対象外に保ちます。
+RC 2 は release-correction freeze 状態です。RC 1 から runtime、型、public export
+を変更せず、2.4.0 から RC 1 までの AUD-05 warning semantics を文書で訂正します。
+unknown-option rejection、GS1 metadata readonly、新しい inspection API は将来候補
+として RC 2 の対象外に保ちます。
 
 ## Planning / Capacity APIs
 
@@ -190,8 +192,9 @@ const result = generateSegmentsStructuredAppend([
 
 Split policy は segment boundary first です。`byte` segment だけを byte boundary、または string data の Unicode code point boundary で安全に chunking します。`numeric` / `alphanumeric` / `kanji` segment の途中分割、ECI / GS1 / FNC1 併用、low-level `{ mode: "structured-append" }` との併用は reject します。`diagnostics.splitStrategy` は `"segment-boundary-byte-chunk"` になり、`diagnostics.symbols` に source segment range、split unit range、byte offset、per-symbol Structured Append metadata が入ります。詳細は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) を参照してください。
 
-次の v3 diagnostics contract を `3.0.0-rc.1` candidate へ統合しています。
-RC は未公開であり、published stable package の support claim ではありません。
+次の v3 diagnostics contract は `3.0.0-rc.1` で prerelease 公開済みです。
+`3.0.0-rc.2` candidate でも contract は変わりません。Stable support claim とは
+区別します。
 
 ```js
 const segments = [

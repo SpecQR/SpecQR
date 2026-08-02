@@ -1,11 +1,13 @@
 # Public API / TypeScript Contract
 
-この文書は SpecQR `3.0.0-rc.1` candidate の public runtime /
-TypeScript / option contract を整理します。RC は未公開です。型精密化や package
+この文書は SpecQR `3.0.0-rc.2` release-correction candidate の public runtime /
+TypeScript / option contract を整理します。`3.0.0-rc.1` は npm `next` で公開済みで、
+RC 2 は未公開です。型精密化や package
 gate の根拠であり、QR encoding、renderer bytes、diagnostics、
-error/warning semantics を変更する文書ではありません。
+error / warning semantics を新たに変更する文書ではありません。2.4.0 から RC 1
+までの AUD-05 warning semantics は別途訂正済みです。
 
-RC 1 は release freeze 状態です。実装済みの manual Structured Append
+RC 2 は release-correction freeze 状態です。実装済みの manual Structured Append
 diagnostics contract 以外に、runtime、型、public export の変更は追加しません。
 unknown-option rejection、GS1 metadata readonly、新しい inspection API は
 future candidate のままです。
@@ -120,8 +122,9 @@ raw `generateStructuredAppend()` は object form を
 Structured Append manual segments の `diagnostics.splitUnits` を standard/full へ
 分ける major contract は
 [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md)
-どおり、現在の dirty working tree へ**3.0.0-rc.1 candidate / unpublished**
-として隔離実装済みです。これは unknown top-level option rejection や GS1
+どおり、`3.0.0-rc.1` で prerelease 公開済みです。現在の未公開
+`3.0.0-rc.2` candidate も同じ contract を維持します。これは unknown top-level
+option rejection や GS1
 readonly とは別 goal です。候補間の依存順は
 [SpecQR v3 Roadmap](./v3-roadmap.md) に整理しています。
 
@@ -145,7 +148,7 @@ canonical tarball を使って再 pack しません。
 
 Published registry package の確認は `verify:published` の責務です。未公開 working tree の contract は `verify:pack` を release gate とし、両者を混同しません。
 
-3.0.0-rc.1 では `npm run release:artifact` が tarball と全 file content manifest を
+3.0.0-rc.2 candidate では `npm run release:artifact` が tarball と全 file content manifest を
 一度生成し、Node 18 / 20 / 22 / 24、packed/type、browser、ZXing Java へ同じ
 artifact を渡します。構成と post-publish exact-version check は
 [Release Artifact Verification](./release-artifact.md) を参照してください。

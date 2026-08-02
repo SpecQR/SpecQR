@@ -6,11 +6,11 @@ on:
       package_specs:
         description: "検証する exact version と dist-tag の package spec（半角スペース区切り）"
         required: false
-        default: "specqr@3.0.0-rc.1 specqr@next"
+        default: "specqr@3.0.0-rc.2 specqr@next"
       expected_version:
         description: "すべての package spec が解決すべき version"
         required: true
-        default: "3.0.0-rc.1"
+        default: "3.0.0-rc.2"
 
 jobs:
   smoke:

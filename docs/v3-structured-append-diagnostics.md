@@ -1,6 +1,6 @@
 # v3 Structured Append Diagnostics Contract
 
-Status: **Integrated as SpecQR 3.0.0-rc.1 candidate / unpublished**  
+Status: **Published in SpecQR 3.0.0-rc.1; unchanged in 3.0.0-rc.2 candidate**
 Target: SpecQR 3.0.0 release line  
 対象 checkout: `main` / `18da5bc1e2ca1cb7d4249b0c886fb0b88f643ee9`
 と、2026-07-31 時点の dirty working tree 全体
@@ -10,13 +10,15 @@ Target: SpecQR 3.0.0 release line
 `diagnostics.splitUnits` を、v3 で compact standard diagnostics と明示的な full
 detail へ分ける公開 contract を固定します。2026-07-31 時点の dirty working tree では
 runtime、TypeScript declarations、unit/packed/browser/fuzz/resource tests へ
-この contract を実装済みです。Package metadata は `3.0.0-rc.1` へ統合しましたが、
-npm 公開、tag、GitHub Release は行っていないため、registry package や stable
-support の claim ではありません。
+この contract を実装済みです。Package metadata は `3.0.0-rc.1` へ統合し、npm
+`next`、tag、GitHub prerelease へ公開済みです。`3.0.0-rc.2` candidate は runtime /
+type contract を変更せず、Planning overflow warning の release documentation だけを
+訂正します。いずれも stable support の claim ではありません。
 
-この contract は RC 1 の唯一の breaking change として release freeze 済みです。
+この contract は RC line の唯一の API shape breaking change として release freeze
+済みです。
 unknown-option rejection、GS1 readonly、新 inspection API、その他の runtime / type
-変更は RC 1 に追加しません。
+変更は RC 2 に追加しません。
 
 QR encoding、分割位置、Structured Append parity、per-symbol diagnostics、
 renderer output はこの設計の対象外です。

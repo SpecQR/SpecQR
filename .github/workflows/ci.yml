@@ -18,7 +18,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Pack 3.0.0-rc.1 and verify expanded-content reproducibility
+      - name: Pack 3.0.0-rc.2 and verify expanded-content reproducibility
         run: >-
           npm run release:artifact --
           --output-dir "${{ runner.temp }}/specqr-release-artifact"
@@ -27,16 +27,16 @@ jobs:
           node .github/scripts/canonicalize-release-artifact.js
           "${{ runner.temp }}/specqr-release-artifact"
         env:
-          SPECQR_EXPECTED_TARBALL_SIZE: "307288"
-          SPECQR_EXPECTED_TARBALL_SHA256: ad1c384475ff09cc27fcbb5479d2a230431dab43d403b86deba13b1005530f04
-          SPECQR_EXPECTED_FILE_COUNT: "120"
-          SPECQR_EXPECTED_UNPACKED_SIZE: "1278859"
-          SPECQR_EXPECTED_CONTENT_SHA256: b8f906d95076316c7de97a3a4f376dfbea70e4aef2e19dbeb6dbbfde96b577d4
+          SPECQR_EXPECTED_TARBALL_SIZE: "312544"
+          SPECQR_EXPECTED_TARBALL_SHA256: c96c324dcd99d72c385d3890156a6ae973ad8db57b840fd5a47f987ddcbb6298
+          SPECQR_EXPECTED_FILE_COUNT: "121"
+          SPECQR_EXPECTED_UNPACKED_SIZE: "1294971"
+          SPECQR_EXPECTED_CONTENT_SHA256: f507de7da842b3bc5fce88eaa6a4d04388ce1d55541c58cbebf36d4b583ae306
       - name: Verify release artifact manifest
         run: npm run verify:release:artifact
         env:
           SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
-          SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+          SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
       - name: Upload canonical release artifact
         uses: actions/upload-artifact@v4
         with:
@@ -62,7 +62,7 @@ jobs:
       matrix:
         node-version: [18, 20, 22, 24]
     env:
-      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -91,7 +91,7 @@ jobs:
     needs: package-artifact
     timeout-minutes: 10
     env:
-      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -118,7 +118,7 @@ jobs:
       - engine-matrix
     timeout-minutes: 20
     env:
-      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -156,7 +156,7 @@ jobs:
       - engine-matrix
     timeout-minutes: 20
     env:
-      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -198,7 +198,7 @@ jobs:
       - engine-matrix
       - artifact-verification
     env:
-      SPECQR_EXPECTED_VERSION: 3.0.0-rc.1
+      SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -232,6 +232,6 @@ jobs:
       - run: npm pack --dry-run --cache "${{ runner.temp }}/specqr-npm-cache"
       - run: >-
           npm publish
-          "${SPECQR_RELEASE_ARTIFACT_DIR}/specqr-3.0.0-rc.1.tgz"
+          "${SPECQR_RELEASE_ARTIFACT_DIR}/specqr-3.0.0-rc.2.tgz"
           --dry-run --tag next
           --cache "${{ runner.temp }}/specqr-npm-cache"

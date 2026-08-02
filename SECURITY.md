@@ -8,7 +8,8 @@ SpecQR は dependency-free runtime を維持する QR Code Model 2 generator で
 | --- | --- |
 | `2.x` | 対応中 |
 | `1.x` | 実用上可能な範囲で security fix |
-| `3.0.0-rc.1` | 未公開の release candidate。評価用途で、stable support の対象外 |
+| `3.0.0-rc.1` | 公開済み prerelease。評価用途で、stable support の対象外 |
+| `3.0.0-rc.2` | 未公開の release-correction candidate。RC 1 と同じ runtime / type surface |
 | その他 prerelease / RC | stable release への upgrade を推奨 |
 
 ## Reporting a Vulnerability
@@ -49,9 +50,9 @@ tarball、temporary install、browser/JDK/Maven artifacts は repository や npm
 package へ含めません。詳細は
 [Release Artifact Verification](./docs/release-artifact.md) を参照してください。
 
-`3.0.0-rc.1` は release freeze 状態です。公開前の editorial change は runtime、
-types、exports、error / warning message、QR output bytes、resource budget を
-変更しません。
+`3.0.0-rc.2` は release-correction freeze 状態です。RC 1 の runtime、types、
+exports、error / warning message、QR output bytes、resource budget を変更せず、
+AUD-05 overflow warning の release claim だけを訂正します。
 
 ## Resource Limits
 

@@ -1,9 +1,10 @@
 # Conformance Matrix
 
-この文書は現在の SpecQR main branch、package version `3.0.0-rc.1`
-candidate の対応範囲を、外から確認しやすい形で整理したものです。RC は未公開です。
-v2 系の stable API を維持し、RC 1 では manual Structured Append diagnostics
-contract だけを major 変更として扱います。SpecQR は通常 QR Code Model 2
+この文書は現在の SpecQR main branch、package version `3.0.0-rc.2` candidate の
+対応範囲を、外から確認しやすい形で整理したものです。`3.0.0-rc.1` は npm
+`next` で公開済みで、RC 2 は未公開です。v2 系の stable API を維持し、RC 1 では
+manual Structured Append diagnostics contract だけを major 変更として扱います。
+SpecQR は通常 QR Code Model 2
 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠を
 ここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・
 外部比較で確認している範囲を明記します。
@@ -14,8 +15,10 @@ Status は次の意味で使います。
 - `Supported`: 実装済みですが、検証は隣接テストまたは限定的な smoke に留まります。
 - `Partial`: 意図的に範囲を絞って対応しています。
 - `Planned`: docs-only proposal として設計済みですが、runtime API はまだ実装していません。
+- `Prerelease / tested`: npm prerelease へ公開済みで in-repo gate もありますが、
+  stable support claim ではありません。
 - `RC candidate / tested`: prerelease metadata へ統合済みで in-repo gate は
-  ありますが、npm publish 前で stable support claim ではありません。
+  ありますが、対象 candidate は npm publish 前です。
 - `Not supported`: 現在の core package の対象外です。
 
 v2 系の release scope は [SpecQR v2 Roadmap](./v2-roadmap.md) に分けています。この matrix では現在の実装状態を主に示し、正式 release 後に残す領域は各 section の notes で明示します。
@@ -24,9 +27,11 @@ v2 系の release scope は [SpecQR v2 Roadmap](./v2-roadmap.md) に分けてい
 
 この in-repo matrix は、SpecQR core repository がサポートする範囲と、その範囲をどの種類の test / fixture / reference comparison で確認しているかを説明します。公開済み npm package を外部から検証する report は [SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/) に分けています。
 
-Conformance Lab は現在、公開済み stable `specqr@2.4.0` を対象にしています。
-3.0.0-rc.1 は未公開なので、Lab の badge/report を RC 検証済みの証拠として
-扱いません。Lab は published package の jsQR decode readability、Nayuki
+Conformance Lab の public report は現在、公開済み stable `specqr@2.4.0` を対象に
+しています。Temporary comparison では `specqr@2.4.0` と
+`specqr@3.0.0-rc.1` の 455 common results を比較し、AUD-05 に対応する 3 warning
+delta だけを確認しました。この comparison は public badge/report を RC 検証済みへ
+切り替えるものではありません。Lab は published package の jsQR decode readability、Nayuki
 fixed-condition matrix comparison、GS1 / Digital Link helper、Structured
 Append helper、Planning / Diagnostics API の結果を外部 report として記録します。
 Micro QR、rMQR、full GS1 catalog、full QR reader、logo / styled QR は Lab の
@@ -71,10 +76,10 @@ Micro QR、rMQR、full GS1 catalog、full QR reader、logo / styled QR は Lab �
 | Structured Append low-level header | Tested | mode indicator `0011`、1-based public index / total / parity validation、0-based sequence encoding、option / manual segment、diagnostics、golden fixture、invalid combination rejection を確認しています。 |
 | Structured Append high-level splitting | Tested | `generateStructuredAppend()` / `QRCode.generateStructuredAppend()`、string / binary input、original payload byte parity、deterministic greedy split、fixed / auto Version selection、maxSymbols、symbol diagnostics、packed package smoke、examples smoke、playground source、fixed version / ECC / mask golden fixture を確認しています。さらに total-capacity preflight、binary view、sparse text index、150,000-unit low-heap reject、16-symbol boundary を [Structured Append Memory Hardening](./structured-append-memory.md) と専用 gate で固定します。 |
 | Structured Append manual segment splitting | Tested | `generateSegmentsStructuredAppend()` / `QRCode.generateSegmentsStructuredAppend()`、segment-boundary split、byte segment safe chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、packed package smoke、fixed version / ECC / mask golden fixture を確認しています。Internal source は segment descriptor を使い、canonical bytes / split units の全量事前生成を行いません。v3 candidate の standard summary は split-unit object を生成せず、full opt-in だけが成功後に一度生成します。Manual segments 専用 parity helper `calculateStructuredAppendSegmentsParity()` も同じ canonical logical bytes policy を確認しています。 |
-| v3 compact Structured Append diagnostics | RC candidate / tested | Standard/full `splitUnits` contract、nested option、discriminated type、migration を [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) どおり `3.0.0-rc.1` metadata へ統合しています。Unit、golden projection、bounded/extended fuzz、canonical tarball の packed runtime/types、Chromium/Firefox/WebKit serialization、Version 40-L / 16-symbol memory gate を確認します。未公開 RC であり、stable support claim ではありません。 |
+| v3 compact Structured Append diagnostics | Prerelease / tested | Standard/full `splitUnits` contract、nested option、discriminated type、migration を [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) どおり `3.0.0-rc.1` で prerelease 公開済みです。Unit、golden projection、bounded/extended fuzz、canonical tarball の packed runtime/types、Chromium/Firefox/WebKit serialization、Version 40-L / 16-symbol memory gate を確認します。`3.0.0-rc.2` candidate でも contract は変わらず、stable support claim とは区別します。 |
 | Structured Append decoded parts merge | Tested | `mergeStructuredAppendParts()` / `QRCode.mergeStructuredAppendParts()` は、decoder が返した `{ index, total, parity, data }` parts だけを対象に、missing、duplicate、total mismatch、parity mismatch、string/binary 混在、payload byte parity を検証して結合します。scanner adapter example では ZXing Java style metadata mapping、string / binary merge、metadata-less decoder の制限を確認しています。SpecQR は decoder や scanner integration は提供しません。読み取り workflow と metadata-returning decoder 候補は [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) と [Structured Append Decoder Metadata Validation](./structured-append-decoder-validation-v2.md) に整理しています。 |
 | Structured Append parity helper | Tested | `calculateStructuredAppendParity(input)` / `QRCode.calculateStructuredAppendParity(input)` は、UTF-8 string、`Uint8Array`、`ArrayBuffer`、`ArrayBufferView` offset / length、`number[]`、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` parity consistency、TypeScript surface、packed package smoke を確認しています。Manual segments 専用 `calculateStructuredAppendSegmentsParity(segments)` / `QRCode.calculateStructuredAppendSegmentsParity(segments)` は、numeric / alphanumeric ASCII、byte string UTF-8、byte binary raw bytes、ArrayBufferView offset / length、Kanji UTF-8、control segment rejection、`generateSegmentsStructuredAppend()` parity consistency、150,000-byte streaming parity、TypeScript surface、packed package smoke を確認しています。詳細は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md)、[Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md)、[Resource Safety](./resource-safety.md) に整理しています。 |
-| Planning / diagnostics API | Tested | `estimate()` / `QRCode.estimate()`、`analyzeSegments()` / `QRCode.analyzeSegments()`、`getCapacity()` / `QRCode.getCapacity()` を実装済みです。String / binary input、Kanji、GS1、FNC1 second、low-level Structured Append、manual control segments、capacity overflow の non-throwing result、既存 diagnostics との planning field 一致、capacity table surface、TypeScript surface、examples smoke、playground source、packed package smoke を確認しています。詳細は [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) に整理しています。 |
+| Planning / diagnostics API | Tested | `estimate()` / `QRCode.estimate()`、`analyzeSegments()` / `QRCode.analyzeSegments()`、`getCapacity()` / `QRCode.getCapacity()` を実装済みです。String / binary input、Kanji、GS1、FNC1 second、low-level Structured Append、manual control segments、capacity overflow の non-throwing result、既存 diagnostics との planning field 一致、capacity table surface、TypeScript surface、examples smoke、playground source、packed package smoke を確認しています。Overflow result は negative `remainingBits` を返し、success-only の `CAPACITY_NEAR_LIMIT` / `SCAN_RISK` warning を付けません。成功した near-limit result では warning を維持します。詳細は [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) に整理しています。 |
 
 ## Rendering / Runtime Helpers
 
@@ -126,7 +131,7 @@ v2 系は、通常 QR Code Model 2 core を維持したまま、GS1 syntax layer
 | FNC1 second position | Tested | 通常 QR Code Model 2 の optional FNC1 coverage として実装済みです。Decoder による symbology identifier の露出差は unit / golden diagnostics で補います。 |
 | Structured Append high-level | Tested | Model 2 の multi-symbol generation を自動分割、parity calculation、symbol diagnostics まで扱います。API shape は [Structured Append v2 API Design](./structured-append-v2.md)、capacity/memory invariant は [Structured Append Memory Hardening](./structured-append-memory.md) に固定済みです。 |
 | Structured Append manual segments | Tested | `generateSegmentsStructuredAppend()` は [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、segment boundary split と byte segment safe chunking で実装済みです。Internal 探索は descriptor/range based です。v3 candidate では standard diagnostics は compact、full opt-in は v2 array 互換です。 |
-| v3 compact `splitUnits` | RC candidate / tested | [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) の major migration を `3.0.0-rc.1` metadata へ統合済みです。npm publish 前なので、published v2 系の contract とは区別します。 |
+| v3 compact `splitUnits` | Prerelease / tested | [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) の major migration は `3.0.0-rc.1` で prerelease 公開済みです。`3.0.0-rc.2` candidate は同一 contract を維持し、published stable v2 系とは区別します。 |
 | Structured Append scanner workflow | Partial / tested | scanner metadata の有無による workflow、metadata が取れた場合の `mergeStructuredAppendParts()`、missing / duplicate / parity mismatch handling を [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に整理しました。ZXing Java required fixture は [Structured Append ZXing Java Verification](./structured-append-zxing-java.md) に固定しています。QR decoder / scanner integration と全 scanner 互換は未対応です。 |
 | Structured Append parity helper | Tested | low-level `structuredAppend` 利用者向けの `calculateStructuredAppendParity(input)` と、manual segments 向けの `calculateStructuredAppendSegmentsParity(segments)` は実装済みです。string は UTF-8、binary input は original bytes、`ArrayBufferView` は offset / length を尊重します。manual segments helper は `generateSegmentsStructuredAppend()` と同じ canonical logical bytes を使い、control segments を reject します。 |
 | v2 validation expansion | Tested / ongoing | 新しい control feature は decoder 表示が揺れやすいため、golden / bitstream / matrix / diagnostics / packed smoke を組み合わせます。Structured Append sequence/parity は ZXing Java 3.5.4 required lane でも確認しますが、1 decoder の結果を全 scanner 互換とは主張しません。 |

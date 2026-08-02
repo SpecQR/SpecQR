@@ -108,11 +108,10 @@ full の `splitUnits.length === 47_216`、standard の
 
 この残存 cost に対する v3 contract は
 [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md)
-どおり、dirty working tree へ**3.0.0-rc.1 candidate / unpublished**として
-runtime/types/tests まで実装済みです。Standard は `splitUnits` own property を
+どおり、`3.0.0-rc.1` で prerelease 公開済みです。Standard は `splitUnits` own property を
 持たず、full array は `diagnostics: { splitUnits: "full" }` で明示的に要求します。
-Package metadata は `3.0.0-rc.1` candidate へ統合済みですが、npm 未公開であり、
-stable support とは扱いません。Migration は
+現在の `3.0.0-rc.2` release-correction candidate は RC 1 と同じ runtime / type
+contract を維持し、stable support とは扱いません。Migration は
 [v3 Migration Guide](./v3-migration.md) を参照してください。
 
 ## Failure Semantics

@@ -11,6 +11,13 @@ release candidate です。
 RC 1 は release freeze 状態です。この文書に記載した breaking change 以外の
 runtime、type、export 変更は追加しません。
 
+> **2026-08-02 訂正:** 下記「互換性」のうち、warnings が 2.4.0 から不変という
+> 記述は不正確でした。AUD-05 により、`ok: false` かつ negative `remainingBits` の
+> overflow planning result から success-only の `CAPACITY_NEAR_LIMIT` を除いています。
+> Successful near-limit result の warning は維持します。API shape の breaking
+> change は manual Structured Append diagnostics だけです。詳細は
+> [SpecQR 3.0.0-rc.2 Release Notes](./release-notes-3.0.0-rc.2.md) を参照してください。
+
 ## 主な変更
 
 - Standard diagnostics は `splitUnitsDetail: "summary"` と
@@ -24,7 +31,8 @@ runtime、type、export 変更は追加しません。
 
 ## 互換性
 
-次は 2.4.0 から変更していません。
+次は 2.4.0 から変更していません。ただし warnings については上記訂正を参照して
+ください。
 
 - QR matrix、codewords、SVG/PNG bytes
 - Version / ECC / mask selection

@@ -12,9 +12,9 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 
 Node.js は `>=18` をサポート範囲にし、CI では Node 18 / 20 / 22 / 24 の engine matrix を release gate として確認します。
 
-この checkout は `3.0.0-rc.1` の公開候補です。npm の `latest` は公開済み stable
-2.4.0 向け、RC は公開時に `next` へ置く方針です。この文書作成時点では
-3.0.0-rc.1 を npm へ公開していません。
+この checkout は、runtime を変更しない `3.0.0-rc.2` release-correction
+candidate です。npm の `latest` は公開済み stable 2.4.0、`next` は公開済み
+3.0.0-rc.1 を指します。この文書作成時点では 3.0.0-rc.2 を公開していません。
 
 ## インストール
 
@@ -22,15 +22,15 @@ Node.js は `>=18` をサポート範囲にし、CI では Node 18 / 20 / 22 / 2
 npm install specqr
 ```
 
-3.0.0-rc.1 が `next` へ公開された後、prerelease channel を明示して試す場合:
+現在の prerelease channel を明示して試す場合:
 
 ```sh
 npm install specqr@next
 ```
 
 `specqr` は stable channel です。通常利用では `npm install specqr` を使ってください。
-`specqr@next` が実際にどの version を指すかは registry で確認し、未公開 RC を
-install できるとは記述しません。
+`specqr@next` は現在 3.0.0-rc.1 です。RC 2 の公開前検証では registry package では
+なく、canonical tarball を使用します。
 
 ## Links
 
@@ -48,6 +48,7 @@ install できるとは記述しません。
 - Release Checklist: [docs/release.md](docs/release.md)
 - Release Artifact Verification: [docs/release-artifact.md](docs/release-artifact.md)
 - v3 Migration Guide: [docs/v3-migration.md](docs/v3-migration.md)
+- 3.0.0-rc.2 Release Notes: [docs/release-notes-3.0.0-rc.2.md](docs/release-notes-3.0.0-rc.2.md)
 - 3.0.0-rc.1 Release Notes: [docs/release-notes-3.0.0-rc.1.md](docs/release-notes-3.0.0-rc.1.md)
 - v3 Structured Append Diagnostics Contract: [docs/v3-structured-append-diagnostics.md](docs/v3-structured-append-diagnostics.md)
 - Security Policy: [SECURITY.md](SECURITY.md)
@@ -106,10 +107,12 @@ compact にします。Standard は `splitUnitsDetail: "summary"` と
 breaking change です。移行方法は [v3 Migration Guide](docs/v3-migration.md) を
 参照してください。
 
-RC 1 は release freeze 状態です。unknown-option rejection、GS1 metadata readonly、
-新しい inspection API、その他の runtime / type / export 変更は RC 1 に追加しません。
-公開前に残る作業は、commit / push、hosted CI、`next` publish、post-publish
-verification です。
+3.0.0-rc.2 は RC 1 と同じ runtime / type / export behavior を持つ
+release-correction candidate です。2.4.0 との observable correctness change として、
+`ok: false` かつ `remainingBits < 0` の overflow planning result では
+`CAPACITY_NEAR_LIMIT` を返しません。成功した near-limit result では warning を
+維持します。詳細は [3.0.0-rc.2 Release Notes](docs/release-notes-3.0.0-rc.2.md)
+を参照してください。
 
 Digital Link 周りの導線は次の順に読むと迷いにくいです。
 
@@ -360,10 +363,11 @@ console.log(autoSet.parity === parity);
 
 Manual segments parity helper の bytes policy と control segment rejection は [Structured Append Manual Segments Parity Helper v2.3](docs/structured-append-segments-parity-v2.3.md) にまとめています。
 
-3.0.0-rc.1 では manual Structured Append の full split-unit diagnostics を
+3.0.0-rc.1 以降では manual Structured Append の full split-unit diagnostics を
 明示的 opt-in にします。Standard では `splitUnitsDetail: "summary"` と正確な
 `splitUnitCount` を返し、`splitUnits` property を持ちません。Full detail は
-`diagnostics: { splitUnits: "full" }` で要求します。RC は未公開であり、
+`diagnostics: { splitUnits: "full" }` で要求します。RC 2 はこの contract を
+変更せず、
 移行と型 contract は [v3 Migration Guide](docs/v3-migration.md) と
 [v3 Structured Append Diagnostics Contract](docs/v3-structured-append-diagnostics.md)
 を参照してください。
@@ -663,14 +667,14 @@ npm run verify:pack
 
 この check は tarball を隔離 install し、root / `specqr/node` / `specqr/browser` の runtime export と代表呼出し、installed declarations に対する NodeNext（DOM なし）/ Bundler（DOM あり）consumer compile を確認します。
 
-3.0.0-rc.1 の公開候補は、repository 外の空 directory へ一度だけ pack し、同じ
+3.0.0-rc.2 の公開候補は、repository 外の空 directory へ一度だけ pack し、同じ
 tarball を Node matrix、browser、ZXing Java へ渡します。
 
 ```sh
 npm run release:artifact -- \
-  --output-dir /private/tmp/specqr-3.0.0-rc.1-artifact
+  --output-dir /private/tmp/specqr-3.0.0-rc.2-artifact
 
-SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact \
   npm run verify:release:artifact
 ```
 
@@ -684,13 +688,15 @@ allow/deny policy、公開後の exact version / `next` 検証手順は
 npm run verify:published
 ```
 
-3.0.0-rc.1 の registry smoke は RC を `next` へ公開した後だけ実行します。
+3.0.0-rc.2 の registry smoke は RC 2 を `next` へ公開した後だけ実行します。
 
 ```sh
 node tools/verify-published-package.js \
-  --expected-version 3.0.0-rc.1 \
-  specqr@3.0.0-rc.1 specqr@next
+  --expected-version 3.0.0-rc.2 \
+  specqr@3.0.0-rc.2 specqr@next
 ```
 
-Conformance Lab は公開済み 2.4.0 を対象としており、この未公開 RC の検証済み claim
-には使用しません。
+Conformance Lab の public report / badge は引き続き 2.4.0 を対象にします。RC 1 の
+一時 comparison では 455 common results のうち、AUD-05 で意図した overflow
+warning 3 件だけが 2.4.0 と異なりました。RC 2 publish 前は registry RC 2 の
+検証済み claim には使用しません。

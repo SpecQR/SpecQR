@@ -47,6 +47,22 @@ single-symbol generation は、選択可能な最大 Version と requested ECC �
 
 Overflow planning では、lower bound で failure が確定している場合に expensive auto-segmentation DP を再実行しません。Version 9/10・26/27、UTF-8、Kanji、binary、manual segments、ECI overhead の exact-fit / max+1 は unit test で固定します。
 
+### AUD-05 overflow warning
+
+`ok: false` かつ `remainingBits < 0` の planning result は、成功時専用の
+`CAPACITY_NEAR_LIMIT` を返しません。その warning だけを根拠にした `SCAN_RISK` も
+生成しません。成功し、`remainingBits >= 0` の near-limit result は従来どおり
+warning を返します。
+
+この条件は `src/diagnostics.js` の `remainingBits >= 0` guard、
+`tests/resource-safety.test.js` の fixed / ranged / manual overflow と successful
+near-limit case、`tools/verify-resource-safety.js` の 20,000-character low-heap
+planning case で固定しています。
+
+公開済み 2.4.0 は overflow result に `CAPACITY_NEAR_LIMIT` を付けていました。
+3.0.0-rc.1 では AUD-05 修正済みであり、3.0.0-rc.2 は runtime を変更せず、この
+observable correctness change の release claim を訂正します。
+
 ## Structured Append
 
 `calculateStructuredAppendSegmentsParity()` は normalized segments を順次走査し、canonical logical message byte length と XOR parity を更新します。全 canonical bytes や split units は作らず、parity 集計の追加 memory は O(1) です。

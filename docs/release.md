@@ -1,9 +1,9 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の dirty
-working tree は `3.0.0-rc.1` release candidate へ統合済みですが、npm publish、
-tag、GitHub Release、GitHub Pages deploy は未実施です。公開済み stable は
-2.4.0 であり、Conformance Lab も 2.4.0 を対象としています。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の checkout
+は、runtime を変更しない `3.0.0-rc.2` release-correction candidate です。公開済み
+stable は 2.4.0、npm `next` と GitHub prerelease は 3.0.0-rc.1 です。RC 2 の npm
+publish、tag、GitHub Release、GitHub Pages deploy は未実施です。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は
 [Project Language and Writing Style](./project-language.md) に従い、日本語を
@@ -13,9 +13,9 @@ README 冒頭の短い English summary は英語導線として維持します�
 ## Release Channels
 
 - `latest`: 安定版利用者向け。現在の公開済み stable 2.4.0 を維持します。
-- `next`: RC / prerelease 利用者向け。3.0.0-rc.1 を公開する場合だけ
-  `npm publish --tag next` を使います。この文書作成時点では、registry の
-  `next` が 3.0.0-rc.1 を指すとは主張しません。
+- `next`: RC / prerelease 利用者向け。現在は公開済み 3.0.0-rc.1 を指します。
+  RC 2 を公開する場合も canonical tarball に `npm publish --tag next` を使い、
+  公開検証が終わるまで手動で dist-tag を上書きしません。
 
 通常 install:
 
@@ -32,14 +32,19 @@ npm install specqr@next
 通常利用者向けの install guide は `npm install specqr` を主導線にします。
 `specqr@next` の RC 導線は publish 後に exact version を検証してから案内します。
 
-## 3.0.0-rc.1 Release Freeze
+## 3.0.0-rc.2 Release Correction Freeze
 
-`3.0.0-rc.1` の runtime、public API、TypeScript contract、package exports、
-resource budget、runtime dependency、QR / renderer output bytes を凍結します。
-RC 1 の唯一の breaking change は、manual segments 版 Structured Append の
-diagnostics contract です。
+`3.0.0-rc.2` は RC 1 の runtime、public API、TypeScript contract、package
+exports、resource budget、runtime dependency、QR / renderer output bytes を
+byte-for-byte で維持します。RC line の唯一の API shape breaking change は、manual
+segments 版 Structured Append の diagnostics contract です。
 
-次は RC 1 に含めません。
+2.4.0 との observable correctness change として、`ok: false` かつ
+`remainingBits < 0` の Planning overflow result では `CAPACITY_NEAR_LIMIT` を
+返しません。成功した near-limit result では warning を維持します。RC 2 はこの
+AUD-05 behavior を変更せず、RC 1 の release documentation だけを訂正します。
+
+次は RC 2 に含めません。
 
 - Top-level unknown option rejection
 - GS1 metadata readonly / runtime freeze
@@ -47,12 +52,12 @@ diagnostics contract です。
 - その他の runtime / type / export 変更
 
 freeze 後に `src/**/*.js`、`src/**/*.d.ts`、exports、error / warning message、
-diagnostics JSON shape、resource budget の変更が必要になった場合は、同じ RC 1 の
-editorial fix として扱いません。変更内容を再評価し、公開済みなら新しい prerelease
-version を使います。
+diagnostics JSON shape、resource budget の変更が必要になった場合は、RC 2 の
+release correction として扱いません。変更内容を再評価し、新しい prerelease version
+を使います。
 
-この freeze 後に残る作業は、commit / push、hosted CI、canonical tarball の
-`next` publish、post-publish verification だけです。
+この freeze 後に残る作業は、commit / push、hosted CI、Lab expected-delta policy の
+審査、明示承認後の canonical tarball `next` publish、post-publish verification です。
 
 ## Release Gate
 
@@ -95,7 +100,7 @@ version を使います。
 - Micro QR、rMQR、QR decoder / scanner integration、logo overlay、styled modules、GS1 full AI catalog、GS1 Digital Link resolver / compression / full canonicalizer が docs に非スコープとして明記されている。Structured Append raw input parity helper は [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に、manual segments parity helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に、Planning API は [Planning / Diagnostics API v2.4](./planning-diagnostics-v2.4.md) に分ける。
 
 release tag は、上記 verification が green の main commit にだけ付けます。この
-integration では tag、commit、push、publish を行いません。
+準備 goal では RC 2 tag、publish、GitHub Release、Pages deploy を行いません。
 
 ## Main / Tag / npm / Pages Consistency Check
 
@@ -126,9 +131,9 @@ npm view specqr version dist-tags repository homepage bugs --json
 
 ```sh
 npm run release:artifact -- \
-  --output-dir /private/tmp/specqr-3.0.0-rc.1-artifact
-SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
-  SPECQR_EXPECTED_VERSION=3.0.0-rc.1 \
+  --output-dir /private/tmp/specqr-3.0.0-rc.2-artifact
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact \
+  SPECQR_EXPECTED_VERSION=3.0.0-rc.2 \
   npm run verify:release:artifact
 npm test
 npm run verify:types
@@ -140,11 +145,11 @@ npm run verify:conformance:fuzz
 npm run verify:resource-safety
 npm run verify:structured-append:memory
 npm run verify:reference:nayuki
-SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact \
   npm run verify:pack
-SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact \
   npm run verify:browser:e2e
-SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact \
 npm run verify:structured-append:zxing-java
 npm run verify:release:workflow
 npm run verify:links
@@ -152,7 +157,7 @@ npm run verify:writing
 npm ls --omit=dev
 npm pack --dry-run --cache /private/tmp/specqr-npm-cache
 npm publish \
-  /private/tmp/specqr-3.0.0-rc.1-artifact/specqr-3.0.0-rc.1.tgz \
+  /private/tmp/specqr-3.0.0-rc.2-artifact/specqr-3.0.0-rc.2.tgz \
   --dry-run --tag next \
   --cache /private/tmp/specqr-npm-cache
 ```
@@ -187,13 +192,14 @@ npm run verify:types
 
 ## Published Package Smoke
 
-npm registry smoke は公開済み package を確認する gate です。3.0.0-rc.1 publish 前は
-`latest` が stable 2.4.0 を指し、RC contract の確認には canonical tarball を使います。
+npm registry smoke は公開済み package を確認する gate です。RC 2 publish 前は
+`latest` が stable 2.4.0、`next` が RC 1 を指すため、RC 2 contract の確認には
+canonical tarball を使います。
 
 ```sh
 node tools/verify-published-package.js \
-  --expected-version 3.0.0-rc.1 \
-  /private/tmp/specqr-3.0.0-rc.1-artifact/specqr-3.0.0-rc.1.tgz
+  --expected-version 3.0.0-rc.2 \
+  /private/tmp/specqr-3.0.0-rc.2-artifact/specqr-3.0.0-rc.2.tgz
 ```
 
 RC を `next` へ publish した後は、exact version と dist-tag が同じ version へ解決する
@@ -201,13 +207,13 @@ RC を `next` へ publish した後は、exact version と dist-tag が同じ ve
 
 ```sh
 node tools/verify-published-package.js \
-  --expected-version 3.0.0-rc.1 \
-  specqr@3.0.0-rc.1 specqr@next
+  --expected-version 3.0.0-rc.2 \
+  specqr@3.0.0-rc.2 specqr@next
 ```
 
 `npm run verify:published` と `Published Package Smoke` manual workflow の default も
-`specqr@3.0.0-rc.1` / `specqr@next` / expected
-`3.0.0-rc.1` です。RC 未公開の現在は実行成功を完了条件にせず、workflow schema と
+`specqr@3.0.0-rc.2` / `specqr@next` / expected
+`3.0.0-rc.2` です。RC 2 未公開の現在は実行成功を完了条件にせず、workflow schema と
 local tarball equivalent だけを検証します。Local path の成功を registry/dist-tag
 成功とは表現しません。
 
@@ -262,13 +268,15 @@ Planning API を stable API として出す release では、少なくとも次�
 - `getCapacity(options)` と `QRCode.getCapacity(options)` が Version / ECC / optional mode の capacity 情報を public-safe shape で返す。
 - `estimate()` / `analyzeSegments()` の成功時 planning fields が `generate(..., { diagnostics: true })` / `generateSegments(..., { diagnostics: true })` の planning fields と一致すると README / API docs から分かる。
 - Capacity overflow は throw ではなく `{ ok: false, reason: "data-too-long" }` result であることが README / API docs / examples から分かる。
+- Overflow result は `CAPACITY_NEAR_LIMIT` を返さず、成功した near-limit result では
+  warning を維持する AUD-05 policy が tests / docs と一致する。
 - Invalid option、invalid GS1、invalid ECI、invalid color などの configuration error は既存 error class を投げることを docs に残す。
 - `getCapacity()` は QR mode-level capacity を返し、GS1 AI、Digital Link、Structured Append high-level split の semantic capacity は `estimate()` / `analyzeSegments()` に任せると明記する。
 - `examples/planning-api.mjs` が examples smoke に含まれ、`estimate()` / `analyzeSegments()` / `getCapacity()` / overflow result の代表ケースを実行する。
 - Playground package contents に `playground/index.html` / `playground/playground.js` / `playground/styles.css` が含まれ、Planning panel、`QRCode.estimate()`、`QRCode.getCapacity()` の source smoke が通る。
 - 2.4.0 は現在の published stable であり、Planning API の registry baseline として
-  Conformance Lab と published smoke が確認する。3.0.0-rc.1 の未公開 contract とは
-  区別する。
+  Conformance Lab と published smoke が確認する。公開済み 3.0.0-rc.1 と未公開
+  3.0.0-rc.2 candidate の evidence は、public baseline report と区別する。
 
 ### v2.3.0 Structured Append parity 確認
 
@@ -295,8 +303,8 @@ Digital Link docs / playground だけを直す patch でも、少なくとも次
 
 ### v3 Structured Append diagnostics candidate
 
-`diagnostics.splitUnits` contract は `3.0.0-rc.1` metadata へ統合済みですが、
-npm 未公開です。通常 gate に加えて次を必須とします。
+`diagnostics.splitUnits` contract は `3.0.0-rc.1` で prerelease 公開済みです。
+`3.0.0-rc.2` は同じ contract を維持します。通常 gate に加えて次を必須とします。
 
 - `diagnostics:false` / omitted / `true` / object form の option/return matrix。
 - Standard で `splitUnits` own property 不在、materializer 呼出し0回、
@@ -313,7 +321,7 @@ npm 未公開です。通常 gate に加えて次を必須とします。
 Package version、CHANGELOG、migration、single-artifact pipeline は RC candidate へ
 統合済みです。RC tag、publish、GitHub Release は人間が canonical tarball と
 manifest を review した後だけ行います。Unknown top-level option rejection、
-GS1 readonly、新 inspection API は RC 1 へ混ぜません。Release freeze 後は、
+GS1 readonly、新 inspection API は RC 2 へ混ぜません。Release freeze 後は、
 これらを同じ version へ追加しません。
 
 ## npm RC Publish
@@ -322,7 +330,7 @@ RC dry-run:
 
 ```sh
 npm publish \
-  /private/tmp/specqr-3.0.0-rc.1-artifact/specqr-3.0.0-rc.1.tgz \
+  /private/tmp/specqr-3.0.0-rc.2-artifact/specqr-3.0.0-rc.2.tgz \
   --dry-run --tag next \
   --cache /private/tmp/specqr-npm-cache
 ```
@@ -331,7 +339,7 @@ npm publish \
 
 ```sh
 npm publish \
-  /private/tmp/specqr-3.0.0-rc.1-artifact/specqr-3.0.0-rc.1.tgz \
+  /private/tmp/specqr-3.0.0-rc.2-artifact/specqr-3.0.0-rc.2.tgz \
   --tag next \
   --cache /private/tmp/specqr-npm-cache
 ```
@@ -339,11 +347,11 @@ npm publish \
 公開後確認:
 
 ```sh
-npm view specqr@3.0.0-rc.1 version repository homepage bugs --json
+npm view specqr@3.0.0-rc.2 version repository homepage bugs --json
 npm view specqr dist-tags versions --json
 node tools/verify-published-package.js \
-  --expected-version 3.0.0-rc.1 \
-  specqr@3.0.0-rc.1 specqr@next
+  --expected-version 3.0.0-rc.2 \
+  specqr@3.0.0-rc.2 specqr@next
 ```
 
 `latest` は 2.4.0 stable に残し、RC publish で変更しません。上記 registry smoke が
@@ -352,19 +360,19 @@ node tools/verify-published-package.js \
 ## Rollback and Stable Promotion
 
 publish 前に gate、artifact manifest、editorial audit のいずれかが失敗した場合は、
-RC 1 を公開せず修正します。runtime / type contract の修正が必要なら freeze を解除し、
+RC 2 を公開せず修正します。runtime / type contract の修正が必要なら freeze を解除し、
 変更を再評価します。
 
 publish 後に exact version、`next`、metadata、exports、types、v3 contract の検証が
 失敗した場合は、同じ version の上書きや即時 unpublish を行いません。原因を記録し、
-必要に応じて `next` の移動、RC 1 の deprecate、新しい RC の publish を人間が
+必要に応じて `next` の移動、RC 2 の deprecate、新しい RC の publish を人間が
 判断します。
 
 `3.0.0` stable へ進む条件:
 
-- RC 1 の唯一の breaking change と migration が利用者に理解できる。
+- RC line の唯一の API shape breaking change と AUD-05 warning correction が利用者に理解できる。
 - canonical artifact と hosted CI の required jobs が green。
-- `specqr@3.0.0-rc.1` と `specqr@next` の post-publish verification が green。
+- `specqr@3.0.0-rc.2` と `specqr@next` の post-publish verification が green。
 - RC 評価中に追加の runtime / type / export 変更が入っていない。
 - [v3 Migration Guide](./v3-migration.md) の rollback 条件を満たす。
 

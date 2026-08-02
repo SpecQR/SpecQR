@@ -6,7 +6,7 @@
 | --- | --- |
 | 監査日 | 2026-07-30 |
 | Repository | `SpecQR/SpecQR` |
-| Checkout | `/Users/kifu/SpecQR` |
+| Checkout | Repository root の local checkout |
 | Commit | `18da5bc1e2ca1cb7d4249b0c886fb0b88f643ee9` (`docs: link SpecQR Conformance Lab`) |
 | Branch | `main` |
 | Local `origin/main` | `18da5bc1e2ca1cb7d4249b0c886fb0b88f643ee9` |
@@ -908,3 +908,43 @@ Evidence:
 この追補は既存 finding を新たに resolved とするものではない。公開前に残る作業は
 commit / push、hosted CI、canonical tarball の `next` publish、post-publish
 verification に限定する。
+
+## 監査追補: 3.0.0-rc.2 Release Correction
+
+追補日: 2026-08-02
+位置づけ: immutable な `3.0.0-rc.1` を置き換えず、2.4.0 から RC 1 までの
+Planning warning semantics を訂正する release-correction evidence。
+
+Registry package comparison:
+
+- `specqr@2.4.0` と `specqr@3.0.0-rc.1` の 455 common results を比較した。
+- Normalized result の差は次の 3 vector だけだった。
+  - `core.estimate.data-too-long-reject`
+  - `planning.estimate.data-too-long-v1-h`
+  - `planning.analyze-segments.data-too-long-v1-h`
+- 3 vector はいずれも `ok: false`、negative `remainingBits` の overflow result で、
+  2.4.0 にあった `CAPACITY_NEAR_LIMIT` が RC 1 では存在しない。
+- Successful near-limit control は RC 1 でも `CAPACITY_NEAR_LIMIT` を維持する。
+- Exact RC 1 と当時の `specqr@next` の common result 差は 0 件で、v3 contract の
+  required check 35 件も一致した。
+
+AUD-05 evidence:
+
+- `src/diagnostics.js` は `remainingBits >= 0` の成功側だけで near-limit warning を
+  作る。
+- `tests/resource-safety.test.js` と `tools/verify-resource-safety.js` は fixed Version、
+  auto range、manual segments の overflow と successful near-limit control を固定する。
+- Overflow result から `CAPACITY_NEAR_LIMIT` と派生 `SCAN_RISK` を除く現行 behavior
+  を正とし、warning を復活させない。
+
+RC 1 / RC 2 candidate invariant:
+
+- `src/**/*.js` と `src/**/*.d.ts` は 43 files で byte-for-byte 同一。
+- Expanded source/type manifest SHA-256 は
+  `02eec15aa08b2b5f66bfe62a702001333186ec223beb0f13fb5fca9c10d4a60d`。
+- Root / node / browser export manifest は同一。
+- RC 2 の差分は version、release documentation、release metadata に限定する。
+
+この追補時点で `3.0.0-rc.2` は未公開です。RC 1 の npm package、tag、GitHub
+Release、`next` dist-tag は削除、上書き、force update しません。Hosted CI と
+canonical artifact の一致は RC 2 commit / push 後に確定します。

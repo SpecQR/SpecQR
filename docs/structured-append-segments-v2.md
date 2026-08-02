@@ -299,9 +299,10 @@ logical split-unit sequence, not the caller's original segment array. The implem
 uses virtual ranges internally; the public `splitUnits` diagnostics array is materialized
 once after successful generation to preserve this return shape.
 
-This paragraph records the published v2 baseline. Package metadata in the current dirty
-working tree is integrated as the unpublished `3.0.0-rc.1` candidate, in which standard
-diagnostics omit the property and full detail is explicitly requested with
+This paragraph records the published v2 baseline. The compact diagnostics contract was
+published in `3.0.0-rc.1` and remains unchanged in the current unpublished
+`3.0.0-rc.2` release-correction candidate. Standard diagnostics omit the property, and
+full detail is explicitly requested with
 `diagnostics: { splitUnits: "full" }`. See
 [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) and
 [v3 Migration Guide](./v3-migration.md).

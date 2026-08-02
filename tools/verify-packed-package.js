@@ -857,6 +857,7 @@ function assertPackContents(packed) {
     "docs/public-api-contract.md",
     "docs/release.md",
     "docs/release-notes-3.0.0-rc.1.md",
+    "docs/release-notes-3.0.0-rc.2.md",
     "docs/gs1-supported-ai.md",
     "docs/spec-scope.md",
     "docs/conformance.md",

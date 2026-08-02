@@ -151,8 +151,10 @@ Module 責務、internal artifact、依存方向、benchmark 方法は [Internal
 
 公開済み npm package の外部 conformance report は
 [SpecQR Conformance Lab](https://specqr.github.io/SpecQR-Conformance-Lab/)
-に置きます。現在の Lab は公開済み 2.4.0 を対象とし、未公開 3.0.0-rc.1 の証拠とは
-しません。この repository の test plan は core package の release gate と
+に置きます。現在の public report は公開済み 2.4.0 を対象とします。Temporary
+comparison では 2.4.0 と公開済み 3.0.0-rc.1 の 455 common results を比較し、
+AUD-05 に対応する 3 warning delta だけを確認しましたが、public report の target は
+切り替えていません。この repository の test plan は core package の release gate と
 source-level regression を管理し、外部 report artifact は SpecQR core
 repository にはコピーしません。
 
@@ -168,7 +170,7 @@ v2.0.0 の release scope は [SpecQR v2.0.0 Roadmap](./v2-roadmap.md) にまと�
 - Structured Append low-level: header encoding、sequence number、total count、parity、manual chunks は unit / golden fixtures で固定済み。
 - Structured Append high-level: [Structured Append v2 API Design](./structured-append-v2.md) に固定した `generateStructuredAppend()` に従い、automatic splitting、最大 16 symbols、split failure、symbol diagnostics、original payload byte parity consistency、fixed version / ECC / mask golden fixture、packed package smoke を確認する。Oversized raw input の preflight と compact split source は [Structured Append Memory Hardening](./structured-append-memory.md) と低 heap gate で確認する。low-level header 利用者向けの parity helper は `calculateStructuredAppendParity(input)` で確認する。
 - Structured Append manual segments: [Structured Append Manual Segments v2 API Design](./structured-append-segments-v2.md) に従い、`generateSegmentsStructuredAppend()` の segment-boundary split、byte segment chunking、numeric / alphanumeric / kanji atomic behavior、control segment rejection、canonical parity、per-symbol diagnostics、golden fixture、packed package smoke を確認する。Internal descriptor は O(segment count + sparse checkpoints)とする。v3 candidate の standard summary は split-unit object を materialize せず、full opt-in だけが成功後に一度 materialize する。
-- v3 Structured Append diagnostics: [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) は**3.0.0-rc.1 candidate / unpublished**。Standard path で throwing fake materializer の呼出し0回、`splitUnits` own property 不在、正確な `splitUnitCount`、standard/full discriminant、full v2 array/JSON deep equality、legacy summary projection hash、named/static/literal/dynamic type narrowing、canonical packed package、Node/3-engine browser serialization、Version 40-L / 16-symbol standard/full memory 差と 32 MiB standard success を required gate で確認する。
+- v3 Structured Append diagnostics: [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md) は `3.0.0-rc.1` で prerelease 公開済みで、`3.0.0-rc.2` candidate でも contract は変わらない。Standard path で throwing fake materializer の呼出し 0 回、`splitUnits` own property 不在、正確な `splitUnitCount`、standard/full discriminant、full v2 array/JSON deep equality、legacy summary projection hash、named/static/literal/dynamic type narrowing、canonical packed package、Node/3-engine browser serialization、Version 40-L / 16-symbol standard/full memory 差と 32 MiB standard success を required gate で確認する。
 - Structured Append decoded parts merge: [Structured Append Scanning Workflow](./structured-append-scanning-v2.md) に従い、decoder が `index` / `total` / `parity` / unmerged data を返す場合だけ `mergeStructuredAppendParts()` で merge validation する。unit tests と packed package smoke では valid merge、shuffled parts、binary merge、missing/duplicate/total/parity/data type mismatch を確認する。ZXing Java required lane では、実 decoded string parts の 7 fixture を public merge helper へ渡して元 payload を確認する。任意 binary 3 fixture は metadata-only とし、理由を report へ残す。
 - Structured Append parity helper: v2.3.0 では [Structured Append Parity Helper v2.3](./structured-append-parity-v2.3.md) に従い、`calculateStructuredAppendParity(input)` の root export、`QRCode` static method、UTF-8 string、binary input、`ArrayBufferView` offset / length、`number[]` validation、empty input、invalid input、`generateStructuredAppend()` / `mergeStructuredAppendParts()` との parity consistency、TypeScript surface、packed package smoke を確認する。Manual segments 専用 helper は [Structured Append Manual Segments Parity Helper v2.3](./structured-append-segments-parity-v2.3.md) に従い、`calculateStructuredAppendSegmentsParity(segments)` の root export、`QRCode` static method、numeric / alphanumeric ASCII、byte string UTF-8、byte binary raw bytes、`ArrayBufferView` offset / length、Kanji UTF-8、control segment rejection、`generateSegmentsStructuredAppend()` との parity consistency、TypeScript surface、packed package smoke を確認する。
 - Structured Append decoder metadata: [Structured Append ZXing Java Verification](./structured-append-zxing-java.md) に従い、ZXing Java 3.5.4 を required 専用 job で実行する。sequence/parity metadata の型・値、index completeness、common total/parity、文字列 payload merge を確認する。jsQR / zbar / Vision は payload readability に使うが、この metadata gate の代替にはしない。
@@ -344,7 +346,7 @@ Browser binaries がない場合は skip せず install command 付きで失敗�
 ## CI
 
 repository には GitHub Actions workflow `.github/workflows/ci.yml` があります。
-最初に `package-artifact` job が `3.0.0-rc.1` を一度 pack し、tarball、SHA-256、
+最初に `package-artifact` job が `3.0.0-rc.2` candidate を一度 pack し、tarball、SHA-256、
 全 file content manifest、二回 pack の expanded-content 比較を artifact として
 upload します。`package.json` の `engines.node: >=18` を実際の release gate に
 するため、Node 18 / 20 / 22 / 24 の matrix はその同じ artifact を download します。
@@ -444,10 +446,10 @@ Runtime option policy と GS1 mutation boundary は `tests/public-api-contract.t
 npm run verify:published
 ```
 
-3.0.0-rc.1 publish 後の manual workflow は
-`specqr@3.0.0-rc.1` と `specqr@next` を一時 directory へ install し、両方が exact
-`3.0.0-rc.1` へ解決することを必須にします。Root/node/browser exact exports、
+3.0.0-rc.2 publish 後の manual workflow は
+`specqr@3.0.0-rc.2` と `specqr@next` を一時 directory へ install し、両方が exact
+`3.0.0-rc.2` へ解決することを必須にします。Root/node/browser exact exports、
 metadata、GS1、v3 standard/full contract、NodeNext/Bundler types も確認します。
-npm registry に依存するため通常 push CI には含めません。RC 未公開の現在は
+npm registry に依存するため通常 push CI には含めません。RC 2 未公開の現在は
 canonical tarball path を同じ verifier へ渡す local equivalent だけを実行し、
 registry/dist-tag 検証済みとは主張しません。

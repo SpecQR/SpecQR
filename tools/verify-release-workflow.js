@@ -55,7 +55,7 @@ for (const consumer of [
     block,
     /SPECQR_RELEASE_ARTIFACT_DIR: \$\{\{ runner\.temp \}\}\/specqr-release-artifact/u
   );
-  assert.match(block, /SPECQR_EXPECTED_VERSION: 3\.0\.0-rc\.1/u);
+  assert.match(block, /SPECQR_EXPECTED_VERSION: 3\.0\.0-rc\.2/u);
 }
 
 assert.match(
@@ -72,7 +72,7 @@ assert.match(
 );
 assert.match(
   jobs.get("release-gates"),
-  /npm publish\s+"\$\{SPECQR_RELEASE_ARTIFACT_DIR\}\/specqr-3\.0\.0-rc\.1\.tgz"\s+--dry-run --tag next/u
+  /npm publish\s+"\$\{SPECQR_RELEASE_ARTIFACT_DIR\}\/specqr-3\.0\.0-rc\.2\.tgz"\s+--dry-run --tag next/u
 );
 assert.equal(
   (ci.match(/npm run verify:writing/gu) ?? []).length,
@@ -95,9 +95,9 @@ for (const packageConsumer of [
 
 assert.match(
   published,
-  /default: "specqr@3\.0\.0-rc\.1 specqr@next"/u
+  /default: "specqr@3\.0\.0-rc\.2 specqr@next"/u
 );
-assert.match(published, /default: "3\.0\.0-rc\.1"/u);
+assert.match(published, /default: "3\.0\.0-rc\.2"/u);
 assert.match(
   published,
   /--expected-version "\$\{\{ inputs\.expected_version \}\}"/u

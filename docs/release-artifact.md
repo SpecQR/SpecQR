@@ -1,6 +1,6 @@
 # Release Artifact Verification
 
-SpecQR 3.0.0-rc.1 では、公開予定 tarball を一度だけ作り、Node、TypeScript、
+SpecQR 3.0.0-rc.2 では、公開予定 tarball を一度だけ作り、Node、TypeScript、
 browser、ZXing Java の package-level gate へ同じ artifact を渡します。
 
 この仕組みは source-level unit test を置き換えるものではありません。公開 package の
@@ -13,13 +13,13 @@ contents、metadata、exports、types、runtime contract が、各 lane で別�
 
 ```sh
 npm run release:artifact -- \
-  --output-dir /private/tmp/specqr-3.0.0-rc.1-artifact
+  --output-dir /private/tmp/specqr-3.0.0-rc.2-artifact
 ```
 
 生成物:
 
 ```text
-specqr-3.0.0-rc.1.tgz
+specqr-3.0.0-rc.2.tgz
 specqr-release-artifact.json
 ```
 
@@ -54,8 +54,8 @@ Manifest 自体は npm tarball に含めません。
 既存 artifact を再検証する command:
 
 ```sh
-SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact \
-  SPECQR_EXPECTED_VERSION=3.0.0-rc.1 \
+SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact \
+  SPECQR_EXPECTED_VERSION=3.0.0-rc.2 \
   npm run verify:release:artifact
 ```
 
@@ -96,8 +96,8 @@ required path と deny policy を別々に検証します。
 Artifact directory を指定すると、各 consumer は再 pack しません。
 
 ```sh
-export SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.1-artifact
-export SPECQR_EXPECTED_VERSION=3.0.0-rc.1
+export SPECQR_RELEASE_ARTIFACT_DIR=/private/tmp/specqr-3.0.0-rc.2-artifact
+export SPECQR_EXPECTED_VERSION=3.0.0-rc.2
 
 npm run verify:release:artifact
 npm run verify:pack
@@ -148,7 +148,7 @@ RC publish 前:
 
 ```sh
 npm publish \
-  /private/tmp/specqr-3.0.0-rc.1-artifact/specqr-3.0.0-rc.1.tgz \
+  /private/tmp/specqr-3.0.0-rc.2-artifact/specqr-3.0.0-rc.2.tgz \
   --dry-run --tag next \
   --cache /private/tmp/specqr-npm-cache
 ```
@@ -158,12 +158,12 @@ spec として渡します。実 publish はこの release integration では行
 
 ## 公開後の registry 検証
 
-3.0.0-rc.1 を人間が `next` へ公開した後:
+3.0.0-rc.2 を人間が `next` へ公開した後:
 
 ```sh
 node tools/verify-published-package.js \
-  --expected-version 3.0.0-rc.1 \
-  specqr@3.0.0-rc.1 specqr@next
+  --expected-version 3.0.0-rc.2 \
+  specqr@3.0.0-rc.2 specqr@next
 ```
 
 Verifier は両 spec が exact version へ解決すること、metadata、exports、Node/browser
@@ -173,8 +173,8 @@ helpers、v3 contract、NodeNext/Bundler types を確認します。
 
 ```sh
 node tools/verify-published-package.js \
-  --expected-version 3.0.0-rc.1 \
-  /private/tmp/specqr-3.0.0-rc.1-artifact/specqr-3.0.0-rc.1.tgz
+  --expected-version 3.0.0-rc.2 \
+  /private/tmp/specqr-3.0.0-rc.2-artifact/specqr-3.0.0-rc.2.tgz
 ```
 
 これは registry や dist-tag を確認したとは主張しません。Registry resolution は
@@ -185,7 +185,8 @@ publish 後の manual workflow または上記 exact command でだけ確認し�
 - Tarball SHA-256 は source tree の署名や provenance attestation ではありません。
 - GitHub artifact upload は npm registry publish を行いません。
 - `npm publish --dry-run` は実際の registry visibility や dist-tag を保証しません。
-- Conformance Lab は公開済み 2.4.0 を対象としており、未公開 RC tarball の証拠では
-  ありません。
+- Conformance Lab の public report / badge は公開済み 2.4.0 を対象としており、
+  未公開 RC 2 tarball の registry evidence ではありません。RC 1 との一時 comparison
+  は、AUD-05 の expected 3 warning delta を release-correction evidence として扱います。
 - Package artifact gate は scanner 全般、mobile device、CDN/network behavior を
   保証しません。

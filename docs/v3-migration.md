@@ -1,16 +1,39 @@
 # SpecQR v3 Migration Guide
 
-SpecQR 3.0.0-rc.1 changes only the diagnostics contract of
-`generateSegmentsStructuredAppend()`. QR matrices, rendered bytes, split
-strategy, parity, errors, warnings, package exports, and the remaining public
-APIs keep their v2 behavior.
+SpecQR 3.0.0-rc.2 keeps the sole intentional API-shape breaking change in the
+diagnostics contract of `generateSegmentsStructuredAppend()`. It also documents
+the earlier AUD-05 correctness change: overflow Planning results no longer carry
+the success-only `CAPACITY_NEAR_LIMIT` warning.
 
-この文書は SpecQR 2.4.0 から 3.0.0-rc.1 へ移行する際の変更点をまとめます。
-RC 1 で breaking になるのは、manual segments 版 Structured Append の
+この文書は SpecQR 2.4.0 から 3.0.0-rc.2 へ移行する際の変更点をまとめます。
+API shape として breaking になるのは、manual segments 版 Structured Append の
 `diagnostics.splitUnits` だけです。
 
-RC 1 は release freeze 状態です。unknown-option rejection、GS1 metadata readonly、
-新しい inspection API、その他の runtime / type / export 変更はこの候補へ追加しません。
+RC 2 は RC 1 と runtime、TypeScript declarations、public exports が同一の
+release-correction candidate です。unknown-option rejection、GS1 metadata readonly、
+新しい inspection API、その他の runtime / type / export 変更は追加しません。
+
+## Planning warning の訂正
+
+2.4.0 から RC line への observable correctness change として、`estimate()` /
+`analyzeSegments()` の overflow result は `CAPACITY_NEAR_LIMIT` を返しません。
+
+```js
+const result = estimate("A".repeat(50), {
+  version: 1,
+  errorCorrectionLevel: "H",
+  mode: "byte"
+});
+
+console.log(result.ok); // false
+console.log(result.remainingBits); // -340
+console.log(result.warnings); // []
+```
+
+`CAPACITY_NEAR_LIMIT` は、`ok: true` かつ `remainingBits >= 0` の near-limit result
+だけに返します。これは API shape breaking change ではありませんが、warning code を
+機械判定する consumer から見える correctness change です。RC 1 と RC 2 の挙動は
+同一で、RC 2 は release documentation だけを訂正します。
 
 ## 変更されない利用
 
@@ -193,12 +216,12 @@ v2 の eager contract へ戻します。
 - Standard path の materialization が0回である。
 - Node 18 / 20 / 22 / 24、NodeNext / Bundler、3 browser engines、
   ZXing Java package-level gate が同一 tarball で成功する。
-- Matrix、SVG/PNG bytes、split 位置、parity、warning 順序が変化しない。
+- Matrix、SVG/PNG bytes、split 位置、parity、RC 1 からの warning 順序が変化しない。
 
 Stable 公開後に standard へ `splitUnits` を黙って戻すことは、property presence と
 serialization contract を再変更するため patch rollback として扱いません。
 
-## RC 1 に含めない変更
+## RC 2 に含めない変更
 
 - Top-level unknown option rejection
 - GS1 metadata readonly / runtime freeze
@@ -206,4 +229,4 @@ serialization contract を再変更するため patch rollback として扱い�
 - GS1 catalog 拡張
 - Micro QR / rMQR / styled output / logo overlay
 
-これらは RC 1 の評価結果と分離して設計・実装します。
+これらは RC 2 の評価結果と分離して設計・実装します。

@@ -11,12 +11,12 @@ const specs = packageSpecs.length > 0
   ? packageSpecs
   : envSpecs.length > 0
     ? envSpecs
-    : ["specqr@3.0.0-rc.1", "specqr@next"];
+    : ["specqr@3.0.0-rc.2", "specqr@next"];
 const requiredVersion =
   expectedVersion
   ?? process.env.SPECQR_EXPECTED_VERSION?.trim()
   ?? (packageSpecs.length === 0 && envSpecs.length === 0
-    ? "3.0.0-rc.1"
+    ? "3.0.0-rc.2"
     : null);
 const cacheDir = process.env.SPECQR_NPM_CACHE ?? path.join(tmpdir(), "specqr-published-npm-cache");
 

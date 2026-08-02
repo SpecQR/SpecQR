@@ -308,12 +308,24 @@ v2.4.0 初期 warning surface は次を対象にします。
 | `COLOR_CONTRAST_LOW` | contrast ratio が推奨未満の場合に返す。 |
 | `COLOR_CONTRAST_MODERATE` | scan 可能だが強い contrast を推奨する場合に返す。 |
 | `COLOR_ALPHA_USED` | foreground / background alpha が 255 未満の場合に返す。 |
-| `CAPACITY_NEAR_LIMIT` | `remainingBits / capacityBits < 0.05` の場合に返す。 |
+| `CAPACITY_NEAR_LIMIT` | `ok: true`、`remainingBits >= 0`、`remainingBits / capacityBits < 0.05` の場合に返す。 |
 | `PRINT_MODULE_TOO_SMALL` | `printDpi` と `scale` から計算した module size が推奨未満の場合に返す。 |
 | `RASTER_SCALE_SMALL` | `output` を planning で扱わない場合は初期 API では返さない。 |
 | `SCAN_RISK` | warning severity を含む場合の aggregate warning として返す。 |
 
 `RASTER_SCALE_SMALL` は renderer output に依存するため、`estimate()` 初期 API では返さない方針です。もし `output` を accepted planning option に含める場合だけ、既存 diagnostics と同じ条件で返します。
+
+### Overflow result の warning policy
+
+`estimate()` / `analyzeSegments()` が `ok: false`、
+`reason: "data-too-long"` を返す場合、negative `remainingBits` を
+near-limit success として扱いません。したがって `CAPACITY_NEAR_LIMIT` と、それだけを
+根拠にした `SCAN_RISK` は返しません。
+
+2.4.0 の公開 package は overflow result に `CAPACITY_NEAR_LIMIT` を付けていました。
+AUD-05 の correctness hardening でこの誤 warning を除外し、3.0.0-rc.1 以降は
+成功した near-limit result だけに warning を限定しています。3.0.0-rc.2 は runtime を
+変更せず、この observable correctness change の release documentation を訂正します。
 
 ## Throwing / Non-Throwing Policy
 

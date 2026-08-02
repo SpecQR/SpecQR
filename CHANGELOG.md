@@ -4,6 +4,48 @@
 
 まだありません。
 
+## 3.0.0-rc.2 - 2026-08-02
+
+SpecQR 3.0.0-rc.2 is a release-correction candidate. It keeps the runtime,
+TypeScript declarations, and public exports byte-for-byte identical to
+3.0.0-rc.1 while correcting the documented Planning warning semantics.
+
+SpecQR 3.0.0-rc.2 は、RC 1 の runtime、TypeScript declarations、public
+exports を変更せず、Planning warning の説明だけを訂正する release-correction
+candidate です。
+
+### 訂正
+
+- Manual Structured Append diagnostics contract は、引き続き v3 の唯一の意図的な
+  API shape breaking change です。
+- 2.4.0 との observable correctness change として、`ok: false` かつ
+  `remainingBits < 0` の overflow planning result から
+  `CAPACITY_NEAR_LIMIT` を除外しています。
+- `CAPACITY_NEAR_LIMIT` は、収容に成功し、残容量が閾値未満になった near-limit
+  result にだけ返します。成功する Version 1-L / 41 桁 numeric case では warning
+  を維持しています。
+- RC 1 section の「error / warning semantics は 2.4.0 から変更していない」という
+  記述は不正確でした。この section を正式な erratum とします。
+
+### Conformance Lab evidence
+
+- `specqr@2.4.0` と `specqr@3.0.0-rc.1` の 455 common results を比較し、差は
+  `core.estimate.data-too-long-reject`、
+  `planning.estimate.data-too-long-v1-h`、
+  `planning.analyze-segments.data-too-long-v1-h` の 3 件だけでした。
+- 3 件はいずれも overflow result の `CAPACITY_NEAR_LIMIT` 除去だけで、matrix、
+  renderer、helper、その他 diagnostics、package surface に未説明の差はありません。
+- Exact RC 1 と `specqr@next` の common result 差は 0 件で、v3 contract の
+  35 required checks も一致しました。
+
+### 不変条件
+
+- `src/**/*.js`、`src/**/*.d.ts`、root / node / browser exports は RC 1 と
+  byte-for-byte で同一です。
+- QR bytes、warning implementation、resource budget、runtime dependency 0、
+  Node.js `>=18` support は変更していません。
+- RC 1 の npm package、tag、GitHub Release、`next` dist-tag は上書きしません。
+
 ## 3.0.0-rc.1 - 2026-07-31
 
 SpecQR 3.0.0-rc.1 is a release candidate that makes manual Structured
@@ -13,8 +55,12 @@ detail through an explicit opt-in.
 SpecQR 3.0.0-rc.1 は、`generateSegmentsStructuredAppend()` の
 diagnostics contract だけを breaking change として隔離した v3 release
 candidate です。QR encoding、split strategy、parity、symbol output、
-per-symbol diagnostics、error/warning semantics、package exports、
-runtime dependency-free policy は 2.4.0 から変更していません。
+per-symbol diagnostics、package exports、runtime dependency-free policy は
+2.4.0 から変更していません。
+
+> **Erratum:** Planning API の overflow result では、AUD-05 の correctness 修正に
+> より `CAPACITY_NEAR_LIMIT` を返さなくなりました。これは 2.4.0 からの
+> observable warning change です。詳細は 3.0.0-rc.2 section を参照してください。
 
 ### Breaking change
 

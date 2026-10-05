@@ -52,7 +52,7 @@ test("ZXing Java Structured Append lane is required and exactly pinned", () => {
   assert.match(runner, /-Dspecqr\.build\.directory=/u);
   assert.match(
     workflow,
-    /structured-append-zxing-java:[\s\S]*java-version: "21\.0\.11\+10"/u
+    /structured-append-zxing-java:[\s\S]*java-version: "21\.0\.11\+10\.0\.LTS"/u
   );
   assert.match(
     workflow,

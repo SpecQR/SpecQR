@@ -249,7 +249,8 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "21.0.11+10"
+          # Adoptium exact SemVer for the same Temurin 21.0.11+10 build.
+          java-version: "21.0.11+10.0.LTS"
           cache: maven
           cache-dependency-path: e2e/zxing-java/pom.xml
       - run: npm ci

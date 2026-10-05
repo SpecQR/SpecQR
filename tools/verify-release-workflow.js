@@ -132,7 +132,7 @@ export function verifyWorkflowContract(ci, published) {
   }
   assertJobNeeds(jobs.get("release-gates"), "release-gates", "artifact-verification");
   assert.match(jobs.get("structured-append-zxing-java"), /distribution: temurin/u);
-  assert.match(jobs.get("structured-append-zxing-java"), /java-version: "21\.0\.11\+10"/u);
+  assert.match(jobs.get("structured-append-zxing-java"), /java-version: "21\.0\.11\+10\.0\.LTS"/u);
   assert.match(jobs.get("structured-append-zxing-java"), /cache-dependency-path: e2e\/zxing-java\/pom\.xml/u);
   assert.match(jobs.get("browser-e2e"), /name: browser-e2e-failure-artifacts/u);
   assert.match(jobs.get("structured-append-zxing-java"), /name: structured-append-zxing-java-failure-artifacts/u);

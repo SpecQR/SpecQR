@@ -60,6 +60,26 @@ function createGs1DigitalLink(
 
 `querySort` は v2 初期実装では `"lexical"` 固定です。canonical URI に近づけるため、query string の AI key は lexical order で並べます。`http` と `https` はどちらも許可しますが、`baseUrl` に query / fragment は含められません。
 
+### Dot-only path value のデータ保護
+
+path に配置する値が `.` / `..` の場合、WHATWG `URL` がその segment や直前の
+AI を消すため、builder は `InvalidGs1Error` にします。`%2e` として URL に
+置いても dot segment として扱われるため、単なる percent encoding では防げません。
+`pathAis: []` で query に置けばリテラル `.` / `..` を保持できます。
+normalizer も、これらの query value を path へ移さず保持します。
+値そのものが文字列 `%2e` である場合は `%252e` として encode され、往復できます。
+
+parser / validator / normalizer は元の URI string を調べ、最初の primary AI
+以後の literal / encoded dot segment を URL 正規化による消失前に拒否します。
+明示した `primaryAi` がある場合は、その AI からを対象とします。base URL と
+primary より前の通常の prefix は従来どおり正規化します。prefix 自体が選択対象の
+primary AI を含む曖昧な URI は、その地点以後の dot segment を拒否します。
+
+`URL` object は既に正規化済みなので、消えた元の segment は判定できません。
+元の URI の検査には string input を使ってください。これは WHATWG URL profile、
+query form decoding、未知 query の保持、Unicode policy を広く変更する修正では
+ありません。
+
 ### `parseGs1DigitalLink(uri, options?)` implemented
 
 GS1 Digital Link URI から GS1 element data を取り出します。

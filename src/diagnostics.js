@@ -1,4 +1,5 @@
 import { parseRgbaColor, getContrastRatio } from "./render/color.js";
+import { InvalidInputError } from "./errors.js";
 
 const MIN_RECOMMENDED_CONTRAST = 4.5;
 const STRONG_RECOMMENDED_CONTRAST = 7;
@@ -228,11 +229,18 @@ function getColorContrast(options) {
 
 function getPrintDiagnostics(plan, options) {
   const moduleSizeMm = options.printDpi === null ? null : (options.scale / options.printDpi) * 25.4;
+  const symbolSizeMm = moduleSizeMm === null ? null : (plan.version * 4 + 17 + options.margin * 2) * moduleSizeMm;
+  if (moduleSizeMm !== null && !Number.isFinite(moduleSizeMm)) {
+    throw new InvalidInputError("Print diagnostics must produce finite geometry: moduleSizeMm");
+  }
+  if (symbolSizeMm !== null && !Number.isFinite(symbolSizeMm)) {
+    throw new InvalidInputError("Print diagnostics must produce finite geometry: symbolSizeMm");
+  }
   return {
     dpi: options.printDpi,
     modulePixels: options.scale,
     moduleSizeMm,
-    symbolSizeMm: moduleSizeMm === null ? null : (plan.version * 4 + 17 + options.margin * 2) * moduleSizeMm,
+    symbolSizeMm,
     recommendedMinimumModuleSizeMm: MIN_PRINT_MODULE_MM,
     isModuleSizeSufficient: moduleSizeMm === null ? null : moduleSizeMm >= MIN_PRINT_MODULE_MM
   };

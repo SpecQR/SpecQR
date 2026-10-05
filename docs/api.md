@@ -1,18 +1,15 @@
 # API
 
-この文書は現在の SpecQR main branch、package version `3.0.0-rc.2` の public
-API を説明します。`3.0.0-rc.1` は npm `next` で公開済みで、RC 2 は未公開の
-release-correction candidate です。SpecQR v2 系の GS1 Digital Link、FNC1
-second position、Structured Append API、GS1 validation / supported AI
-introspection API、GS1 Digital Link validation API は維持し、RC 1 では
-`generateSegmentsStructuredAppend()` の diagnostics contract だけを変更します。
-API 名、option 名、型名、error class 名は JavaScript/TypeScript から利用する
-識別子なので英語のままです。
+この文書は現在の SpecQR main branch の public API を説明します。現在の checkout は
+公開済み `3.0.0-rc.2` 後の未公開 source corrections を含みます。Package version は
+据え置きですが、FNC1 の `%`、Digital Link の dot segment、非有限な印刷寸法、ECC
+option の検証を修正しており、historical rc.2 との runtime 同一性は主張しません。
+変更の範囲は [Unreleased changelog](../CHANGELOG.md#unreleased) を参照してください。
 
-RC 2 は release-correction freeze 状態です。RC 1 から runtime、型、public export
-を変更せず、2.4.0 から RC 1 までの AUD-05 warning semantics を文書で訂正します。
-unknown-option rejection、GS1 metadata readonly、新しい inspection API は将来候補
-として RC 2 の対象外に保ちます。
+既存の GS1、Planning、Structured Append API と public exports / declarations は
+維持します。Manual Structured Append の standard/full diagnostics contract は RC 1
+から導入済みです。unknown-option rejection、GS1 metadata readonly、新しい inspection
+API はこの修正に含めません。API 名、option 名、型名、error class 名は英語のままです。
 
 ## Planning / Capacity APIs
 
@@ -335,7 +332,7 @@ Narrow overload の末尾には `QRCodeOptions` catch-all があるため、動�
 - `fnc1Second`: `false | string`。default は `false`。2 桁数字または 1 文字 Latin alphabetic の Application Indicator を指定すると、QR FNC1 second position (`1001`) と 8-bit Application Indicator codeword を先頭に挿入します。この実装では GS1/FNC1 first position と ECI との併用を reject します。
 - `structuredAppend`: `false | { index, total, parity }`。default は `false`。Structured Append mode indicator (`0011`) と 8-bit Symbol Sequence Indicator、8-bit parity data を先頭に挿入します。public API の `index` は 1-based、`total` は `2..16`、`index` は `1..total`、`parity` は `0..255` integer です。この実装では ECI / FNC1 first / FNC1 second / `gs1: true` との併用を安全側で reject します。
 - `diagnostics`: `true` の場合、生成詳細と warnings を返します。
-- `printDpi`: print-size diagnostics のための optional DPI。生成結果そのものには影響しません。
+- `printDpi`: print-size diagnostics のための optional DPI。生成結果そのものには影響しません。diagnostics を計算する場合、実際の Version、scale、margin から求めた module / symbol size が非有限値になる指定は `InvalidInputError` です。
 
 Current major では、base API の unknown key は無視され、`null` / array option container も legacy behavior として default merge されます。`diagnostics` の non-boolean truthy value も現在は受理されます。これらは互換性のため維持している挙動であり、新規利用では documented key と正しい型だけを non-null object で渡してください。Structured Append や `getCapacity()` にはより strict な所有 option / container policy があります。API family ごとの差と v3 tightening 候補は [Public API / TypeScript Contract](./public-api-contract.md) に固定しています。
 
@@ -360,6 +357,22 @@ const svg = QRCode.generate(data, {
   output: "svg"
 });
 ```
+
+`generate()` / `estimate()` に渡す文字列の `%` はリテラルです。
+FNC1 first / second position が有効な場合、高水準 API は選択された alphanumeric
+segment 内の `%` だけを QR の `%%` escape に変換します。明示した
+`mode: "alphanumeric"` は維持します。auto は escape 後の既存分割と全体 byte
+mode の bit 数、segment 数を比較し、同数なら既存分割を選びます。FNC1 専用の
+全候補を探索する optimizer ではありません。既に安全な segment は変更しません。
+
+`inputBytes` と GS1 validation metadata は元の入力を示します。segment ごとの
+`characterCount`、`byteCount`、`bitLength` は escape を含む実際の符号化内容を
+示すため、元の入力より増えることがあります。容量と Version 選択も escape 後の
+bit 数に基づきます。実際の GS separator (`\u001d`) は引き続きそのまま渡します。
+
+低水準 `generateSegments()` / `analyzeSegments()` は呼び出し元が escape を管理
+します。FNC1 alphanumeric の `%` は GS separator、`%%` はリテラル `%` です。
+これらの低水準セグメントや、FNC1 を使わない通常 QR の `%` は変更しません。
 
 manual segment でも FNC1 first position を明示できます。
 
@@ -702,6 +715,14 @@ if (result.ok) {
 
 - `GS1_DIGITAL_LINK_HTTP`
 - `GS1_DIGITAL_LINK_UNKNOWN_QUERY_PRESERVED`
+
+Digital Link の path value `.` / `..` は URL 正規化で失われるため builder は
+拒否します。`pathAis: []` で query に置くことはできます。parser / validator /
+normalizer は、元の URI string の primary AI 以後にある literal または
+percent-encoded dot segment を正規化前に拒否します。通常の base / prefix の
+正規化は維持し、normalizer は query の dot-only value を query に残します。
+既に `URL` object を作った段階で消えた情報は復元できないため、元の入力の
+検査が必要な場合は URI string を渡してください。
 
 `http:` URI は validation failure にはせず、`GS1_DIGITAL_LINK_HTTP` warning を返します。Fragment、非 `http` / `https` scheme、malformed path、invalid percent encoding は `ok: false` です。
 

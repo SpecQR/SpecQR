@@ -38,7 +38,7 @@ const DEFAULT_OPTIONS = {
 export function normalizeOptions(options = {}) {
   const normalized = { ...DEFAULT_OPTIONS, ...options };
 
-  if (!ERROR_CORRECTION_LEVELS[normalized.errorCorrectionLevel]) {
+  if (!Object.hasOwn(ERROR_CORRECTION_LEVELS, normalized.errorCorrectionLevel)) {
     throw new InvalidInputError(
       `errorCorrectionLevel must be one of L, M, Q, H; got ${normalized.errorCorrectionLevel}`
     );

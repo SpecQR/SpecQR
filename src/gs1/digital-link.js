@@ -21,6 +21,11 @@ export function createGs1DigitalLink(input, options = {}) {
     .filter((element) => element.ai !== primaryAi && !shouldPlaceInPath(element.ai, primaryAi, pathAis))
     .sort((a, b) => a.ai.localeCompare(b.ai) || a.value.localeCompare(b.value));
 
+  if (pathElements.some((element) => isDotPathValue(element.value))) {
+    throw new InvalidGs1Error(
+      "GS1 Digital Link path values must not be dot segments; use pathAis: [] to place these values in the query"
+    );
+  }
   url.pathname = buildPath(url.pathname, [primary, ...pathElements]);
   url.search = "";
   for (const element of queryElements) {
@@ -31,9 +36,10 @@ export function createGs1DigitalLink(input, options = {}) {
 }
 
 export function parseGs1DigitalLink(uri, options = {}) {
-  const url = normalizeDigitalLinkUri(uri);
+  const { url, source } = normalizeDigitalLinkUri(uri);
   const primaryAi = options.primaryAi === undefined ? null : normalizePrimaryAi(options.primaryAi);
   const unknownQueryPolicy = normalizeUnknownQueryPolicy(options.unknownQuery);
+  rejectRawPayloadDotSegments(source, primaryAi);
   const pathElements = parsePathElements(url, primaryAi);
   const queryElements = [];
   const unknownQuery = [];
@@ -86,7 +92,7 @@ export function validateGs1DigitalLink(uri, options = undefined) {
   }
 
   try {
-    const result = parseGs1DigitalLink(urlResult.url, normalizedOptions.parseOptions);
+    const result = parseGs1DigitalLink(urlResult.source, normalizedOptions.parseOptions);
     return {
       ok: true,
       result,
@@ -99,16 +105,19 @@ export function validateGs1DigitalLink(uri, options = undefined) {
 
 export function normalizeGs1DigitalLink(uri, options = {}) {
   const normalizedOptions = normalizeDigitalLinkNormalizeOptions(options);
-  const url = normalizeDigitalLinkUri(uri);
+  const { url, source } = normalizeDigitalLinkUri(uri);
   if (hasInvalidPercentEncoding(url.pathname) || hasInvalidPercentEncoding(url.search)) {
     throw new InvalidGs1Error("GS1 Digital Link URI must use valid percent-encoding");
   }
 
-  const parsed = parseGs1DigitalLink(url, normalizedOptions.parseOptions);
+  const parsed = parseGs1DigitalLink(source, normalizedOptions.parseOptions);
   const baseUrl = getDigitalLinkStemUrl(url, normalizedOptions.parseOptions.primaryAi);
   const normalized = new URL(createGs1DigitalLink(parsed.elements, {
     baseUrl,
-    primaryAi: parsed.primary.ai
+    primaryAi: parsed.primary.ai,
+    pathAis: parsed.elements
+      .filter((element) => canPlaceInPath(element.ai, parsed.primary.ai) && !isDotPathValue(element.value))
+      .map((element) => element.ai)
   }));
 
   for (const query of parsed.unknownQuery) {
@@ -154,8 +163,10 @@ function normalizeBaseUrl(baseUrl) {
 
 function normalizeDigitalLinkUri(uri) {
   let url;
+  let source;
   try {
-    url = uri instanceof URL ? new URL(uri.href) : new URL(String(uri));
+    source = String(uri instanceof URL ? uri.href : uri);
+    url = new URL(source);
   } catch {
     throw new InvalidGs1Error("GS1 Digital Link URI must be an absolute http or https URL");
   }
@@ -167,7 +178,35 @@ function normalizeDigitalLinkUri(uri) {
     throw new InvalidGs1Error("GS1 Digital Link URI must not include a fragment");
   }
 
-  return url;
+  return { url, source };
+}
+
+function isDotPathValue(value) {
+  return value === "." || value === "..";
+}
+
+function rejectRawPayloadDotSegments(source, primaryAi) {
+  // URL has already checked validity. Inspect only the original HTTP(S) path,
+  // before WHATWG dot removal can erase GS1 data or even its first primary AI.
+  // Match URL's edge-control trimming, embedded TAB/LF/CR removal and backslashes.
+  // A URL object has already lost this information, so only its href is available.
+  let start = 0;
+  let end = source.length;
+  while (start < end && source.charCodeAt(start) <= 0x20) start++;
+  while (end > start && source.charCodeAt(end - 1) <= 0x20) end--;
+  const cleaned = source.slice(start, end).replace(/[\t\n\r]/gu, "");
+  const path = cleaned.match(/^[a-z][a-z0-9+.-]*:[\\/]*[^\\/?#]*([^?#]*)/iu)?.[1] ?? "";
+  let primarySeen = false;
+  for (const segment of path.split(/[\\/]/u)) {
+    if (primaryAi === null ? isPrimaryAi(segment) : segment === primaryAi) {
+      primarySeen = true;
+    }
+    if (primarySeen && /^(?:\.|%2e){1,2}$/iu.test(segment)) {
+      throw new InvalidGs1Error(
+        "GS1 Digital Link path values must not be dot segments; place these values in the query"
+      );
+    }
+  }
 }
 
 function normalizePrimaryAi(primaryAi) {
@@ -398,9 +437,11 @@ function getDigitalLinkStemUrl(url, primaryAi) {
 
 function getDigitalLinkUrlForValidation(uri) {
   try {
+    const source = String(uri instanceof URL ? uri.href : uri);
     return {
       ok: true,
-      url: uri instanceof URL ? new URL(uri.href) : new URL(String(uri))
+      source,
+      url: new URL(source)
     };
   } catch {
     return {
@@ -483,6 +524,11 @@ function toGs1DigitalLinkValidationError(error) {
     return createValidationError("GS1_INVALID_PERCENT_ENCODING", message, {
       reason: "invalid-percent-encoding",
       expected: "percent escapes must use two hexadecimal digits"
+    });
+  }
+  if (/path values must not be dot segments/u.test(message)) {
+    return createValidationError("GS1_INVALID_DIGITAL_LINK_PLACEMENT", message, {
+      reason: "invalid-digital-link-placement"
     });
   }
   if (/query parameter .* is not a GS1 AI/u.test(message)) {

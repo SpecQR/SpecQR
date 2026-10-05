@@ -1,9 +1,10 @@
 # Conformance Matrix
 
-この文書は現在の SpecQR main branch、package version `3.0.0-rc.2` candidate の
-対応範囲を、外から確認しやすい形で整理したものです。`3.0.0-rc.1` は npm
-`next` で公開済みで、RC 2 は未公開です。v2 系の stable API を維持し、RC 1 では
-manual Structured Append diagnostics contract だけを major 変更として扱います。
+この文書は現在の SpecQR main branch の対応範囲を整理します。公開済み
+`3.0.0-rc.2` 後の未公開 source corrections を含み、package version が据え置きでも
+historical rc.2 の runtime と同一とは扱いません。修正範囲は
+[Unreleased changelog](../CHANGELOG.md#unreleased) を参照してください。v2 系の API と
+RC 1 で導入した manual Structured Append diagnostics contract は維持します。
 SpecQR は通常 QR Code Model 2
 generation を対象にしていますが、ISO/IEC 18004:2024 の全文に対する完全準拠を
 ここでは断言しません。ISO 本文や仕様表の無断転載は行わず、実装・テスト・
@@ -17,6 +18,7 @@ Status は次の意味で使います。
 - `Planned`: docs-only proposal として設計済みですが、runtime API はまだ実装していません。
 - `Prerelease / tested`: npm prerelease へ公開済みで in-repo gate もありますが、
   stable support claim ではありません。
+- `Unreleased source / tested`: exact commit の未公開 source-test artifact を検証した状態です。
 - `RC candidate / tested`: prerelease metadata へ統合済みで in-repo gate は
   ありますが、対象 candidate は npm publish 前です。
 - `Not supported`: 現在の core package の対象外です。
@@ -107,7 +109,7 @@ Micro QR、rMQR、full GS1 catalog、full QR reader、logo / styled QR は Lab �
 | Resource-safety gate | Tested | 32 MiB V8 old-space child process と deterministic preflight assertions で oversized single-symbol input、large parity、renderer allocation failure、高レベル Structured Append の oversized raw/manual reject と 16-symbol success を確認します。時間/RSS threshold は gate に使いません。 |
 | Architecture characterization | Tested | Public export/static surface、matrix/SVG/PNG/Data URL bytes、diagnostics/Planning、GS1/Digital Link、Structured Append、errors を専用 test で固定します。Static module graph の cycle と facade 責務も検査します。詳細は [Internal Architecture](./internal-architecture.md) を参照してください。 |
 | Public API / TypeScript contract | Tested | Literal/dynamic generate overload、DOM 有無の canvas consumer、legacy option policy、GS1 metadata mutation boundary を source type/runtime tests で固定します。詳細は [Public API / TypeScript Contract](./public-api-contract.md) を参照してください。 |
-| Canonical release artifact | RC candidate / tested | 一回目の `npm pack` で tarball SHA-256 と全 file content manifest を生成し、二回目の pack との expanded-content 一致、allow/deny policy を確認します。同じ artifact を Node 18 / 20 / 22 / 24、packed/type、browser、ZXing へ渡します。詳細は [Release Artifact Verification](./release-artifact.md) を参照してください。 |
+| Current-source test artifact | Unreleased source / tested | 一回目の `npm pack` で tarball SHA-256 と全 file content manifest を生成し、二回目の pack との expanded-content 一致、allow/deny policy を確認します。同じ artifact を Node 18 / 20 / 22 / 24、packed/type、browser、ZXing へ渡します。詳細は [Release Artifact Verification](./release-artifact.md) を参照してください。 |
 | Packed subpath/type gate | Tested | canonical tarball を隔離 install し、root/node/browser の exact runtime exports と代表呼出し、installed declarations に対する NodeNext/Bundler compile、packaged examples を確認します。Source direct import には依存しません。Artifact 指定なしの local command だけは self-pack します。 |
 | Real browser E2E | Tested | 独立 Playwright harness が canonical packed `specqr` / `specqr/browser` と build 済み `dist/pages` だけを local server から実行し、Chromium / Firefox / WebKit で各10件、合計 30 tests を確認します。Branded Safari、実端末/mobile、scanner、network/CDN、visual fidelity は non-claims です。詳細は [Browser E2E](./browser-e2e.md) を参照してください。 |
 | Writing / release metadata | RC candidate / tested | `verify:writing` が Markdown prose、workflow display text、package discovery metadata の明確な spacing、unit、正式名称を確認します。code、URL、path などは除外し、人による editorial review と併用します。詳細は [Project Language and Writing Style](./project-language.md) を参照してください。 |

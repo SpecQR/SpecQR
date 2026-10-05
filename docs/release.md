@@ -1,9 +1,16 @@
 # Release Checklist
 
-この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の checkout
-は、runtime を変更しない `3.0.0-rc.2` release-correction candidate です。公開済み
-stable は 2.4.0、npm `next` と GitHub prerelease は 3.0.0-rc.1 です。RC 2 の npm
-publish、tag、GitHub Release、GitHub Pages deploy は未実施です。
+この文書は SpecQR の stable / prerelease 公開前後 checklist です。現在の checkout は
+公開済み `3.0.0-rc.2` 後の未公開 source corrections を含みます。Package version は
+据え置きですが、current-source artifact は公開用ではありません。FNC1、Digital Link、
+印刷 diagnostics、ECC validation の修正は [Unreleased changelog](../CHANGELOG.md#unreleased)
+に分離します。将来の runtime release には新しい prerelease version が必要です。
+
+以下の RC 2 freeze / publish 手順と equality evidence は historical rc.2 を対象にします。
+現在の checkout から rc.2 を再公開する手順ではありません。Source-only integration は
+registry、dist-tag、tag、GitHub Release、RC observation policy を変更しません。
+Source CI の二つの必須 lane は [Release Artifact Verification](./release-artifact.md) に
+定義します。
 
 v2 以降の release notes、CHANGELOG、commit messages、PR-style summaries は
 [Project Language and Writing Style](./project-language.md) に従い、日本語を
@@ -13,9 +20,9 @@ README 冒頭の短い English summary は英語導線として維持します�
 ## Release Channels
 
 - `latest`: 安定版利用者向け。現在の公開済み stable 2.4.0 を維持します。
-- `next`: RC / prerelease 利用者向け。現在は公開済み 3.0.0-rc.1 を指します。
-  RC 2 を公開する場合も canonical tarball に `npm publish --tag next` を使い、
-  公開検証が終わるまで手動で dist-tag を上書きしません。
+- `next`: RC / prerelease 利用者向け。解決先は registry の exact-version check で確認します。
+  新しい RC を公開する場合は承認済み canonical tarball に `npm publish --tag next` を
+  使い、公開検証が終わるまで手動で dist-tag を上書きしません。
 
 通常 install:
 
@@ -32,7 +39,7 @@ npm install specqr@next
 通常利用者向けの install guide は `npm install specqr` を主導線にします。
 `specqr@next` の RC 導線は publish 後に exact version を検証してから案内します。
 
-## 3.0.0-rc.2 Release Correction Freeze
+## 3.0.0-rc.2 Release Correction Freeze（historical）
 
 `3.0.0-rc.2` は RC 1 の runtime、public API、TypeScript contract、package
 exports、resource budget、runtime dependency、QR / renderer output bytes を
@@ -56,14 +63,18 @@ diagnostics JSON shape、resource budget の変更が必要になった場合は
 release correction として扱いません。変更内容を再評価し、新しい prerelease version
 を使います。
 
-この freeze 後に残る作業は、commit / push、hosted CI、Lab expected-delta policy の
-審査、明示承認後の canonical tarball `next` publish、post-publish verification です。
+この freeze の runtime 同一性は immutable commit
+`15ad15e5c770ea0e39072f8f88b2733018f02ffd` の rc.2 に限定します。現在の source-only
+integration は新しい runtime release の承認を含みません。
 
 ## Release Gate
 
 - `package.json` と `package-lock.json` の version が公開予定 version で一致している。
-- `npm run release:artifact` が repository 外へ canonical tarball と manifest を生成し、
-  repeated pack の expanded content が一致する。
+- Source-only integration では `prepare-source-test-artifact.js` が exact commit から
+  非公開 test artifact を生成し、二回 pack と canonical normalization を検証する。
+- Frozen rc.2 reproduction は immutable checkout の `npm run release:artifact` と
+  canonicalizer で五つの historical pin を検証する。新しい release を準備する場合は
+  新しい prerelease version で canonical tarball と manifest を生成する。
 - `npm run verify:release:artifact` が tarball SHA-256、全 file manifest、
   allow/deny policy、version/repository/exports/runtime dependency 0 を確認する。
 - `npm test` が green。
@@ -213,7 +224,7 @@ node tools/verify-published-package.js \
 
 `npm run verify:published` と `Published Package Smoke` manual workflow の default も
 `specqr@3.0.0-rc.2` / `specqr@next` / expected
-`3.0.0-rc.2` です。RC 2 未公開の現在は実行成功を完了条件にせず、workflow schema と
+`3.0.0-rc.2` です。RC 2 公開前の historical 手順では実行成功を完了条件にせず、workflow schema と
 local tarball equivalent だけを検証します。Local path の成功を registry/dist-tag
 成功とは表現しません。
 

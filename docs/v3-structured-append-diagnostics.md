@@ -1,5 +1,9 @@
 # v3 Structured Append Diagnostics Contract
 
+この文書の RC 1 / RC 2 同一性の記述は immutable な historical release contract を
+対象にします。現在の未公開 source corrections は
+[Unreleased changelog](../CHANGELOG.md#unreleased) に分離し、同一性の対象に含めません。
+
 Status: **Published in SpecQR 3.0.0-rc.1; unchanged in 3.0.0-rc.2 candidate**
 Target: SpecQR 3.0.0 release line  
 対象 checkout: `main` / `18da5bc1e2ca1cb7d4249b0c886fb0b88f643ee9`

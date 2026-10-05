@@ -3,17 +3,16 @@
 ## Target
 
 SpecQR は、実務で使う通常の QR Code Model 2 generation を対象にします。
-現在の main branch は未公開の `3.0.0-rc.2` release-correction candidate で、
-`3.0.0-rc.1` は npm `next` で公開済みです。v2 stable scope の GS1 strict
-parser、GS1 validation、GS1 Digital Link、FNC1 second position、Structured
-Append、Planning API を維持します。RC 1 で変更するのは manual Structured Append
-diagnostics contract だけです。2.4.0 から RC 1 までには AUD-05 の observable
-correctness change もありますが、RC 2 は RC 1 から runtime、型、public export を
-変更しません。別系統の QR family や装飾機能は core へ混ぜません。
+現在の main branch は公開済み `3.0.0-rc.2` 後の未公開 source corrections を含みます。
+既存の GS1 strict parser、validation、Digital Link、FNC1、Structured Append、Planning
+API を維持し、FNC1 の `%`、Digital Link の dot segment、非有限な印刷寸法、ECC option
+validation を修正します。詳細は [Unreleased changelog](../CHANGELOG.md#unreleased) に
+固定します。Historical rc.2 が RC 1 と runtime / type / export 同一だったという記録を、
+この checkout へ拡張しません。別系統の QR family や装飾機能は core へ混ぜません。
 
-RC 2 は release-correction freeze 状態です。Structured Append diagnostics contract
-以外の runtime、型、public export の変更は追加しません。unknown-option rejection、GS1
-metadata readonly、新しい inspection API は将来候補として分離します。
+unknown-option rejection、GS1 metadata readonly、新しい inspection API は今回の対象外
+です。Package version は据え置きですが、source-test artifact は公開用ではなく、将来の
+runtime release には新しい prerelease version が必要です。
 
 対応状況の表は [Conformance Matrix](./conformance.md) に、外部参照実装との比較範囲は [External Reference Comparison](./reference-comparison.md) に分けています。
 
@@ -82,7 +81,7 @@ raw GS1 element string は `parseGs1ElementString(input)` で `{ elements, hasSe
 package は ESM-first です。`specqr`, `specqr/node`, `specqr/browser` の separate export を持ちます。CommonJS と minified browser build は build pipeline を導入するまで生成しません。source package は dependency-free runtime を保ちます。
 
 Node.js runtime は `package.json` の `engines.node` で `>=18` を宣言します。
-3.0.0-rc.2 candidate では一度作った canonical tarball を Node 18 / 20 / 22 / 24 へ
+Source CI では一度作った非公開 source-test tarball を Node 18 / 20 / 22 / 24 へ
 install し、tests、TypeScript consumer、examples、packed runtime、runtime
 dependency check を release gate にします。macOS Vision、Pages、jsQR、Nayuki、
 resource gates は代表 Node 20 へ、browser と ZXing Java は専用 job へ分けます。

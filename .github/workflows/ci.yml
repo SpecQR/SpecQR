@@ -8,24 +8,75 @@ on:
 
 jobs:
   package-artifact:
-    name: Release candidate package artifact を構築
+    name: 未公開 source-test artifact を構築
     runs-on: macos-15-intel
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Exact commit の非公開 test snapshot を生成
+        run: >-
+          node .github/scripts/prepare-source-test-artifact.js
+          "${{ runner.temp }}/specqr-source-test-artifact"
+        env:
+          SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
+      - name: Verify source-test artifact manifest
+        run: npm run verify:release:artifact
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-source-test-artifact
+          SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+          SPECQR_ARTIFACT_KIND: unreleased-source-test
+          SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
+      - name: Upload unreleased source-test artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: specqr-source-test-artifact
+          path: ${{ runner.temp }}/specqr-source-test-artifact/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload source-test failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: specqr-source-test-artifact-failure
+          path: ${{ runner.temp }}/specqr-source-test-artifact/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  frozen-rc2-reproduction:
+    name: Immutable rc.2 の再現を検証
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frozen-rc2
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 15ad15e5c770ea0e39072f8f88b2733018f02ffd
+          path: frozen-rc2
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frozen-rc2/package-lock.json
+      - run: npm ci
       - name: Pack 3.0.0-rc.2 and verify expanded-content reproducibility
         run: >-
           npm run release:artifact --
-          --output-dir "${{ runner.temp }}/specqr-release-artifact"
+          --output-dir "${{ runner.temp }}/specqr-frozen-rc2-artifact"
       - name: Canonical gzip stream を正規化
         run: >-
           node .github/scripts/canonicalize-release-artifact.js
-          "${{ runner.temp }}/specqr-release-artifact"
+          "${{ runner.temp }}/specqr-frozen-rc2-artifact"
         env:
           SPECQR_EXPECTED_TARBALL_SIZE: "312544"
           SPECQR_EXPECTED_TARBALL_SHA256: c96c324dcd99d72c385d3890156a6ae973ad8db57b840fd5a47f987ddcbb6298
@@ -35,21 +86,29 @@ jobs:
       - name: Verify release artifact manifest
         run: npm run verify:release:artifact
         env:
-          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-frozen-rc2-artifact
           SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+      - name: Immutable rc.2 の publish dry-run
+        run: >-
+          npm publish
+          "${SPECQR_RELEASE_ARTIFACT_DIR}/specqr-3.0.0-rc.2.tgz"
+          --dry-run --tag next
+          --cache "${{ runner.temp }}/specqr-npm-cache"
+        env:
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-frozen-rc2-artifact
       - name: Upload canonical release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: specqr-release-artifact
-          path: ${{ runner.temp }}/specqr-release-artifact/
+          name: specqr-frozen-rc2-artifact
+          path: ${{ runner.temp }}/specqr-frozen-rc2-artifact/
           if-no-files-found: error
           retention-days: 7
       - name: Upload package artifact failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: specqr-release-artifact-failure
-          path: ${{ runner.temp }}/specqr-release-artifact/
+          name: specqr-frozen-rc2-artifact-failure
+          path: ${{ runner.temp }}/specqr-frozen-rc2-artifact/
           if-no-files-found: ignore
           retention-days: 7
 
@@ -63,8 +122,12 @@ jobs:
         node-version: [18, 20, 22, 24]
     env:
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+      SPECQR_ARTIFACT_KIND: unreleased-source-test
+      SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
@@ -72,11 +135,11 @@ jobs:
       - name: Canonical artifact path を設定
         run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
         env:
-          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-source-test-artifact
       - uses: actions/download-artifact@v5
         with:
-          name: specqr-release-artifact
-          path: ${{ runner.temp }}/specqr-release-artifact
+          name: specqr-source-test-artifact
+          path: ${{ runner.temp }}/specqr-source-test-artifact
       - run: npm ci
       - run: npm run verify:release:artifact
       - run: npm test
@@ -92,8 +155,12 @@ jobs:
     timeout-minutes: 10
     env:
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+      SPECQR_ARTIFACT_KIND: unreleased-source-test
+      SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -101,11 +168,11 @@ jobs:
       - name: Canonical artifact path を設定
         run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
         env:
-          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-source-test-artifact
       - uses: actions/download-artifact@v5
         with:
-          name: specqr-release-artifact
-          path: ${{ runner.temp }}/specqr-release-artifact
+          name: specqr-source-test-artifact
+          path: ${{ runner.temp }}/specqr-source-test-artifact
       - run: npm ci
       - run: npm run verify:release:artifact
       - run: npm run verify:pack
@@ -119,8 +186,12 @@ jobs:
     timeout-minutes: 20
     env:
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+      SPECQR_ARTIFACT_KIND: unreleased-source-test
+      SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -129,11 +200,11 @@ jobs:
       - name: Canonical artifact path を設定
         run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
         env:
-          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-source-test-artifact
       - uses: actions/download-artifact@v5
         with:
-          name: specqr-release-artifact
-          path: ${{ runner.temp }}/specqr-release-artifact
+          name: specqr-source-test-artifact
+          path: ${{ runner.temp }}/specqr-source-test-artifact
       - run: npm ci --prefix e2e/browser
       - run: npm --prefix e2e/browser run install:browsers:ci
       - run: npm run verify:browser:e2e
@@ -157,8 +228,12 @@ jobs:
     timeout-minutes: 20
     env:
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+      SPECQR_ARTIFACT_KIND: unreleased-source-test
+      SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -166,11 +241,11 @@ jobs:
       - name: Canonical artifact path を設定
         run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
         env:
-          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-source-test-artifact
       - uses: actions/download-artifact@v5
         with:
-          name: specqr-release-artifact
-          path: ${{ runner.temp }}/specqr-release-artifact
+          name: specqr-source-test-artifact
+          path: ${{ runner.temp }}/specqr-source-test-artifact
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -197,10 +272,15 @@ jobs:
       - package-artifact
       - engine-matrix
       - artifact-verification
+      - frozen-rc2-reproduction
     env:
       SPECQR_EXPECTED_VERSION: 3.0.0-rc.2
+      SPECQR_ARTIFACT_KIND: unreleased-source-test
+      SPECQR_EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: 20
@@ -208,11 +288,11 @@ jobs:
       - name: Canonical artifact path を設定
         run: echo "SPECQR_RELEASE_ARTIFACT_DIR=${SPECQR_RELEASE_ARTIFACT_DIR}" >> "${GITHUB_ENV}"
         env:
-          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-release-artifact
+          SPECQR_RELEASE_ARTIFACT_DIR: ${{ runner.temp }}/specqr-source-test-artifact
       - uses: actions/download-artifact@v5
         with:
-          name: specqr-release-artifact
-          path: ${{ runner.temp }}/specqr-release-artifact
+          name: specqr-source-test-artifact
+          path: ${{ runner.temp }}/specqr-source-test-artifact
       - run: npm ci
       - name: Ensure ImageMagick for Vision decode fixtures
         run: |
@@ -230,8 +310,3 @@ jobs:
       - run: npm run verify:writing
       - run: npm run verify:release:workflow
       - run: npm pack --dry-run --cache "${{ runner.temp }}/specqr-npm-cache"
-      - run: >-
-          npm publish
-          "${SPECQR_RELEASE_ARTIFACT_DIR}/specqr-3.0.0-rc.2.tgz"
-          --dry-run --tag next
-          --cache "${{ runner.temp }}/specqr-npm-cache"

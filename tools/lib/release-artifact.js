@@ -358,12 +358,18 @@ export async function resolveReleaseArtifact({
   requireManifest = false
 } = {}) {
   const parsed = parseArtifactArguments(argv);
+  const sourceTestRequired = env.SPECQR_ARTIFACT_KIND === "unreleased-source-test";
+  if (sourceTestRequired) requireManifest = true;
   const artifactDirectory = parsed.artifactDirectory
     ?? trimOrNull(env.SPECQR_RELEASE_ARTIFACT_DIR);
   const explicitTarball = parsed.tarball
     ?? trimOrNull(env.SPECQR_TARBALL);
   const explicitManifest = parsed.manifest
     ?? trimOrNull(env.SPECQR_RELEASE_MANIFEST);
+  if (sourceTestRequired) {
+    assert.ok(artifactDirectory || (explicitTarball && explicitManifest),
+      "Source-test consumers require the producer artifact; repack fallback is forbidden");
+  }
 
   if (artifactDirectory && explicitTarball) {
     throw new Error(
@@ -416,7 +422,8 @@ export async function resolveReleaseArtifact({
 export async function verifyReleaseArtifact({
   tarballPath,
   manifestPath,
-  expectedVersion
+  expectedVersion,
+  env = process.env
 }) {
   assert.ok(tarballPath, "tarballPath is required");
   assert.ok(manifestPath, "manifestPath is required");
@@ -432,6 +439,7 @@ export async function verifyReleaseArtifact({
     inspection.contents.sha256
   );
   assert.equal(manifest.policy.status, "passed");
+  assertArtifactProvenance(manifest, env);
 
   const policy = assertPackageContentPolicy(inspection.contents.files);
   assert.equal(policy.status, "passed");
@@ -442,6 +450,33 @@ export async function verifyReleaseArtifact({
   );
   assert.deepEqual(manifest.package, metadata);
   return { manifest, inspection, packageJson };
+}
+
+export function assertArtifactProvenance(manifest, env = process.env) {
+  const requiredKind = trimOrNull(env.SPECQR_ARTIFACT_KIND);
+  if (requiredKind) {
+    assert.equal(requiredKind, "unreleased-source-test", "Unknown artifact lane");
+    assert.equal(manifest.purpose?.kind, requiredKind, "Artifact lane mismatch");
+  }
+  if (manifest.purpose?.kind === "unreleased-source-test") {
+    const commit = trimOrNull(env.SPECQR_EXPECTED_SOURCE_COMMIT);
+    assert.match(commit ?? "", /^[a-f0-9]{40}$/u, "Exact source commit is required");
+    assert.equal(manifest.purpose.publishable, false, "Source-test artifact must not be publishable");
+    assert.equal(manifest.provenance.head, commit, "Source-test commit mismatch");
+    assert.match(manifest.provenance.tree, /^[a-f0-9]{40}$/u);
+    assert.equal(manifest.provenance.workingTreeDirty, false);
+    assert.equal(manifest.artifact.filename, `specqr-source-test-${commit}.tgz`);
+    assert.equal(manifest.reproducibility.firstContentSha256, manifest.contents.sha256);
+    assert.equal(manifest.reproducibility.tarballSha256Matches, true);
+    assert.equal(manifest.reproducibility.secondTarballSha256, manifest.artifact.sha256);
+    assert.equal(manifest.normalization?.algorithm, "gzip -n -9; OS=255");
+    assert.equal(manifest.normalization.repeatedCanonicalBytesMatch, true);
+    assert.equal(manifest.normalization.canonicalTarballSha256, manifest.artifact.sha256);
+    assert.match(manifest.normalization.originalTarballSha256, /^[a-f0-9]{64}$/u);
+  } else {
+    assert.equal(env.SPECQR_EXPECTED_SOURCE_COMMIT, undefined,
+      "A current-source commit cannot be verified using a frozen release artifact");
+  }
 }
 
 export async function getPathSize(filePath) {

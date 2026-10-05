@@ -58,6 +58,7 @@ export function generateStructuredAppend(input, options = {}) {
     const diagnosticOptions = {
       ...symbolOptions,
       output: "matrix",
+      printDpi: normalized.diagnostics ? symbolOptions.printDpi : null,
       diagnostics: true
     };
     const diagnostics = createArtifactDiagnostics(artifact, diagnosticOptions, inputBytes);
@@ -110,6 +111,7 @@ export function generateSegmentsStructuredAppend(segments, options = {}) {
     const diagnosticOptions = {
       ...symbolOptions,
       output: "matrix",
+      printDpi: normalized.diagnostics ? symbolOptions.printDpi : null,
       diagnostics: true
     };
     const diagnostics = createArtifactDiagnostics(artifact, diagnosticOptions, inputBytes);

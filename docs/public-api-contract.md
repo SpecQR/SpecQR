@@ -1,16 +1,15 @@
 # Public API / TypeScript Contract
 
-この文書は SpecQR `3.0.0-rc.2` release-correction candidate の public runtime /
-TypeScript / option contract を整理します。`3.0.0-rc.1` は npm `next` で公開済みで、
-RC 2 は未公開です。型精密化や package
-gate の根拠であり、QR encoding、renderer bytes、diagnostics、
-error / warning semantics を新たに変更する文書ではありません。2.4.0 から RC 1
-までの AUD-05 warning semantics は別途訂正済みです。
+この文書は現在の SpecQR main branch の public runtime / TypeScript / option contract
+を整理します。現在の checkout は公開済み `3.0.0-rc.2` 後の未公開 source corrections
+を含み、version 表示だけで historical rc.2 との runtime 同一性を主張しません。
+FNC1、Digital Link、印刷 diagnostics、ECC validation の修正範囲は
+[Unreleased changelog](../CHANGELOG.md#unreleased) を参照してください。
 
-RC 2 は release-correction freeze 状態です。実装済みの manual Structured Append
-diagnostics contract 以外に、runtime、型、public export の変更は追加しません。
-unknown-option rejection、GS1 metadata readonly、新しい inspection API は
-future candidate のままです。
+Public exports と TypeScript declarations、manual Structured Append の standard/full
+contract は維持します。unknown-option rejection、GS1 metadata readonly、新しい
+inspection API は今回の対象外です。将来の runtime release には新しい prerelease
+version が必要です。
 
 ## Package Surface
 
@@ -148,7 +147,7 @@ canonical tarball を使って再 pack しません。
 
 Published registry package の確認は `verify:published` の責務です。未公開 working tree の contract は `verify:pack` を release gate とし、両者を混同しません。
 
-3.0.0-rc.2 candidate では `npm run release:artifact` が tarball と全 file content manifest を
-一度生成し、Node 18 / 20 / 22 / 24、packed/type、browser、ZXing Java へ同じ
-artifact を渡します。構成と post-publish exact-version check は
+Source CI では exact commit から生成した非公開 source-test tarball と全 file content
+manifest を Node 18 / 20 / 22 / 24、packed/type、browser、ZXing Java へ渡します。
+Immutable rc.2 の frozen reproduction は別 job / directory / artifact で必須検証します。構成と post-publish exact-version check は
 [Release Artifact Verification](./release-artifact.md) を参照してください。

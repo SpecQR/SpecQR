@@ -1,16 +1,18 @@
 # SpecQR v3 Roadmap
 
-Status: **Phase 1 published as 3.0.0-rc.1; 3.0.0-rc.2 correction candidate is unpublished.**
+Status: **Phase 1 と historical rc.2 は公開済み。現在の checkout は未公開 source corrections を含む。**
 
-Phase 2 以降は未実装です。RC 2 は RC 1 と runtime / type / export behavior が
-同一の release-correction candidate であり、Phase 2 以降の変更を追加しません。
+Phase 2 以降は未実装です。Historical rc.2 は RC 1 と runtime / type / export behavior が
+同一でした。現在の FNC1、Digital Link、印刷 diagnostics、ECC validation の修正は
+[Unreleased changelog](../CHANGELOG.md#unreleased) に分離し、Phase 2 以降の変更を
+追加しません。将来の runtime release には新しい prerelease version が必要です。
 
 v3 候補を一つの変更へ混ぜず、互換性判断と rollback を独立させるための順序です。
 
 1. [Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md)
    - `diagnostics.splitUnits` を standard/full へ分離する。
    - Current memory hardening と public type gate が前提。
-   - Dirty working tree で runtime/types/unit/fuzz/memory/packed/3-engine
+   - Phase 1 当時の working tree で runtime/types/unit/fuzz/memory/packed/3-engine
      browser coverage まで実装済み。
    - Package metadata、CHANGELOG、migration、single-artifact release pipeline を
      `3.0.0-rc.1` へ統合し、npm `next`、tag、GitHub prerelease へ公開済み。

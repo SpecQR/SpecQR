@@ -1,5 +1,9 @@
 # SpecQR v3 Migration Guide
 
+この文書の RC 1 / RC 2 同一性の記述は immutable な historical release contract を
+対象にします。現在の未公開 source corrections は
+[Unreleased changelog](../CHANGELOG.md#unreleased) に分離し、同一性の対象に含めません。
+
 SpecQR 3.0.0-rc.2 keeps the sole intentional API-shape breaking change in the
 diagnostics contract of `generateSegmentsStructuredAppend()`. It also documents
 the earlier AUD-05 correctness change: overflow Planning results no longer carry

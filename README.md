@@ -12,9 +12,13 @@ SpecQR は、通常の QR Code Model 2 を JavaScript だけで生成するた�
 
 Node.js は `>=18` をサポート範囲にし、CI では Node 18 / 20 / 22 / 24 の engine matrix を release gate として確認します。
 
-この checkout は、runtime を変更しない `3.0.0-rc.2` release-correction
-candidate です。npm の `latest` は公開済み stable 2.4.0、`next` は公開済み
-3.0.0-rc.1 を指します。この文書作成時点では 3.0.0-rc.2 を公開していません。
+この checkout は、immutable な `3.0.0-rc.2` の後に加えた未公開 source corrections
+を含みます。FNC1 のリテラル `%`、GS1 Digital Link の dot segment、非有限な印刷
+寸法、継承 property 名の ECC option を修正しています。詳細は
+[Unreleased changelog](CHANGELOG.md#unreleased) を参照してください。
+Package version は `3.0.0-rc.2` のままですが、この checkout の test artifact は
+公開済み rc.2 と同一ではなく、publish 用ではありません。将来の runtime release は
+新しい prerelease version と明示的な release 承認が必要です。
 
 ## インストール
 
@@ -29,8 +33,9 @@ npm install specqr@next
 ```
 
 `specqr` は stable channel です。通常利用では `npm install specqr` を使ってください。
-`specqr@next` は現在 3.0.0-rc.1 です。RC 2 の公開前検証では registry package では
-なく、canonical tarball を使用します。
+`specqr@next` は registry の prerelease channel です。この checkout の未公開修正が
+含まれるとは限りません。Source CI は exact commit に結び付いた source-test artifact を
+使い、公開済み rc.2 の再現とは別に検証します。
 
 ## Links
 
@@ -107,8 +112,9 @@ compact にします。Standard は `splitUnitsDetail: "summary"` と
 breaking change です。移行方法は [v3 Migration Guide](docs/v3-migration.md) を
 参照してください。
 
-3.0.0-rc.2 は RC 1 と同じ runtime / type / export behavior を持つ
-release-correction candidate です。2.4.0 との observable correctness change として、
+公開済み 3.0.0-rc.2 は RC 1 と同じ runtime / type / export behavior を持つ
+historical release correction です。この同一性は現在の未公開 source corrections には
+適用しません。2.4.0 との observable correctness change として、
 `ok: false` かつ `remainingBits < 0` の overflow planning result では
 `CAPACITY_NEAR_LIMIT` を返しません。成功した near-limit result では warning を
 維持します。詳細は [3.0.0-rc.2 Release Notes](docs/release-notes-3.0.0-rc.2.md)

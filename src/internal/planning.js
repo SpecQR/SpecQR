@@ -115,7 +115,7 @@ export function selectPlanForInput(input, options, selectOptions = {}) {
     (version) => prependStructuredAppendSegment(
       prependFnc1SecondSegment(
         prependFnc1Segment(
-          createSegments(input, options.mode, version, options.optimizeSegments, options.eci),
+          createInputSegments(input, options, version),
           options.gs1
         ),
         options.fnc1Second
@@ -126,6 +126,37 @@ export function selectPlanForInput(input, options, selectOptions = {}) {
     selectOptions
   );
   return makePlanImmutable(gs1Validation ? { ...plan, gs1Validation } : plan);
+}
+
+// High-level input is literal text. Manual segments keep QR FNC1 escaping
+// under caller control, so this adaptation belongs only to input planning.
+function createInputSegments(input, options, version, optimizeSegments = options.optimizeSegments) {
+  const segments = createSegments(input, options.mode, version, optimizeSegments, options.eci);
+  if (!options.gs1 && options.fnc1Second === false) {
+    return segments;
+  }
+  const needsEscaping = segments.some((segment) =>
+    segment.mode === "alphanumeric" && segment.text.includes("%")
+  );
+  if (!needsEscaping) {
+    return segments;
+  }
+
+  const escaped = segments.map((segment) => segment.mode === "alphanumeric"
+    ? { ...segment, text: segment.text.replaceAll("%", "%%") }
+    : segment);
+  if (options.mode !== "auto") {
+    return escaped;
+  }
+
+  // Escaping can make a percent-heavy alphanumeric segment larger than byte
+  // mode. Compare only affected plans; retain all already-safe output/ties.
+  const bytes = createSegments(input, "byte", version, false, options.eci);
+  const byteBits = getSegmentsBitLength(bytes, version);
+  const escapedBits = getSegmentsBitLength(escaped, version);
+  return byteBits < escapedBits || (byteBits === escapedBits && bytes.length < escaped.length)
+    ? bytes
+    : escaped;
 }
 
 export function selectPlanForManualSegments(segments, options, selectOptions = {}) {
@@ -200,7 +231,7 @@ function normalizeCapacityErrorCorrection(options) {
   if (hasLevel && hasAlias && options.errorCorrectionLevel !== options.errorCorrection) {
     throw new InvalidInputError("errorCorrectionLevel and errorCorrection must match when both are provided");
   }
-  if (!ERROR_CORRECTION_LEVELS[level]) {
+  if (!Object.hasOwn(ERROR_CORRECTION_LEVELS, level)) {
     throw new InvalidInputError(`errorCorrectionLevel must be one of L, M, Q, H; got ${level}`);
   }
   return level;
@@ -312,7 +343,7 @@ function createInputPreflightOverflowPlan(input, options, version) {
   const segments = prependStructuredAppendSegment(
     prependFnc1SecondSegment(
       prependFnc1Segment(
-        createSegments(input, options.mode, version, false, options.eci),
+        createInputSegments(input, options, version, false),
         options.gs1
       ),
       options.fnc1Second

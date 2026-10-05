@@ -346,9 +346,10 @@ Browser binaries がない場合は skip せず install command 付きで失敗�
 ## CI
 
 repository には GitHub Actions workflow `.github/workflows/ci.yml` があります。
-最初に `package-artifact` job が `3.0.0-rc.2` candidate を一度 pack し、tarball、SHA-256、
-全 file content manifest、二回 pack の expanded-content 比較を artifact として
-upload します。`package.json` の `engines.node: >=18` を実際の release gate に
+`package-artifact` job が exact commit の未公開 source-test snapshot を二回 pack し、
+expanded content と tarball の一致、canonical gzip、SHA-256、clean commit provenance を
+検証して一つだけ upload します。Frozen rc.2 の五つの固定値は別の必須
+`frozen-rc2-reproduction` job で immutable commit から再現し、artifact を混ぜません。`package.json` の `engines.node: >=18` を実際の release gate に
 するため、Node 18 / 20 / 22 / 24 の matrix はその同じ artifact を download します。
 すべての Node version で次を実行します。
 
@@ -369,7 +370,7 @@ upload します。`package.json` の `engines.node: >=18` を実際の release 
 - `npm run verify:structured-append:memory`
 - `npm run verify:writing`
 - `npm pack --dry-run`
-- canonical tarball を指定した `npm publish --dry-run --tag next`
+- `npm publish --dry-run --tag next` は別の frozen rc.2 reproduction job でのみ実行する
 - `npm run verify:links`
 
 代表 Node を 20 にする理由は、v1 / v2 の既存 release lane と同じ比較軸を保ちつつ、Node 18 / 22 / 24 の engines claim は軽量 matrix で別に検証するためです。macOS Vision validation は Swift、Vision、ImageMagick に依存するため、この代表 Node job では macOS runner を使います。

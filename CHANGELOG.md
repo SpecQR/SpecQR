@@ -2,7 +2,25 @@
 
 ## Unreleased
 
-まだありません。
+### 修正
+
+- High-level `generate()` / `estimate()` の FNC1 first / second position で、
+  alphanumeric segment に入るリテラル `%` を `%%` として encode し、
+  group separator への意図しない変換を防ぎます。明示した alphanumeric mode は
+  維持し、auto は修正後の既存分割と byte mode を比較します。
+- 手動 segment の FNC1 escape、通常 QR の `%`、既に安全な byte segment、
+  optimizer の既存 tie policy は変更しません。
+- GS1 Digital Link の `.` / `..` path value と、URI string の payload 内にある
+  literal / percent-encoded dot segment を URL 正規化前に拒否します。
+  query に置かれた dot-only value は normalizer でも query に保持します。
+- 印刷 diagnostics の module / symbol size が非有限値になる場合は
+  `InvalidInputError` を返します。通常の DPI と、印刷 diagnostics を返さない
+  生成結果は変更しません。
+- ECC option に `constructor` などの継承 property 名を渡した場合、内部の
+  `TypeError` ではなく既存の `InvalidInputError` を返します。
+
+これらは未公開の修正です。既存の `2.4.0` / `3.0.0-rc.2` tag、npm package、
+Conformance Lab の stable pin と RC observation policy は変更しません。
 
 ## 3.0.0-rc.2 - 2026-08-02
 

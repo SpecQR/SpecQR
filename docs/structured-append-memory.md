@@ -110,7 +110,7 @@ full の `splitUnits.length === 47_216`、standard の
 [v3 Structured Append Diagnostics Contract](./v3-structured-append-diagnostics.md)
 どおり、`3.0.0-rc.1` で prerelease 公開済みです。Standard は `splitUnits` own property を
 持たず、full array は `diagnostics: { splitUnits: "full" }` で明示的に要求します。
-現在の `3.0.0-rc.2` release-correction candidate は RC 1 と同じ runtime / type
+公開済み historical `3.0.0-rc.2` は RC 1 と同じ runtime / type
 contract を維持し、stable support とは扱いません。Migration は
 [v3 Migration Guide](./v3-migration.md) を参照してください。
 

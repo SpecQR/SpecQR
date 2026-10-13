@@ -3,6 +3,9 @@
 この文書は、SpecQR の公開文書、開発記録、GitHub 上の表示テキストに適用する
 言語・表記方針の source of truth です。
 
+統合基準は `GITHUB_WRITING_RULES.md`（版 1.0、2026 年 10 月 12 日）です。
+日本語中心の方針は SpecQR、空白の細則は「リンゴとデスク」に従います。
+
 SpecQR は日本語を中心に設計、実装、検証の意思決定を残します。一方で、npm /
 GitHub での発見性、API の検索性、海外利用者向けの最小限の導線は英語で維持します。
 
@@ -50,8 +53,8 @@ README の冒頭に English summary を置く理由は、npm / GitHub で最初�
 
 ## Japanese and Latin Spacing
 
-日本語の本文では、日本語と Latin 文字、英単語、ASCII 識別子、inline code の
-間に半角スペースを入れます。
+日本語の本文では、日本語と Latin 文字、英単語、算用数字、ASCII 識別子、inline code の
+間に通常の半角スペース U+0020 を 1 個入れます。
 
 推奨:
 
@@ -82,7 +85,8 @@ SpecQR（以下「library」）を検証します。
 
 ## Numbers and Units
 
-数値と Latin unit symbol または英語の unit word の間には、半角スペースを入れます。
+数値と単位の間には、半角スペースを入れます。Latin unit symbol と英語の unit word
+に加え、助数詞・日本語の年月日・金額・百分率も対象です。
 
 ```text
 32 MiB
@@ -105,19 +109,26 @@ RC 1 の候補
 32 MiB を上限にする
 ```
 
-次は数値の内部、または日本語表記としてスペースを入れません。
+助数詞・年月日・金額・百分率の例:
+
+- 日本語の助数詞・年月日: `10 件`、`3 回`、`2026 年 7 月 31 日`
+- 金額: `10,000 円`
+- percent: `95 %`
+
+百分率の後に日本語が続く場合も、「95 % の結果」のように空けます。
+
+次は数値の内部、固定表記、または保護対象としてスペースを追加しません。
 
 - version: `3.0.0-rc.1`
 - date: `2026-07-31`
 - ratio: `3:2`
 - range: `1-40`
 - URL / path / command / hash / package spec
-- 日本語の助数詞・年月日: `10件`、`3回`、`2026年7月31日`
-- percent: `95%`
 - 角度: `90°`
 
-温度は SI の表記に合わせて `25 °C` とします。`%` と平面角の `°` は数値へ
-密着させますが、`°C` は unit として数値との間にスペースを置きます。
+温度は SI の表記に合わせて `25 °C` とします。`%` は数値との間にスペースを
+置きます。平面角の `°` は数値へ密着させ、`°C` は unit として数値との間に
+スペースを置きます。
 
 ## Punctuation
 
@@ -232,8 +243,8 @@ PR-style summary と Codex final report は日本語を中心にします。
 tarball へ含めません。公開 tarball の prose は pack 前にこの gate を通し、
 canonical content manifest で固定します。
 
-- 日本語と Latin 文字・inline code の不自然な密着。
-- 既知の unit list に対する数値とのスペース欠落。
+- 日本語と Latin 文字・算用数字・inline code の不自然な密着。
+- 既知の単位・助数詞・年月日・金額・百分率に対する数値とのスペース欠落。
 - 明確な製品名・技術名の表記揺れ。
 - 日本語 sentence 末尾の一部の ASCII punctuation。
 
@@ -241,6 +252,10 @@ code fence、inline code の内部、URL destination、path、command、JSON な
 検査対象から除外します。例外は file / line / rule / fragment を指定した狭い
 allowlist とし、理由を source に記録します。file 全体の除外や broad ignore は
 使いません。
+
+workflow の自動検査は最上位の `name`、`run-name`、`description` に限定します。
+入れ子の artifact / environment / job / step の名前は人が確認し、required status
+check と結び付く表示名は互換性を確認します。
 
 自動検査で意味を判断できない文章、workflow 表示名、package metadata、examples /
 Playground の UI text は、release freeze 時に人が確認します。

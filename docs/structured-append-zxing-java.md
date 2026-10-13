@@ -4,8 +4,8 @@
 decode し、sequence / parity metadata を公開 diagnostics と照合する required
 verification lane を定義します。
 
-この lane は ZXing Java 1実装との継続互換性を確認するものです。全 scanner 互換、
-ISO/IEC 18004全要件への適合、branded 端末 scanner の挙動を保証するものでは
+この lane は ZXing Java 1 実装との継続互換性を確認するものです。全 scanner 互換、
+ISO/IEC 18004 全要件への適合、branded 端末 scanner の挙動を保証するものでは
 ありません。
 
 ## Required Command
@@ -140,7 +140,7 @@ result を残します。
 GitHub Actions の独立 job
 `Structured Append metadata from canonical tarball` が
 `package-artifact` を依存先とし、同じ tarball を download して Ubuntu、Node 22、
-Temurin `21.0.11+10` でこの lane を1回だけ実行します。engine matrix や macOS
+Temurin `21.0.11+10` でこの lane を 1 回だけ実行します。engine matrix や macOS
 Vision job では重複実行しません。
 
 Maven cache は利用しますが、clean environment でも wrapper が Maven と ZXing を取得
@@ -169,7 +169,7 @@ metadata key、Java 型、sequence semantics の変化は silent adaptation せ�
 - Structured Append set の scanner 側自動 merge
 - arbitrary binary payload の ZXing string round-trip
 - damaged/rotated/blurred/printed symbols の readability
-- ISO/IEC 18004全要件への独立認証
+- ISO/IEC 18004 全要件への独立認証
 - network/CDN service や外部 decode API
 
 この lane は generator の header/metadata interoperability を強化する追加証拠です。

@@ -217,7 +217,7 @@ Object form を渡すと `InvalidInputError` になります。Object form は
 v2 の eager contract へ戻します。
 
 - Full `splitUnits` が v2 fixtures と一致する。
-- Standard path の materialization が0回である。
+- Standard path の materialization が 0 回である。
 - Node 18 / 20 / 22 / 24、NodeNext / Bundler、3 browser engines、
   ZXing Java package-level gate が同一 tarball で成功する。
 - Matrix、SVG/PNG bytes、split 位置、parity、RC 1 からの warning 順序が変化しない。

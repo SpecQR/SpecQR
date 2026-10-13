@@ -127,7 +127,7 @@ const result = generateSegmentsStructuredAppend(segments, {
 
 ### Release candidate validation
 
-- standard path で full split-unit materialization が0回であることを
+- standard path で full split-unit materialization が 0 回であることを
   deterministic test で確認します。
 - full opt-in の `splitUnits` は v2 characterization fixtures と deep equality、
   property order、JSON、mutability を比較します。

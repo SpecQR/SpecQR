@@ -31,7 +31,7 @@ renderer output はこの設計の対象外です。
 
 v3 では次を採用します。
 
-- `diagnostics: true` は**standard diagnostics**を返す。
+- `diagnostics: true` は **standard diagnostics** を返す。
 - standard diagnostics は `splitUnits` property を持たない。
 - standard/full の両方に `splitUnitCount` と
   `splitUnitsDetail` discriminant を返す。
@@ -165,7 +165,7 @@ interface QRStructuredAppendSplitUnitDiagnostics {
 Ordering は `sourceSegmentIndex`、同じ byte segment 内では `unitStart` の昇順です。
 
 - binary byte segment: 1 raw byte = 1 split unit
-- text byte segment: 1 Unicode code point = 1 split unit。`byteLength` は UTF-8長
+- text byte segment: 1 Unicode code point = 1 split unit。`byteLength` は UTF-8 長
 - numeric / alphanumeric / kanji: segment 全体 = 1 atomic split unit
 - numeric / alphanumeric canonical bytes: ASCII
 - kanji canonical bytes: original JavaScript string の UTF-8
@@ -186,21 +186,21 @@ logical split-unit sequence を参照します。この offset contract は v3 �
 - V8 `14.1.146.11-node.25`
 - fixed Version 40-L、`maxSymbols: 16`、fixed mask `0`
 - `output: "matrix"`、`diagnostics: false`
-- `node --expose-gc` の fresh child process を case ごとに5回
-- 表は5回の median
+- `node --expose-gc` の fresh child process を case ごとに 5 回
+- 表は 5 回の median
 
 Case construction:
 
 - ASCII text: `{ mode: "byte", data: "A".repeat(47_216) }`
 - binary: `{ mode: "byte", data: new Uint8Array(47_216) }`
 - astral text: `{ mode: "byte", data: "😀".repeat(737 * 16) }`
-- many segments: 13,000個の 1-byte `Uint8Array` byte segments
+- many segments: 13,000 個の 1-byte `Uint8Array` byte segments
 - mixed: numeric `"1234567890"`、alphanumeric `"HELLO123"`、
-  byte `"é😀Z"`、kanji `"漢字"` の 4 segments を1,450回
+  byte `"é😀Z"`、kanji `"漢字"` の 4 segments を 1,450 回
 
 Input 構築後に GC した heap を before とし、public API を実行しました。
 `retained splitUnits` は、生成後に matrix と他 summary を保持せず、
-`splitUnits` と最小 holder だけを残して GC した差分です。これは V8上の再現可能な
+`splitUnits` と最小 holder だけを残して GC した差分です。これは V8 上の再現可能な
 retained-heap baseline であり、object 単体の厳密な byte size や性能 SLA では
 ありません。
 
@@ -242,7 +242,7 @@ kanji entry であり、mode による unit 粒度の違いも測定に含みま
 ### A. 現行 eager required array を維持
 
 - Memory: 常に O(unit count)
-- Calculation: 1回
+- Calculation: 1 回
 - JSON / clone: 自然だが常に full cost
 - TypeScript: 最も単純
 - Compatibility: v2 と完全互換
@@ -253,7 +253,7 @@ kanji entry であり、mode による unit 粒度の違いも測定に含みま
 ### B. Standard では省略、full detail だけ eager opt-in
 
 - Memory: standard は O(1) count fields、full は現行 O(unit count)
-- Calculation: standard は materialization 0回、full は成功後1回
+- Calculation: standard は materialization 0 回、full は成功後 1 回
 - Sync / determinism: plain eager data だけなので現行と同じ
 - JSON / structured clone: standard/full の見た目が明確
 - Freeze: getter state や memoization を持たない
@@ -443,7 +443,7 @@ if (result.diagnostics.splitUnitsDetail === "full") {
 
 Named export と static method に同じ overload を置き、最後に dynamic options を
 受ける catch-all を残します。Literal output、`symbolResults`、`splitUnits` の
-3軸を精密化し、`QRCodeOptions` 相当の dynamic value を拒否しません。
+3 軸を精密化し、`QRCodeOptions` 相当の dynamic value を拒否しません。
 
 ### Error policy
 
@@ -588,7 +588,7 @@ README/release notes で major migration として告知します。
 v3 implementation を stable へ入れる条件:
 
 1. v2 characterization fixture と full result の `splitUnits` が deep-equal。
-2. Standard path で `materializeSplitUnits()` が0回であることを focused test で固定。
+2. Standard path で `materializeSplitUnits()` が 0 回であることを focused test で固定。
 3. Standard/full で matrix、SVG/PNG、split positions、parity、symbol diagnostics、
    warnings が一致。
 4. Literal/static/dynamic overload を consumer type tests と packed tarball で確認。
@@ -609,9 +609,9 @@ contract を再び変えるため patch rollback にはしません。
 2026-07-31 の v3 candidate は次を満たします。
 
 - standard summary assembly は `materializeSplitUnits()` を呼ばない。Focused test は
-  materializer が呼ばれた瞬間に throw する fake source を使い、呼出し0回を
+  materializer が呼ばれた瞬間に throw する fake source を使い、呼出し 0 回を
   deterministic に確認する。
-- full opt-in は既存 golden fixture 3件と memory characterization で、v2 の
+- full opt-in は既存 golden fixture 3 件と memory characterization で、v2 の
   `splitUnits` array、entry property order、split offsets、parity、symbol
   diagnostics、matrix/output hash と一致する。
 - full summary 全体には v3 で必須の `splitUnitCount` と `splitUnitsDetail` が加わる。
@@ -627,7 +627,7 @@ contract を再び変えるため patch rollback にはしません。
 - Bounded/extended deterministic conformance は standard/full、
   output/diagnostic symbols の matrix・summary invariant を同じ seed で確認する。
 
-Version 40-L、16 symbols、47,216-byte manual byte segment を fresh child で各5回
+Version 40-L、16 symbols、47,216-byte manual byte segment を fresh child で各 5 回
 測定した candidate baseline は次です。Node/V8/CPU load 依存であり、性能 SLA では
 ありません。
 

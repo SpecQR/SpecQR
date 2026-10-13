@@ -47,7 +47,7 @@ options normalization
   source として使います。
 - String input は code point array、全 byte-length array、全 byte-start array を
   作りません。64 code points ごとの sparse checkpoint だけを保持し、
-  UTF-16/code-point/UTF-8境界を range cursor で復元します。
+  UTF-16/code-point/UTF-8 境界を range cursor で復元します。
 - Manual input は source segment ごとに 1 descriptor を持ちます。Binary/text
   byte segment は virtual range、numeric/alphanumeric/Kanji は atomic range です。
   Canonical bytes 全体や内部用の 1-unit object は作りません。
@@ -62,13 +62,13 @@ Preflight は、選択できる最大 Version、ECC、Structured Append header
 （20 bits）、`maxSymbols`、mode/segment overhead を使い、「どの分割でも絶対に
 収まらない」場合だけ `DataTooLongError` を投げます。
 
-Raw fixed-mode input では、payload bit length と各 symbol に最低1つ必要な mode /
+Raw fixed-mode input では、payload bit length と各 symbol に最低 1 つ必要な mode /
 character-count overhead を使います。Auto text では、全 mode より楽観的な numeric
 density と最小 character-count indicator を使います。この lower bound でさえ
 総容量を超える場合だけ reject するため、fit し得る input を preflight だけで
 reject しません。
 
-Manual input では、既存 source segment の payload bits と各 segment に1回だけ必要な
+Manual input では、既存 source segment の payload bits と各 segment に 1 回だけ必要な
 mode / character-count overhead を合計します。実際の split で同じ segment が複数
 symbols へ分かれると overhead は増えるため、この値も楽観的 lower bound です。
 
@@ -130,12 +130,12 @@ npm run verify:structured-append:memory
 専用 gate は 32 MiB V8 old-space child で次を実行します。
 
 - 150,000-byte offset 付き binary view の早期 `DataTooLongError`
-- 150,000-character ASCII string の auto Version 1..40早期 `DataTooLongError`
+- 150,000-character ASCII string の auto Version 1..40 早期 `DataTooLongError`
 - 150,000-byte manual byte segment の早期 `DataTooLongError`
 - Version 10-L の 4,304-byte / 16-symbol raw success
-- 同じ manual success と4,304件の full `splitUnits`
+- 同じ manual success と 4,304 件の full `splitUnits`
 - Version 40-L / 47,216-byte / 16-symbol standard の 32 MiB old-space 成功
-- Standard/full を fresh child で各5回測定し、matrix hash 一致、diagnostics JSON
+- Standard/full を fresh child で各 5 回測定し、matrix hash 一致、diagnostics JSON
   size 差、heap/time 中央値を report
 
 Pass/fail に時間や RSS の閾値は使いません。低 heap 完走、stable error、symbol 数、
@@ -146,7 +146,7 @@ Version 境界、および compact source の white-box invariant を固定し�
 ## Baseline
 
 測定環境は 2026-07-31、Darwin arm64、Node.js 25.9.0 です。修正前値は同じ
-checkout で変更前に採った1回の baseline、修正後値は独立 child 5回の中央値です。
+checkout で変更前に採った 1 回の baseline、修正後値は独立 child 5 回の中央値です。
 これは性能 SLA ではありません。
 
 | Case | Before | After |

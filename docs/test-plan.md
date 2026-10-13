@@ -315,8 +315,8 @@ Installed public API だけで 2/3/16-symbol、UTF-8/astral、raw binary/offset 
 manual mixed/byte chunk、fixed Version/ECC/mask、shuffled scan order の
 10 fixtures / 44 symbols を生成します。Maven Wrapper 3.3.4 / Maven 3.9.16 が
 ZXing core/javase 3.5.4 を取得し、`STRUCTURED_APPEND_SEQUENCE` /
-`STRUCTURED_APPEND_PARITY` を6つの public diagnostics field へ照合します。
-JDK 21や dependency 取得が利用できない場合、metadata が欠ける場合、部分 decode の
+`STRUCTURED_APPEND_PARITY` を 6 つの public diagnostics field へ照合します。
+JDK 21 や dependency 取得が利用できない場合、metadata が欠ける場合、部分 decode の
 場合は skip せず failure です。詳細は
 [Structured Append ZXing Java Verification](./structured-append-zxing-java.md)
 を参照してください。
@@ -365,7 +365,7 @@ expanded content と tarball の一致、canonical gzip、SHA-256、clean commit
 - `npm run pages:build`
 - `npm run verify:decode`
 - `npm run verify:decode:jsqr`
-- `npm run verify:conformance:fuzz`（内部で Nayuki 1280件を比較）
+- `npm run verify:conformance:fuzz`（内部で Nayuki 1280 件を比較）
 - `npm run verify:resource-safety`
 - `npm run verify:structured-append:memory`
 - `npm run verify:writing`

@@ -73,7 +73,7 @@ cross-runtime contract として使いません。
 ### ZXing-C++
 
 `sequenceSize()` / `sequenceIndex()` / `sequenceId()` を持つため第二実装候補
-ですが、現在は binary/toolchain を固定していません。ZXing Java 1実装の成功を
+ですが、現在は binary/toolchain を固定していません。ZXing Java 1 実装の成功を
 全 ZXing family や全 scanner へ一般化しません。
 
 ## Evidence Boundaries
@@ -95,7 +95,7 @@ required metadata lane が証明する範囲:
 
 したがって、Structured Append conformance は引き続き unit/golden bitstream、
 matrix/codeword、diagnostics、Nayuki/reference 可能範囲、resource gates、
-packed smoke と組み合わせます。外部 decoder 1実装だけを唯一の根拠にはしません。
+packed smoke と組み合わせます。外部 decoder 1 実装だけを唯一の根拠にはしません。
 
 ## References
 

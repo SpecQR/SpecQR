@@ -95,54 +95,146 @@ console.log(
 function lintMarkdown(relativeFile, source) {
   const lines = source.split(/\r?\n/u);
   let fence = null;
-  let inHtmlComment = false;
+  const htmlState = { comment: false, element: null };
+  let inIndentedCode = false;
+  let inList = false;
+  let quoteDepth = 0;
 
   for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
+    const quoteMarkers = lines[index].match(/^(?: {0,3}>[ \t]?)+/u)?.[0].match(/ {0,3}>[ \t]?/gu) ?? [];
+    const inProtectedBlock = fence !== null || htmlState.comment || htmlState.element !== null || htmlState.tag;
+    const quotePrefix = (inProtectedBlock ? quoteMarkers.slice(0, quoteDepth) : quoteMarkers).join("");
+    const currentQuoteDepth = [...quotePrefix].filter((character) => character === ">").length;
+    const line = lines[index].slice(quotePrefix.length);
+    if ((line.trim() !== "" || currentQuoteDepth > 0) && currentQuoteDepth !== quoteDepth) {
+      // A quote container cannot leave fence or raw HTML state in its parent.
+      fence = null;
+      htmlState.comment = false;
+      htmlState.element = null;
+      htmlState.tag = null;
+      inIndentedCode = false;
+      inList = false;
+      quoteDepth = currentQuoteDepth;
+    }
     const fenceMatch = line.match(/^\s*(`{3,}|~{3,})/u);
-    if (fenceMatch) {
-      const marker = fenceMatch[1][0];
-      if (fence === null) {
-        fence = marker;
-      } else if (fence === marker) {
+    if (fence !== null) {
+      if (fenceMatch
+        && fence[0] === fenceMatch[1][0]
+        && fenceMatch[1].length >= fence.length
+        && line.slice(fenceMatch[0].length).trim() === ""
+      ) {
         fence = null;
       }
       continue;
     }
-    if (fence !== null) {
-      continue;
-    }
-
-    let prose = line;
-    if (inHtmlComment) {
-      const end = prose.indexOf("-->");
-      if (end < 0) {
+    if (!htmlState.comment && htmlState.element === null && !htmlState.tag) {
+      if (fenceMatch) {
+        fence = fenceMatch[1];
         continue;
       }
-      prose = " ".repeat(end + 3) + prose.slice(end + 3);
-      inHtmlComment = false;
-    }
-    const commentStart = prose.indexOf("<!--");
-    if (commentStart >= 0) {
-      const commentEnd = prose.indexOf("-->", commentStart + 4);
-      if (commentEnd >= 0) {
-        prose = maskRange(prose, commentStart, commentEnd + 3, " ");
-      } else {
-        prose = prose.slice(0, commentStart);
-        inHtmlComment = true;
+      // Recognize top-level indented blocks; nested list syntax needs review.
+      if (/^ {0,3}(?:[-+*]|\d+[.)])\s/u.test(line)) {
+        inList = true;
+      } else if (/^\S/u.test(line)) {
+        inList = false;
+      }
+      if (/^(?: {4}|\t)/u.test(line) && !inList
+        && (inIndentedCode || index === 0 || lines[index - 1].trim() === "")) {
+        inIndentedCode = true;
+        continue;
+      }
+      if (line.trim() !== "") {
+        inIndentedCode = false;
       }
     }
 
+    const prose = maskHtmlProtected(line, htmlState, true);
     checked.markdownLines += 1;
     lintProse(relativeFile, index + 1, prepareMarkdownProse(prose));
   }
 }
 
+function maskHtmlProtected(source, state, markdown = false) {
+  let result = "";
+  let rest = state.tag ? state.tag + "\n" + source : source;
+  state.tag = null;
+  while (rest !== "") {
+    if (state.comment || state.element !== null) {
+      const closing = state.comment ? /-->/u : new RegExp(`</${state.element}\\s*>`, "iu");
+      const match = closing.exec(rest);
+      if (state.element === "code") {
+        result += "A";
+      }
+      if (!match) {
+        return result;
+      }
+      rest = rest.slice(match.index + match[0].length);
+      state.comment = false;
+      state.element = null;
+      continue;
+    }
+    const match = /<!--|<\/?[A-Za-z][A-Za-z0-9:-]*(?=\s|\/?>|$)/iu.exec(rest);
+    const code = markdown ? /(?<!`)(`+)(?!`)[^\n]*?(?<!`)\1(?!`)/u.exec(rest) : null;
+    if (code && (!match || code.index < match.index)) {
+      result += rest.slice(0, code.index) + "A".repeat(code[0].length);
+      rest = rest.slice(code.index + code[0].length);
+      continue;
+    }
+    if (!match) {
+      return result + rest;
+    }
+    result += rest.slice(0, match.index);
+    rest = rest.slice(match.index);
+    state.comment = match[0] === "<!--";
+    if (state.comment) {
+      rest = rest.slice(4);
+      continue;
+    }
+    const end = htmlTagEnd(rest);
+    if (end < 0) {
+      state.tag = rest;
+      return result;
+    }
+    const tag = rest.slice(0, end + 1);
+    rest = rest.slice(end + 1);
+    const protectedElement = tag.match(/^<(script|style|pre|code)\b/iu);
+    if (!protectedElement) {
+      result += tag;
+      continue;
+    }
+    state.element = protectedElement[1].toLowerCase();
+    // A block element separates its surrounding prose; inline code does not.
+    if (!state.comment && state.element !== "code") {
+      result += " ";
+    }
+  }
+  return result;
+}
+
+function htmlTagEnd(source) {
+  let quote = null;
+  for (let index = 1; index < source.length; index += 1) {
+    const character = source[index];
+    if (quote !== null) {
+      if (character === quote) {
+        quote = null;
+      }
+    } else if (character === "\"" || character === "'") {
+      quote = character;
+    } else if (character === ">") {
+      return index;
+    }
+  }
+  return -1;
+}
+
 function lintWorkflowDisplayText(relativeFile, source) {
   const lines = source.split(/\r?\n/u);
   for (let index = 0; index < lines.length; index += 1) {
+    // Nested names can be artifact/environment identifiers or required checks.
+    // Review those fields in context; only unambiguous root metadata is linted.
     const match = lines[index].match(
-      /^\s*(?:name|run-name|description):\s*(?![>|])(.+?)\s*$/u
+      /^(?:name|run-name|description):\s*(?![>|])(.+?)\s*$/u
     );
     if (!match) {
       continue;
@@ -185,23 +277,10 @@ function lintLeadingComments(relativeFile, source) {
 
 function lintHtmlText(relativeFile, source) {
   const lines = source.split(/\r?\n/u);
-  let ignoredElement = null;
+  const htmlState = { comment: false, element: null };
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    if (ignoredElement !== null) {
-      if (new RegExp(`</${ignoredElement}>`, "iu").test(line)) {
-        ignoredElement = null;
-      }
-      continue;
-    }
-    const ignoredStart = line.match(/<(script|style)\b/iu);
-    if (ignoredStart) {
-      if (!new RegExp(`</${ignoredStart[1]}>`, "iu").test(line)) {
-        ignoredElement = ignoredStart[1];
-      }
-      continue;
-    }
-    const prose = decodeBasicEntities(line.replace(/<[^>]*>/gu, " ")).trim();
+    const prose = prepareHtmlProse(maskHtmlProtected(line, htmlState)).trim();
     if (!prose) {
       continue;
     }
@@ -246,39 +325,48 @@ function lintProse(relativeFile, lineNumber, prose) {
 
   for (const [pattern, direction] of [
     [
-      /([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])([A-Za-z])/gu,
+      /([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])([^\S\r\n]*)(?=([A-Za-z]))/gu,
       "Add a half-width space between Japanese and Latin text."
     ],
     [
-      /([A-Za-z])([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])/gu,
+      /([A-Za-z])([^\S\r\n]*)(?=([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]))/gu,
       "Add a half-width space between Latin and Japanese text."
     ]
   ]) {
     for (const match of prose.matchAll(pattern)) {
-      report(relativeFile, lineNumber, "ja-latin-spacing", match[0], direction);
+      if (match[2] === " ") {
+        continue;
+      }
+      report(relativeFile, lineNumber, "ja-latin-spacing", match[0] + match[3], direction);
     }
   }
 
   for (const match of prose.matchAll(
-    /([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])(?!\d[\d,.]*(?:年|月|日|件|回|個|つ|人|本|枚|章|節|項|桁|文字))(\d[\d,.]*(?:\.\d+)?)/gu
+    /([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])([^\S\r\n]*)(?=(\d[\d,.]*))/gu
   )) {
+    if (match[2] === " ") {
+      continue;
+    }
     report(
       relativeFile,
       lineNumber,
       "number-prose-spacing",
-      match[0],
+      match[0] + match[3],
       "Add a half-width space before a standalone numeric token."
     );
   }
 
   for (const match of prose.matchAll(
-    /(\d)(?=(?:では|で|に|を|へ|は|が|の|と|も|から|まで|向け|時点|対象|以上|以下|未満|超|以降|以前|として|だけ|ずつ))/gu
+    /(\d)([^\S\r\n]*)(?=([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]))/gu
   )) {
+    if (match[2] === " ") {
+      continue;
+    }
     report(
       relativeFile,
       lineNumber,
       "number-prose-spacing",
-      match[0],
+      match[0] + match[3],
       "Add a half-width space after a standalone numeric token."
     );
   }
@@ -345,8 +433,11 @@ function lintTerminology(relativeFile, lineNumber, prose) {
 }
 
 function lintNumberUnits(relativeFile, lineNumber, prose) {
-  const unitPattern = /(?:\d|\d[\d,.]*\d)(?:(?:Ki|Mi|Gi|Ti)?B|kB|MB|GB|TB|bits?|bytes?|ms|dpi|ppi|px|pixels?|symbols?|fixtures?|cases?|files?|rows?|characters?|modules?|codewords?|°C)(?=$|[^A-Za-z])/gu;
+  const unitPattern = /(?<![A-Za-z0-9_.])(?:\d|\d[\d,.]*\d)([^\S\r\n]*)(?:(?:Ki|Mi|Gi|Ti)?B|kB|MB|GB|TB|[GM]bps|MB\/s|bits?|bytes?|ms|mm|g|W|Hz|dpi|ppi|px|pixels?|symbols?|fixtures?|cases?|files?|rows?|characters?|modules?|codewords?|°C)(?=$|[^A-Za-z])/gu;
   for (const match of prose.matchAll(unitPattern)) {
+    if (match[1] === " ") {
+      continue;
+    }
     report(
       relativeFile,
       lineNumber,
@@ -354,6 +445,22 @@ function lintNumberUnits(relativeFile, lineNumber, prose) {
       match[0],
       "Add a half-width space between the number and Latin unit."
     );
+  }
+  for (const pattern of [
+    /\d([^\S\r\n]*)%/gu,
+    /%([^\S\r\n]*)(?=([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]))/gu
+  ]) {
+    for (const match of prose.matchAll(pattern)) {
+      if (match[1] !== " ") {
+        report(
+          relativeFile,
+          lineNumber,
+          "number-unit-spacing",
+          match[0] + (match[2] ?? ""),
+          "Use one half-width space at the percentage boundary."
+        );
+      }
+    }
   }
 }
 
@@ -374,40 +481,67 @@ function report(relativeFile, lineNumber, rule, fragment, message) {
   );
 }
 
-function isAllowed(candidate) {
-  return allowlist.some(
-    (entry) => entry.file === candidate.file
+// Exported only for the repository's checker tests, not from the npm package.
+export function isAllowed(candidate, entries = allowlist) {
+  return entries.some(
+    (entry) => typeof entry.reason === "string" && entry.reason.trim() !== ""
+      && entry.file === candidate.file
       && entry.line === candidate.line
       && entry.rule === candidate.rule
       && entry.fragment === candidate.fragment
   );
 }
 
+function maskInlineCode(source) {
+  // Mask code before processing link/HTML syntax that may occur inside it.
+  return maskPattern(
+    source,
+    /(?<!`)(`+)(?!`)[^\n]*?(?<!`)\1(?!`)/gu,
+    (match) => "A".repeat(match[0].length)
+  );
+}
+
 function prepareMarkdownProse(line) {
-  let result = line;
+  let result = maskInlineCode(line);
   result = maskPattern(
     result,
     /(!?\[)([^\]\n]*)(\]\()([^)\n]*)(\))/gu,
-    (match) => " ".repeat(match[1].length)
-      + match[2]
-      + " ".repeat(match[3].length + match[4].length + match[5].length)
+    (match) => match[2]
   );
   result = maskPattern(
     result,
-    /(`+)([^`\n]*?)\1/gu,
+    /<(?:code|pre)\b[^>]*>.*?<\/(?:code|pre)>/giu,
     (match) => "A".repeat(match[0].length)
   );
+  result = maskPattern(
+    result,
+    /<https?:\/\/[^>]+>|<[\w.+-]+@[\w.-]+>/gu,
+    (match) => "U".repeat(match[0].length)
+  );
+  result = maskPattern(result, /(?<!\\)\$[^$\n]+\$/gu, (match) => "A".repeat(match[0].length));
+  result = prepareHtmlProse(result);
+  return result.replace(/(\*{1,3}|_{1,3}|~~)(\S(?:.*?\S)?)\1/gu, "$2");
+}
+
+function prepareHtmlProse(line) {
+  let result = line;
   result = maskPattern(
     result,
     /https?:\/\/[^\s<>)\]}]+/gu,
     (match) => "U".repeat(match[0].length)
   );
-  result = maskPattern(
-    result,
-    /<[^>\n]+>/gu,
-    (match) => " ".repeat(match[0].length)
-  );
-  return result;
+  // These bounded forms are protected tokens, not prose unit declarations.
+  for (const pattern of [
+    /[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/gu,
+    /(?:[A-Za-z]:[\\/]|\.{1,2}[\\/])[A-Za-z0-9_./\\%~+-]+|[\w.-]+(?:[\\/][\w.%-]+)+\.[A-Za-z0-9]+/gu,
+    /\b[\w%-]*\d[\w%-]*\.(?:md|pdf|txt|json|ya?ml|[cm]?js|ts|html|csv|svg|png)\b/gu
+  ]) {
+    result = maskPattern(result, pattern, (match) => "A".repeat(match[0].length));
+  }
+  // Formatting syntax does not create visible spaces around its text.
+  result = result.replace(/<\/?(?:a|b|del|em|i|ins|mark|s|small|span|strong|sub|sup|u)\b(?:[^<>"']|"[^"]*"|'[^']*')*>/giu, "");
+  result = result.replace(/<(?:[^<>"']|"[^"]*"|'[^']*')*>/gu, " ");
+  return decodeBasicEntities(result);
 }
 
 function maskPattern(source, pattern, replacement) {
@@ -462,7 +596,7 @@ async function collectFiles(directory, predicate, options = {}) {
       continue;
     }
     const absolutePath = path.join(absoluteDirectory, entry.name);
-    const relativePath = path.relative(root, absolutePath);
+    const relativePath = path.relative(root, absolutePath).split(path.sep).join("/");
     if (entry.isDirectory()) {
       result.push(
         ...await collectFiles(relativePath, predicate, options)

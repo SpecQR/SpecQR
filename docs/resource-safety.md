@@ -97,7 +97,7 @@ single-pass の根拠は `tests/resource-safety.test.js` で `BitBuffer.toBytes(
 
 ## Baseline
 
-2026-07-30、Darwin arm64、Node.js 25.9.0 で同じ process・3回 median を用いて修正前後を測定しました。これは性能 SLA ではなく、再現手順と相対的な退行検知の参考値です。
+2026-07-30、Darwin arm64、Node.js 25.9.0 で同じ process・3 回 median を用いて修正前後を測定しました。これは性能 SLA ではなく、再現手順と相対的な退行検知の参考値です。
 
 | Case | Before | After |
 | --- | ---: | ---: |

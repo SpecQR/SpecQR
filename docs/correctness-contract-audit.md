@@ -551,7 +551,9 @@ Manual byte segment parity:
 - 推奨修正: Conformance/fuzzing と resource fixes 後に、plan/build/render、SA input/split、diagnostics assembly を behavior-preserving に分離。
 - 依存: AUD-03/04 の behavior lock。先に refactor しない。
 
-### AUD-15: External exact comparison は代表 6ケースに限定
+<a name="aud-15-external-exact-comparison-は代表-6ケースに限定"></a>
+
+### AUD-15: External exact comparison は代表 6 ケースに限定
 
 - 分類: untested risk
 - 重要度: Medium
@@ -568,7 +570,7 @@ Manual byte segment parity:
 
 - 全 required local gates は pass。
 - 192 additional fixed matrices は Nayuki と一致。
-- Renderer extreme scale、manual parity stack overflow、planning warning、TypeScript 2件は再現済み。
+- Renderer extreme scale、manual parity stack overflow、planning warning、TypeScript 2 件は再現済み。
 - Browser E2E は repository に存在しない。
 - ZXing Java metadata validation はこの環境と現行 CI 設定で skip。
 
@@ -578,7 +580,7 @@ Manual byte segment parity:
 - GS1 full catalog / industry-specific rules。
 - 全 scanner の FNC1/Structured Append metadata behavior。
 - Browser engine 間の ImageData/Object URL/download 互換性。
-- 2015版と 2024版の全差分。
+- 2015 版と 2024 版の全差分。
 - Conformance Lab repository 内部の正確性。この監査では変更・実行していない。
 
 ## 後続 Goal
@@ -698,7 +700,7 @@ resource-safety hardeningとdeterministic conformance gateで固定したbehavio
 - `tests/internal-architecture.test.js`: facade boundary と static module graph の cycle 不在を固定
 - AUD-01〜05: renderer budget、early reject、streaming parity、single-build、overflow warning behavior を focused tests で再確認
 
-Current module map と internal artifact invariant は [Internal Architecture](./internal-architecture.md) に記録した。AUD-14 は current working tree で remediated と評価できるが、AUD-06〜13、AUD-15および browser/decoder の環境依存範囲はこの refactor では変更していない。
+Current module map と internal artifact invariant は [Internal Architecture](./internal-architecture.md) に記録した。AUD-14 は current working tree で remediated と評価できるが、AUD-06〜13、AUD-15 および browser/decoder の環境依存範囲はこの refactor では変更していない。
 
 Refactor 前後の Structured Append 5-run median は同文書に記録し、重大な退行がないことを確認した。時間値は correctness gate には使用しない。
 
@@ -771,10 +773,10 @@ child を required release gate として実行する。設計と baseline は
 [Structured Append Memory Hardening](./structured-append-memory.md) を参照する。
 
 修正前の 150,000-character ASCII は 13,456 ms、manual 150,000-byte は raw
-`RangeError` だった。修正後5回中央値はそれぞれ 2.28 ms の
+`RangeError` だった。修正後 5 回中央値はそれぞれ 2.28 ms の
 `DataTooLongError`、2.08 ms の `DataTooLongError` である。V10-L 4,304-byte /
-16-symbol の matrix と diagnostics hash は変更前後で一致し、Nayuki 1280件と
-bounded conformance 1536件も green である。
+16-symbol の matrix と diagnostics hash は変更前後で一致し、Nayuki 1280 件と
+bounded conformance 1536 件も green である。
 
 残存 risk:
 
@@ -828,7 +830,7 @@ publish 前なので stable finding は引き続き resolved とはしません�
 
 Current v2 contract では、`generateSegmentsStructuredAppend()` の成功結果が
 `diagnostics:false` を含め常に 1 split unit あたり 1 plain object を返す。
-Version 40-L / 16-symbol / 47,216-unit case を fresh Node child で5回測定すると、
+Version 40-L / 16-symbol / 47,216-unit case を fresh Node child で 5 回測定すると、
 `splitUnits` retained heap の median は ASCII text 4,369,744 bytes、binary
 4,261,936 bytes、full diagnostics JSON は 4,941,373 bytes だった。
 

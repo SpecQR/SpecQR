@@ -318,7 +318,7 @@ Digital Link docs / playground だけを直す patch でも、少なくとも次
 `3.0.0-rc.2` は同じ contract を維持します。通常 gate に加えて次を必須とします。
 
 - `diagnostics:false` / omitted / `true` / object form の option/return matrix。
-- Standard で `splitUnits` own property 不在、materializer 呼出し0回、
+- Standard で `splitUnits` own property 不在、materializer 呼出し 0 回、
   `splitUnitCount` 正確性。
 - Full opt-in で v2 `splitUnits` array/順序/mutability/JSON が一致し、legacy
   summary projection、split 位置、parity、matrix/output hash が一致。

@@ -98,7 +98,7 @@ input preparation
   -> top-level summary
 ```
 
-Split feasibility probe は plan だけを行います。最終 symbol の encoding、ECC、matrix build は1回です。`diagnostics: false` の matrix/PNG path で不要な SVG を構築しません。
+Split feasibility probe は plan だけを行います。最終 symbol の encoding、ECC、matrix build は 1 回です。`diagnostics: false` の matrix/PNG path で不要な SVG を構築しません。
 
 Raw binary は view/range、raw string は 64 code points ごとの sparse index、manual
 input は source segment ごとの descriptor を使います。v3 candidate の manual
@@ -137,7 +137,7 @@ public `diagnostics.splitUnits` を materialize します。Preflight と memory
 
 ## Benchmark
 
-性能値は SLA や CI threshold ではありません。同一 process、1回 warm-up 後の5回中央値です。Input は 20,000 ASCII bytes、Version 25-L、auto mask、16 symbols、matrix output です。Manual case は単一 20,000-byte segment を使います。
+性能値は SLA や CI threshold ではありません。同一 process、1 回 warm-up 後の 5 回中央値です。Input は 20,000 ASCII bytes、Version 25-L、auto mask、16 symbols、matrix output です。Manual case は単一 20,000-byte segment を使います。
 
 | Case | Refactor 前 median | Refactor 後 median |
 | --- | ---: | ---: |

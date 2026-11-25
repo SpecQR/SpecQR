@@ -555,6 +555,12 @@ npm run playground
 
 Open `http://127.0.0.1:4173/playground/`.
 
+Single QR の「印刷サイズを確認」では、用紙幅ではなく印刷可能幅と、プリンターの実解像度
+（dpi または dots/mm）を指定して、生成した QR Code Model 2 の印刷寸法を確認できます。
+モジュールの初期値は 4 ドットです。余白は各辺に最低 4 モジュールを見込み、
+Margin がそれより大きければ、その値を使います。計算は正方形のドットで 1:1 印刷する前提で、
+SVG / PNG の出力や印刷設定は変えません。読み取りや GS1 適合を保証するものではありません。
+
 GitHub Pages に公開する場合は、repository settings で Pages source を `GitHub Actions` にし、`Deploy Playground` workflow を手動実行します。push だけでは deploy しません。
 
 ## Errors

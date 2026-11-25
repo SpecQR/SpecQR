@@ -7,6 +7,7 @@ import {
   validateGs1DigitalLink
 } from "../src/index.js";
 import { toObjectURL } from "../src/browser.js";
+import { calculatePrintFit } from "./print-check.js";
 
 const input = document.querySelector("#qr-input");
 const workflow = document.querySelector("#qr-workflow");
@@ -29,7 +30,20 @@ const warnings = document.querySelector("#qr-warnings");
 const downloadSvg = document.querySelector("#download-svg");
 const downloadPng = document.querySelector("#download-png");
 
+const printCheck = document.querySelector("#qr-print-check");
+const printWidth = document.querySelector("#qr-print-width");
+const printDensity = document.querySelector("#qr-print-density");
+const printDensityUnit = document.querySelector("#qr-print-density-unit");
+const printModuleDots = document.querySelector("#qr-print-module-dots");
+const printResult = document.querySelector("#qr-print-result");
+
 let objectUrls = [];
+let printSymbol = null;
+
+printCheck.addEventListener("toggle", renderPrintCheck);
+for (const element of [printWidth, printDensity, printDensityUnit, printModuleDots]) {
+  element.addEventListener("input", renderPrintCheck);
+}
 
 populateVersionOptions();
 
@@ -62,6 +76,8 @@ render();
 function render() {
   revokeDownloads();
   syncModeControls();
+  printSymbol = null;
+  printCheck.hidden = workflow.value === "structured";
 
   try {
     let handledError = false;
@@ -84,6 +100,8 @@ function render() {
     errorBox.textContent = error instanceof Error ? error.message : String(error);
     disableDownload(downloadSvg);
     disableDownload(downloadPng);
+  } finally {
+    renderPrintCheck();
   }
 }
 
@@ -148,7 +166,51 @@ function renderSingleSymbol() {
   renderDiagnostics(rows);
   renderWarnings(result.diagnostics.warnings);
   updateSingleDownloads(result.svg, data, downloadOptions);
+  printSymbol = { size: result.diagnostics.size, margin: options.margin };
   return false;
+}
+
+function renderPrintCheck() {
+  let message = "";
+  if (!printCheck.hidden && printCheck.open) {
+    message = getPrintMessage();
+  }
+  if (printResult.textContent !== message) printResult.textContent = message;
+}
+
+function getPrintMessage() {
+  if (!printSymbol) return "QR を生成すると、印刷サイズを確認できます。";
+  if (!printWidth.value.trim()) return "印刷可能幅を入力すると、必要なサイズを表示します。";
+
+  const moduleDots = printModuleDots.valueAsNumber;
+  const fit = calculatePrintFit({
+    ...printSymbol,
+    width: printWidth.value,
+    density: printDensity.value,
+    densityUnit: printDensityUnit.value,
+    moduleDots
+  });
+  if (!fit) return "印刷可能幅と解像度は正の数、ドット数は 1 以上の整数で入力してください。";
+
+  const lines = [
+    `${fit.fits ? "幅に収まります。" : "幅に収まりません。"} 必要な寸法は 1 辺あたり約 ${fit.requiredMm} mm（${fit.requiredDots} ドット）。`,
+    `比較は丸め前の値で行います。白い余白は各辺 ${fit.quietZone} モジュールです。`
+  ];
+  if (printSymbol.margin < 4) {
+    lines.push("この計算では余白を 4 に補っています。出力にも余白を付けるには Margin を 4 以上にしてください。");
+  }
+  if (fit.maxModuleDots === 0n) {
+    lines.push("指定の幅では、1 ドット / モジュールでも収まりません。");
+  } else {
+    lines.push(`この幅で収まる上限は ${fit.maxModuleDots} ドット / モジュールです。`);
+  }
+  if (!fit.fits) {
+    lines.push(`指定のドット数を保つには、印刷可能幅を ${fit.minimumMm} mm 以上にしてください。`);
+  }
+  if (moduleDots < 4 || fit.maxModuleDots < 4n) {
+    lines.push("安定した印刷の目安は 4 ドット / モジュール以上です。");
+  }
+  return lines.join(" ");
 }
 
 function renderStructuredAppend() {

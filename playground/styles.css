@@ -255,3 +255,30 @@ li {
     width: min(86vw, 520px);
   }
 }
+
+.print-check {
+  border-bottom: 1px solid #dbe3ea;
+  padding-bottom: 12px;
+}
+
+.print-check summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding-block: 6px;
+}
+
+.print-check label {
+  margin-top: 0;
+}
+
+.print-check p {
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+#qr-print-result {
+  color: #17202a;
+  font-weight: 600;
+}

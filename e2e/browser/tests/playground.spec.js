@@ -188,3 +188,40 @@ test("Structured Append renders multiple symbols with usable PNG links", async (
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
   ]);
 });
+
+test("Single QR print fit uses exact density and does not change preview or downloads", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.getByLabel("Version").selectOption("6");
+  await page.getByText("印刷サイズを確認", { exact: true }).click();
+  await expect(page.getByLabel("ドット数 / モジュール")).toHaveValue("4");
+
+  const preview = page.getByTestId("qr-preview").locator("svg");
+  const svg = await preview.evaluate(element => element.outerHTML);
+  const pngHref = await page.getByTestId("download-png").getAttribute("href");
+  const result = page.locator("#qr-print-result");
+
+  await page.getByLabel("印刷可能幅 (mm)").fill("20.5");
+  await page.getByLabel("ドット数 / モジュール").fill("5");
+  await expect(result).toContainText("幅に収まりません。");
+  await expect(result).toContainText("20.744 mm");
+  await page.getByLabel("解像度の単位").selectOption("dots/mm");
+  await page.getByLabel("解像度", { exact: true }).fill("12");
+  await expect(result).toContainText("幅に収まります。");
+  await expect(result).toContainText("20.417 mm");
+  await expect(result).toContainText("245 ドット");
+  expect(await preview.evaluate(element => element.outerHTML)).toBe(svg);
+  await expect(page.getByTestId("download-png")).toHaveAttribute("href", pngHref);
+
+  await page.getByLabel("Margin", { exact: true }).fill("5");
+  await expect(result).toContainText("幅に収まりません。");
+  await page.getByLabel("Margin", { exact: true }).fill("0");
+  await expect(result).toContainText("余白を 4 に補っています");
+
+  await page.getByRole("textbox", { name: "入力", exact: true }).fill("a".repeat(300));
+  await expect(result).toHaveText("QR を生成すると、印刷サイズを確認できます。");
+  await page.getByLabel("生成").selectOption("structured");
+  await expect(page.locator("#qr-print-check")).toBeHidden();
+  await page.getByLabel("生成").selectOption("single");
+  await page.getByRole("textbox", { name: "入力", exact: true }).fill("test");
+  await expect(result).toContainText("幅に収まります。");
+});

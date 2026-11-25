@@ -91,6 +91,36 @@
         </div>
 
         <aside class="diagnostics">
+          <details id="qr-print-check" class="print-check">
+            <summary>印刷サイズを確認</summary>
+            <p id="qr-print-help">用紙幅ではなく、実際に印刷できる幅を入力してください。</p>
+            <div class="control-grid">
+              <label>
+                印刷可能幅 (mm)
+                <input id="qr-print-width" type="text" inputmode="decimal" maxlength="24"
+                       aria-describedby="qr-print-help">
+              </label>
+              <label>
+                解像度
+                <input id="qr-print-density" type="text" inputmode="decimal" maxlength="24" value="300">
+              </label>
+              <label>
+                解像度の単位
+                <select id="qr-print-density-unit">
+                  <option value="dpi">dpi</option>
+                  <option value="dots/mm">dots/mm</option>
+                </select>
+              </label>
+              <label>
+                ドット数 / モジュール
+                <input id="qr-print-module-dots" type="number" min="1" step="1" value="4">
+              </label>
+            </div>
+            <p id="qr-print-result" role="status" aria-atomic="true"></p>
+            <p>縦横が同じ実解像度で、プリンターのドットに 1:1 で印刷する前提です。
+              読み取りや GS1 適合は保証しません。SVG / PNG の出力設定は変わりません。</p>
+          </details>
+
           <h2>Planning</h2>
           <dl id="qr-planning" aria-label="Planning results" data-testid="qr-planning"></dl>
           <h2>Diagnostics</h2>
